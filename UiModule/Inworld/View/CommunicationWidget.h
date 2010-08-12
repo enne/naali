@@ -30,6 +30,13 @@ namespace Communications
     }
 }
 
+
+namespace TTS
+{
+	class TtsSessionInterface;
+	class TtsServiceInterface;
+}
+
 namespace CommUI
 {
     class VoiceUsersWidget;
@@ -80,11 +87,16 @@ namespace CoreUi
         void SendMessageRequested();
         void InitializeInWorldVoice();
         void InitializeInWorldChat();
+		void InitializeTts();
+		void InitializeInWorldTts();
+		void UninitializeInWorldTts();
         void UninitializeInWorldVoice();
         void UpdateInWorldVoiceIndicator();
         void ShowVoiceControls();
         void HideVoiceControls();
         void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message);
+
+		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
 
     private:
         Foundation::Framework* framework_;
@@ -110,6 +122,9 @@ namespace CoreUi
         QGraphicsProxyWidget* voice_users_proxy_widget_;
 
         Communications::InWorldChat::SessionInterface* in_world_chat_session_;
+
+		//TTS
+		TTS::TtsSessionInterface* in_world_tts_chat_session_;
 
     signals:
         void SendMessageToServer(const QString &message);

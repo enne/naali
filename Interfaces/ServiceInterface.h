@@ -49,7 +49,8 @@ namespace Foundation
             ST_UiSettings,
             ST_Player,
             ST_WorldBuilding,
-            ST_Unknown
+            ST_Unknown,
+			ST_Tts
         };
     }
 }

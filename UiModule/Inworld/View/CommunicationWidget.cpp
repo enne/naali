@@ -23,6 +23,11 @@
 
 #include "DebugOperatorNew.h"
 
+#include "TtsServiceInterface.h"
+
+#include "TtsModule.h"
+
+
 namespace
 {
     /// HTTP schema indentifier
@@ -85,7 +90,8 @@ namespace CoreUi
         voice_users_info_widget_(0),
         voice_users_widget_(0),
         voice_users_proxy_widget_(0),
-        in_world_chat_session_(0)
+        in_world_chat_session_(0),
+		in_world_tts_chat_session_(0)
     {
         Initialise();
         ChangeView(viewmode_);
@@ -139,6 +145,16 @@ namespace CoreUi
                 connect(comm.get(), SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldChat()) );
                 connect(comm.get(), SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
             }
+			boost::shared_ptr<TTS::TtsServiceInterface> tts = framework_->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
+			if (tts.get())
+            {
+                InitializeTts();
+            }
+			else
+			{
+				TTS::TtsModule* mod=framework_->GetModule<TTS::TtsModule>();
+				connect(mod, SIGNAL(ServiceTtsAvailable()),SLOT(InitializeTts()));
+			}
         }
     }
 
@@ -269,6 +285,14 @@ namespace CoreUi
             in_world_chat_session_->SendTextMessage(message);
     }
 
+	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message)
+	{
+		//Envia el mensaje al TtsChatSession
+        QString hour_str = QString::number(message.TimeStamp().time().hour());
+        QString minute_str = QString::number(message.TimeStamp().time().minute());
+        QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
+		in_world_tts_chat_session_->SpeakTextMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, message.Text());
+	}
     void CommunicationWidget::hoverMoveEvent(QGraphicsSceneHoverEvent *mouse_hover_move_event)
     {
         if (stacked_layout_->currentWidget() == history_view_text_edit_)
@@ -441,6 +465,36 @@ namespace CoreUi
         UpdateInWorldVoiceIndicator();
     }
 
+	void CommunicationWidget::InitializeTts()
+	{
+		boost::shared_ptr<TTS::TtsServiceInterface> tts = framework_->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
+		if (tts.get())
+        {
+			connect(tts.get(), SIGNAL(TtsAvailable()), SLOT(InitializeInWorldTts()) );
+			connect(tts.get(),SIGNAL(TtsUnavailable()),SLOT(UninitializeInWorldTts()) );
+        }
+	}
+	void CommunicationWidget::InitializeInWorldTts()
+	{
+		if (framework_ &&  framework_->GetServiceManager())
+		{
+			boost::shared_ptr<TTS::TtsServiceInterface> tts = framework_->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
+			if (tts.get())
+			{
+				if (in_world_tts_chat_session_)
+                {
+                    disconnect(in_world_tts_chat_session_);
+                    in_world_tts_chat_session_ = 0;
+                }
+				in_world_tts_chat_session_ = tts->SessionTtschat();
+                if (!in_world_tts_chat_session_)
+                    return;
+				connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&)) );
+			}
+		}
+	}
+
+
     void CommunicationWidget::UpdateInWorldVoiceIndicator()
     {
         if (!in_world_voice_session_)
@@ -485,6 +539,10 @@ namespace CoreUi
         in_world_voice_session_ = 0;
     }
 
+	void CommunicationWidget::UninitializeInWorldTts()
+	{
+		in_world_tts_chat_session_ = 0;
+	}
     // NormalChatViewWidget : QWidget
 
     NormalChatViewWidget::NormalChatViewWidget(QWidget *parent) :
