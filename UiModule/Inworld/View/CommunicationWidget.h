@@ -6,6 +6,15 @@
 #include <QGraphicsProxyWidget>
 #include "ui_CommunicationWidget.h"
 
+
+//H2
+//Include TTSChat widget
+//Todo: Why is necessary? How to avoid this here?
+#include "TTSChatWidget.h"
+//#include "CommunicationsService.h"
+//
+
+
 class QStackedLayout;
 class QTextBrowser;
 class QGraphicsSceneMouseEvent;
@@ -28,6 +37,14 @@ namespace Communications
         class SessionInterface;
         class TextMessageInterface;
     }
+
+	//H2
+	//Namespace added
+	namespace TTSChat
+	{
+		class TTSChatWidget;
+	}
+	//
 }
 
 
@@ -87,6 +104,15 @@ namespace CoreUi
         void SendMessageRequested();
         void InitializeInWorldVoice();
         void InitializeInWorldChat();
+		//H2
+		//Initialize TTSChat
+		void InitializeTTSChat();
+		//ToggleTTSChatWidget is a slot to show/hide the Qwidget
+		void ToggleTTSChatWidget();
+		//Muestran u ocultan el boton TTS
+		void ShowTTSChatControls();
+        void HideTTSChatControls();
+		//
 		void InitializeTts();
 		void InitializeInWorldTts();
 		void UninitializeInWorldTts();
@@ -120,6 +146,23 @@ namespace CoreUi
         CommUI::VoiceUsersInfoWidget* voice_users_info_widget_;
         CommUI::VoiceUsersWidget* voice_users_widget_;
         QGraphicsProxyWidget* voice_users_proxy_widget_;
+
+
+		
+		//H2
+		//TTSChat Widget
+		Communications::TTSChat::TTSChatWidget* TTS_chat_widget;
+		//ESTO HAY QUE CAMBIARLO A LA SESION DE TTS
+        //Communications::InWorldVoice::SessionInterface* in_world_TTSChat_session_;
+
+		//TTSChat proxy
+		//Todo: Describe a bit both widgets, and why they are needed
+		//QGraphicsProxyWidget*  tts_chat_proxy_widget_;
+	
+
+		
+		//
+
 
         Communications::InWorldChat::SessionInterface* in_world_chat_session_;
 

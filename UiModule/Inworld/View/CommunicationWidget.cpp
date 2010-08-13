@@ -91,6 +91,9 @@ namespace CoreUi
         voice_users_widget_(0),
         voice_users_proxy_widget_(0),
         in_world_chat_session_(0),
+		//HEMEN2
+		TTS_chat_widget(0),
+		//TTS_ui_(0)
 		in_world_tts_chat_session_(0)
     {
         Initialise();
@@ -156,6 +159,22 @@ namespace CoreUi
 				connect(mod, SIGNAL(ServiceTtsAvailable()),SLOT(InitializeTts()));
 			}
         }
+		//H3
+		//Text To Speech Controls
+        HideTTSChatControls();
+
+			
+        // Initialize TTS Chat
+        if (framework_ &&  framework_->GetServiceManager())
+        {
+			boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetService<Communications::ServiceInterface>(Foundation::Service::ST_Communications).lock();
+            //boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
+            if (comm.get())
+            {
+				connect(comm.get(), SIGNAL(InWorldVoiceAvailable()), SLOT(InitializeTTSChat()) );
+                //connect(comm.get(), SIGNAL(TtsAvailable()), SLOT(InitializeTTSChat()) );
+            }
+        }
     }
 
     void CommunicationWidget::ShowVoiceControls()
@@ -177,7 +196,27 @@ namespace CoreUi
         if (voice_users_info_widget_)
             voice_users_info_widget_->hide();
     }
+//H3
+	 void CommunicationWidget::ShowTTSChatControls()
+    {
+		this->ttsContentWidget->show();
+		this->ttsButton->show();
+		/*if (tts_chat_proxy_widget_)
+			tts_chat_proxy_widget_->show();*/
+    }
 
+    void CommunicationWidget::HideTTSChatControls()
+    {
+		this->ttsContentWidget->hide();
+		//this->ttsContentWidget->resize(1, this->ttsContentWidget->height());
+		this->ttsButton->hide();
+		
+		
+	
+		
+		/*if (tts_chat_proxy_widget_)
+			tts_chat_proxy_widget_->hide();*/
+    }
     void CommunicationWidget::ChangeViewPressed()
     {
         switch (viewmode_)
@@ -219,7 +258,31 @@ namespace CoreUi
                 im_proxy_->AnimatedHide();
         }
     }
+//H2
 
+	//Shows/hides the QWidget when is called.
+
+	void CommunicationWidget::ToggleTTSChatWidget()
+    {
+		if(TTS_chat_widget){
+		   if(!TTS_chat_widget->isVisible())
+			   TTS_chat_widget->show();
+		   else
+			   TTS_chat_widget->hide();
+		}
+		
+		
+		/*if (tts_chat_proxy_widget_)
+        {
+            if (!tts_chat_proxy_widget_->isVisible())
+                tts_chat_proxy_widget_->show();
+            else
+				tts_chat_proxy_widget_->hide();
+        }*/
+
+    }
+
+	//
     void CommunicationWidget::ToggleVoice()
     {
         if (!in_world_voice_session_)
@@ -410,6 +473,29 @@ namespace CoreUi
         }
     }
 
+	//H2
+	void CommunicationWidget::InitializeTTSChat()
+	{
+		
+		ShowTTSChatControls();
+		if (TTS_chat_widget)
+        {
+            SAFE_DELETE(TTS_chat_widget);
+        }
+		TTS_chat_widget = new Communications::TTSChat::TTSChatWidget(); //CommUI::VoiceUsersInfoWidget(0);
+		
+		TTS_chat_widget->ConfigureInterface();
+		connect(ttsButton, SIGNAL( clicked() ), SLOT( ToggleTTSChatWidget() ));
+	
+
+        boost::shared_ptr<UiServices::UiModule> ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
+        if (ui_module.get())
+        {
+				UiServices::UiWidgetProperties widget_properties("Text To Speech", UiServices::SceneWidget);
+				ui_module->GetInworldSceneController()->AddWidgetToScene(TTS_chat_widget,widget_properties);
+				TTS_chat_widget->hide();
+        }	
+	}
     void CommunicationWidget::InitializeInWorldVoice()
     {
         if (framework_ &&  framework_->GetServiceManager())
