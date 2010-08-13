@@ -49,7 +49,7 @@ TtsModule::TtsModule() :
 
 TtsModule::~TtsModule()
 {
-    //SAFE_DELETE(logFile_);
+	//SAFE_DELETE(logFile_);
 }
 
 void TtsModule::Load()
