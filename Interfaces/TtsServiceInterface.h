@@ -25,7 +25,6 @@ namespace TTS
         
 	    virtual ~TtsServiceInterface() {}
 
-		//virtual TtsChatSession* SessionTtsChat() const = 0;
 		virtual TtsSessionInterface* SessionTtschat() = 0;
 
 		virtual bool RegisterTtsProvider(TtsProviderInterface* tts_provider) = 0;

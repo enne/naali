@@ -34,27 +34,6 @@ namespace TTS
 	
 	bool TtsService::RegisterTtsProvider(TtsProviderInterface* tts_provider)
     {
-		//if (!tts_provider)
-  //      {
-  //          return false;
-  //      }
-
-  //      TtsProviderPtr provider = TtsProviderPtr(tts_provider);
-		//TtsProviderVector::iterator i = providers_.begin();
-  //      while (i != providers_.end())
-  //      {
-  //          if ((*i) == provider)
-  //          {
-  //              return false;
-  //          }            
-  //          ++i;
-  //      }        
-  //      
-  //      providers_.push_back(provider);  
-		//connect(tts_provider, SIGNAL(SessionUnavailable()), SLOT(TtsChatSessionUnavailable()) );
-		//emit TtsAvailable(); //envía la señal y la recoge communicationwidget
-		//return true;
-
 		if (!tts_provider)
         {
             return false;
@@ -78,27 +57,6 @@ namespace TTS
     
 	bool TtsService::UnregisterTtsProvider(TtsProviderInterface* tts_provider)
     {
-		//if (!tts_provider)
-		//{
-		//	return false;
-		//}
-		//
-		//TtsProviderPtr provider = TtsProviderPtr(tts_provider);
-
-		//TtsProviderVector::iterator i = providers_.begin();
-		//while (i != providers_.end())
-		//{
-		//	if ((*i) == provider)
-		//	{
-		//		provider->CloseSession();
-		//		//providers_.erase(i);
-		//		disconnect(tts_provider);
-		//		provider.reset();
-		//		return true;
-		//	}            
-		//	++i;
-		//}  
-		//return false;
 		if (!tts_provider)
 		{
 			return false;
@@ -121,7 +79,6 @@ namespace TTS
         
     void TtsService::Update(f64 frametime)
     {
-
     }
 
 	void TtsService::TtsChatSessionUnavailable()

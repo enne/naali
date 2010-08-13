@@ -22,24 +22,11 @@ namespace TTS
 
         void TtsChatProvider::Update(f64 frametime)
         {
-            if (session_)
-                session_->Update(frametime);
+			//if (session_)
+			//	session_->Update(frametime);
         }
         bool TtsChatProvider::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface* data)
         {
-    //        if (category_id == networkstate_event_category_)
-    //        {
-    //            switch (event_id)
-    //            {
-				//case ProtocolUtilities::Events::EVENT_SERVER_CONNECTED:
-				//	RegisterToCommunicationsService();
-				//	break;
-    //            case ProtocolUtilities::Events::EVENT_CONNECTION_FAILED:
-    //                CloseSession();
-    //                break;
-    //            }
-    //        }
-			//RegisterToTtsService();
             return false;
         }
 

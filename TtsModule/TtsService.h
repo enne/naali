@@ -16,6 +16,7 @@ namespace Foundation
 
 namespace TTS
 {
+	
 	class TtsService : public TtsServiceInterface
 	{
 		Q_OBJECT
@@ -28,24 +29,24 @@ namespace TTS
         virtual ~TtsService();
         
         //! Registers an tts provider
-        /*! \param asset_provider Provider to register
+        /*! \param tts_provider Provider to register
             \return true if successfully registered
          */
 		virtual bool RegisterTtsProvider(TtsProviderInterface* tts_provider);
         
-        //! Unregisters an asset provider
-        /*! \param asset_provider Provider to unregister
+        //! Unregisters an tts provider
+        /*! \param tts_provider Provider to unregister
             \return true if successfully unregistered
          */
 		virtual bool UnregisterTtsProvider(TtsProviderInterface* tts_provider);
-        
-        //! Performs time-based update
+
+		//! Return the ttschatsession of the provider
+		virtual TtsSessionInterface* SessionTtschat(); 
+
+		//! Performs time-based update
         /*! Calls update function of all registered asset providers, and of cache
             \param frametime Seconds since last frame
          */
-		virtual TtsSessionInterface* SessionTtschat(); 
-		//virtual TTS::TtsChatSession* SessionTtsChat() const;
-
         void Update(f64 frametime);
 
     private:
@@ -56,6 +57,7 @@ namespace TTS
         //! Asset event category
         event_category_id_t event_category_;
 
+		//! Vector of Providers which are registered on the service
 		typedef std::vector<TtsProviderInterface*> TtsProviderVector;
         TtsProviderVector providers_;
 
