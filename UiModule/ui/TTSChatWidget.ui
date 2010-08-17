@@ -298,8 +298,6 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources>
-  <include location="ttswidget.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
