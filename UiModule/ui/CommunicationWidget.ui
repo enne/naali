@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>918</width>
-    <height>364</height>
+    <width>804</width>
+    <height>392</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -125,7 +125,7 @@ background-color: rgba(34,34,34,191);
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayotMain">
+    <layout class="QHBoxLayout" name="horizontalLayoutMain">
      <property name="spacing">
       <number>0</number>
      </property>
@@ -276,6 +276,90 @@ background-color: rgba(34,34,34,191);
       </layout>
      </item>
      <item>
+      <layout class="QVBoxLayout" name="verticalLayoutTTS">
+       <item>
+        <spacer name="verticalSpacer_TTS">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QWidget" name="ttsContentWidget" native="true">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>50</width>
+           <height>32</height>
+          </size>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="margin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="ttsButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Calibri</family>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
       <layout class="QVBoxLayout" name="voiceLayoutVoice" stretch="0">
        <property name="spacing">
         <number>0</number>
@@ -359,87 +443,6 @@ background-color: rgba(34,34,34,191);
           </layout>
          </item>
         </layout>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayoutTTS">
-       <item>
-        <spacer name="verticalSpacer_TTS">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QWidget" name="ttsContentWidget" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>103</width>
-           <height>32</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>103</width>
-           <height>32</height>
-          </size>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <property name="margin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="ttsButton">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>84</width>
-              <height>32</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>84</width>
-              <height>32</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Calibri</family>
-              <pointsize>10</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
        </item>
       </layout>
      </item>
