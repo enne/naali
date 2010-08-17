@@ -9,7 +9,7 @@
 #include "StableHeaders.h"
 
 #include "TtsModule.h"
-#include "TtsChatProvider.h"
+
 #include "ConsoleCommandServiceInterface.h"
 #include "WorldStream.h"
 #include "WorldLogicInterface.h"
@@ -25,7 +25,6 @@
 #include "EC_OpenSimPresence.h"
 #include "EC_OpenSimPrim.h"
 #include "EC_OgrePlaceable.h"
-#include "TtsChatProvider.h"
 #include "MemoryLeakCheck.h"
 
 #include <QColor>
@@ -80,7 +79,7 @@ void TtsModule::PostInitialize()
 
 void TtsModule::Uninitialize()
 {
-	tts_service_->UnregisterTtsProvider(chat_tts_provider_);
+	tts_service_->UnregisterTtsChatProvider();
 
 	framework_->GetServiceManager()->UnregisterService(tts_service_);
     tts_service_.reset();
@@ -99,7 +98,7 @@ bool TtsModule::HandleEvent(event_category_id_t category_id, event_id_t event_id
 		if (event_id == Foundation::WORLD_STREAM_READY)
         {
 			// Get settings.
-			chat_tts_provider_ = new TtsChatProvider(framework_);
+			chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
 			if (chat_tts_provider_)
 				chat_tts_provider_->RegisterToTtsService();
 			return false;

@@ -148,6 +148,7 @@ namespace CoreUi
                 connect(comm.get(), SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldChat()) );
                 connect(comm.get(), SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
             }
+
 			boost::shared_ptr<TTS::TtsServiceInterface> tts = framework_->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
 			if (tts.get())
             {
@@ -159,22 +160,10 @@ namespace CoreUi
 				connect(mod, SIGNAL(ServiceTtsAvailable()),SLOT(InitializeTts()));
 			}
         }
+
 		//H3
 		//Text To Speech Controls
         HideTTSChatControls();
-
-			
-        // Initialize TTS Chat
-        if (framework_ &&  framework_->GetServiceManager())
-        {
-			boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetService<Communications::ServiceInterface>(Foundation::Service::ST_Communications).lock();
-            //boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
-            if (comm.get())
-            {
-				connect(comm.get(), SIGNAL(InWorldVoiceAvailable()), SLOT(InitializeTTSChat()) );
-                //connect(comm.get(), SIGNAL(TtsAvailable()), SLOT(InitializeTTSChat()) );
-            }
-        }
     }
 
     void CommunicationWidget::ShowVoiceControls()
@@ -356,6 +345,7 @@ namespace CoreUi
         QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
 		in_world_tts_chat_session_->SpeakTextMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, message.Text());
 	}
+
     void CommunicationWidget::hoverMoveEvent(QGraphicsSceneHoverEvent *mouse_hover_move_event)
     {
         if (stacked_layout_->currentWidget() == history_view_text_edit_)
@@ -473,29 +463,6 @@ namespace CoreUi
         }
     }
 
-	//H2
-	void CommunicationWidget::InitializeTTSChat()
-	{
-		
-		ShowTTSChatControls();
-		if (TTS_chat_widget)
-        {
-            SAFE_DELETE(TTS_chat_widget);
-        }
-		TTS_chat_widget = new Communications::TTSChat::TTSChatWidget(); //CommUI::VoiceUsersInfoWidget(0);
-		
-		TTS_chat_widget->ConfigureInterface();
-		connect(ttsButton, SIGNAL( clicked() ), SLOT( ToggleTTSChatWidget() ));
-	
-
-        boost::shared_ptr<UiServices::UiModule> ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (ui_module.get())
-        {
-				UiServices::UiWidgetProperties widget_properties("Text To Speech", UiServices::SceneWidget);
-				ui_module->GetInworldSceneController()->AddWidgetToScene(TTS_chat_widget,widget_properties);
-				TTS_chat_widget->hide();
-        }	
-	}
     void CommunicationWidget::InitializeInWorldVoice()
     {
         if (framework_ &&  framework_->GetServiceManager())
@@ -577,6 +544,26 @@ namespace CoreUi
                     return;
 				connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&)) );
 			}
+
+			//Inicialización de la ventana gráfica del TTS
+			ShowTTSChatControls();
+			if (TTS_chat_widget)
+			{
+				SAFE_DELETE(TTS_chat_widget);
+			}
+			TTS_chat_widget = new Communications::TTSChat::TTSChatWidget(); //CommUI::VoiceUsersInfoWidget(0);
+			
+			TTS_chat_widget->ConfigureInterface(in_world_tts_chat_session_);
+			connect(ttsButton, SIGNAL( clicked() ), SLOT( ToggleTTSChatWidget() ));
+		
+
+			boost::shared_ptr<UiServices::UiModule> ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
+			if (ui_module.get())
+			{
+					UiServices::UiWidgetProperties widget_properties("Text To Speech", UiServices::SceneWidget);
+					ui_module->GetInworldSceneController()->AddWidgetToScene(TTS_chat_widget,widget_properties);
+					TTS_chat_widget->hide();
+			}	
 		}
 	}
 

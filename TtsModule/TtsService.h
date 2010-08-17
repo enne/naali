@@ -32,16 +32,16 @@ namespace TTS
         /*! \param tts_provider Provider to register
             \return true if successfully registered
          */
-		virtual bool RegisterTtsProvider(TtsProviderInterface* tts_provider);
+		virtual bool RegisterTtsChatProvider(TTSChat::TtsProviderInterface* tts_provider);
         
         //! Unregisters an tts provider
         /*! \param tts_provider Provider to unregister
             \return true if successfully unregistered
          */
-		virtual bool UnregisterTtsProvider(TtsProviderInterface* tts_provider);
+		virtual bool UnregisterTtsChatProvider();
 
 		//! Return the ttschatsession of the provider
-		virtual TtsSessionInterface* SessionTtschat(); 
+		virtual TTSChat::TtsSessionInterface* SessionTtschat(); 
 
 		//! Performs time-based update
         /*! Calls update function of all registered asset providers, and of cache
@@ -58,8 +58,7 @@ namespace TTS
         event_category_id_t event_category_;
 
 		//! Vector of Providers which are registered on the service
-		typedef std::vector<TtsProviderInterface*> TtsProviderVector;
-        TtsProviderVector providers_;
+		TTSChat::TtsProviderInterface* tts_chat_provider_;
 
 	private slots:
 

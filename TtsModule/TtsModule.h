@@ -13,9 +13,11 @@
 #include "ModuleInterface.h"
 #include "ModuleLoggingFunctions.h"
 #include "Core.h"
+
+#include "TtsServiceInterface.h"
 #include "TtsService.h"
-#include "TtsProviderInterface.h"
 #include "TtsChatProvider.h"
+
 #include <QObject>
 
 
@@ -98,7 +100,7 @@ namespace TTS
 		/// Servicio del tts
 		TtsServicePtr tts_service_;
 		/// Provider del Tts
-		TtsChatProvider* chat_tts_provider_;
+		TTSChat::TtsProviderInterface* chat_tts_provider_;
 
 
         /// NetworkState event category.

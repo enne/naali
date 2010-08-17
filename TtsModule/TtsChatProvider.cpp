@@ -2,14 +2,13 @@
 #include "TtsChatProvider.h"
 #include "TtsChatSession.h"
 #include "TtsModule.h"
-#include "EventManager.h"
-#include "NetworkEvents.h" // For network events
 
 namespace TTS
 {
+	namespace TTSChat
+	{
         TtsChatProvider::TtsChatProvider(Foundation::Framework* framework) :
             framework_(framework),
-			type_(CHAT),
             description_("Tts in-world chat"),
             session_(0)
         {
@@ -22,12 +21,6 @@ namespace TTS
 
         void TtsChatProvider::Update(f64 frametime)
         {
-			//if (session_)
-			//	session_->Update(frametime);
-        }
-        bool TtsChatProvider::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface* data)
-        {
-            return false;
         }
 
 		TtsSessionInterface* TtsChatProvider::Session()
@@ -64,15 +57,11 @@ namespace TTS
 				boost::shared_ptr<TTS::TtsServiceInterface> tts = framework_->GetServiceManager()->GetService<TTS::TtsServiceInterface>(Foundation::Service::ST_Tts).lock();
                 if (tts.get())
                 {
-                    tts->RegisterTtsProvider(this);
+                    tts->RegisterTtsChatProvider(this);
                 }
                 return;
             }
         }
 
-		TtsProviderInterface::Type TtsChatProvider::getType()
-		{
-			return type_;
-		}
-
+	}
 } // TTS

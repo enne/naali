@@ -305,11 +305,7 @@ void InWorldChatModule::HandleRexEmotionIconMessage(StringVector &params)
         ApplyBillboard(*entity, params[1], timeToShow);
     }
 }
-//H1
-//char* comando;
-std::stringstream comandoss;
-std::string comandos;
-//
+
 void InWorldChatModule::HandleChatFromSimulatorMessage(ProtocolUtilities::NetInMessage &msg)
 {
     msg.ResetReading();
@@ -348,43 +344,6 @@ void InWorldChatModule::HandleChatFromSimulatorMessage(ProtocolUtilities::NetInM
     // emit ChatReceived()
     //if (chatWindow_)
     //    chatWindow_->ChatReceived(name, msg);
-
-	
-	
-	
-	//H1
-
-	
-	comandoss << "festival -ES1 -A -T \"";
-	comandoss << message;
-	//comandoss << clientParameters_.agentID;
-	//QString::toStdString()
-	//QString nombreusuario = QString::fromStdString(current_world_stream_->GetUsername());
-	//std::string nombreusuarios = QString::toStdString(nombreusuario);
-	//currentWorldStream_->GetSimName().c_str(); 
-	std::string nombre = currentWorldStream_->GetUsername();
-	std::string direccion = currentWorldStream_->GetAuthAddress();
-	//comandoss << " ";
-	//comandoss << fromName;
-	//comandoss << " ";
-	//comandoss << nombre;
-	//comandoss << "\"";
-	//comandoss << direccion;
-	comandoss << "\"";
-	comandos = comandoss.str();
-	system(comandos.c_str());
-	LogInfo(fromName);
-	LogInfo(nombre);
-	LogInfo(direccion);
-	//LogInfo("texto de log");
-	
-
-	//sprintf(comando, "festival -A -T \"%s\"", message);
-	//system("festival -A -T \"probando dentro de HandleChatFromSimulatorMessage\" -ES1");
-	//system("festival -A -T \"probando despues\" -ES1");
-	
-	//
-
 }
 
 bool InWorldChatModule::CreateLogFile()

@@ -4,8 +4,9 @@
 #define incl_TtsModule_Session_h
 
 #include "ModuleLoggingFunctions.h"
-#include "TtsService.h"
-#include "TtsSessionInterface.h"
+#include "TtsServiceInterface.h"
+#include "TtsChatConfiguration.h"
+
 #include <QMap>
 
 namespace Foundation
@@ -15,6 +16,9 @@ namespace Foundation
 
 namespace TTS
 {
+
+	namespace TTSChat
+	{
 
 	class TtsChatSession : public TtsSessionInterface
         {
@@ -26,14 +30,19 @@ namespace TTS
             virtual ~TtsChatSession();
 
             virtual void Close();
-			virtual TtsSessionInterface::State GetState() const;
-            virtual QString Description() const;
+			virtual const State GetState();
+            virtual const QString Description();
 			virtual void SpeakTextMessage(bool self_sent_message, QString sender, QString timestamp, QString message);
-        
+			virtual const Voice GetOwnVoice();
+			virtual const Voice GetOthersVoice();
+			virtual void SetOwnVoice(Voice voice);
+			virtual void SetOthersVoice(Voice voice);
+
 			//! Logging
 		    MODULE_LOGGING_FUNCTIONS
 	        static const std::string &NameStatic() { return type_name_static_; }
 			void Update(f64 frametime);
+
 
         private:
 
@@ -45,8 +54,10 @@ namespace TTS
             Foundation::Framework* framework_;
             TtsSessionInterface::State state_;
             QString description_;
-		};
+			TtsChatConfigurationInterface* configuration_;
 
+		};
+	}
 } // TTS
 
 #endif // incl_TtsModule_Session_h

@@ -17,17 +17,10 @@ namespace Communications //Needed
 
 	}
 
-	void TTSChat::TTSChatWidget::ConfigureInterface()
+	void TTSChat::TTSChatWidget::ConfigureInterface(TTS::TTSChat::TtsSessionInterface* session)
 	{
 
-		//Initializations
-		ownTTSChatVoice=ES1;
-		othersTTSChatVoice=ES2;
-		ownTTSChatStatus=FALSE;
-		othersTTSChatStatus=FALSE;
-
-
-
+		session_=session;
 		//Configuration, if the chechbox is not enabled, combobox are disabled
 		//by default, all disabled.
 	   ui.ownLangComboBox->setEnabled(false);
@@ -43,7 +36,7 @@ namespace Communications //Needed
 	   QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersGendComboBox, SLOT(setEnabled(bool)));
 
 		//Hide Button, if pressed, hide QWidget
-	   QObject::connect(ui.hideButton, SIGNAL(clicked(bool)), SLOT(hide()));
+	   QObject::connect(ui.saveButton, SIGNAL(clicked(bool)), SLOT(hide()));
 
 	   //Save button.
 	   QObject::connect(ui.saveButton, SIGNAL(clicked(bool)), SLOT(SaveButtonPressed()));
@@ -63,20 +56,20 @@ namespace Communications //Needed
 			{
 				//If index is 0, selected gender is Male
 				if(!ui.ownGendComboBox->currentIndex())
-					ownTTSChatVoice=ES1;
+					session_->SetOwnVoice(TTS::TTSChat::Voices.ES1);
 				//Else Female
 				else
-					ownTTSChatVoice=ES2;
+					session_->SetOwnVoice(TTS::TTSChat::Voices.ES2);
 			}
 			//else EN
 			else
 			{	
 				//Male
 				if(!ui.ownGendComboBox->currentIndex())
-					ownTTSChatVoice=EN1;
+					session_->SetOwnVoice(TTS::TTSChat::Voices.EN1);
 				//Female
 				else
-					ownTTSChatVoice=EN2;
+					session_->SetOwnVoice(TTS::TTSChat::Voices.EN1);
 			}
 			//TODO: It should EMIT a signal to TTSModule, to update configuration.
 			
@@ -91,45 +84,22 @@ namespace Communications //Needed
 			if(!ui.othersLangComboBox->currentIndex())
 			{
 				if(!ui.othersGendComboBox->currentIndex())
-					othersTTSChatVoice=ES1;
+					session_->SetOthersVoice(TTS::TTSChat::Voices.ES1);
 				else
-					othersTTSChatVoice=ES2;
+					session_->SetOthersVoice(TTS::TTSChat::Voices.ES2);
 			}
 			else
 			{
 				if(!ui.othersGendComboBox->currentIndex())
-					othersTTSChatVoice=EN1;
+					session_->SetOthersVoice(TTS::TTSChat::Voices.EN1);
 				else
-					othersTTSChatVoice=EN2;
+					session_->SetOthersVoice(TTS::TTSChat::Voices.EN2);
 			}
 		}
 		
 		
 	}
 	
-	//Returns if ownTTS is enabled or not
-	bool TTSChat::TTSChatWidget::ownTTSChatEnabled()
-	{
-		 return ownTTSChatStatus;   
-	}
-	//Returns if othersTTS is enabled or not
-	bool TTSChat::TTSChatWidget::othersTTSChatEnabled()
-	{
-		   return othersTTSChatStatus; 
-	}
-	//Returns own voice
-	//it should be called if own TTS is enabled
-	int TTSChat::TTSChatWidget::getOwnTTSChatVoice()
-	{
-			return ownTTSChatVoice;
-	}
-	//Returns others voice
-	//it should be called if others TTS is enabled
-	int TTSChat::TTSChatWidget::getOthersTTSChatVoice()
-	{
-			return othersTTSChatVoice;
-	}
-
 	//Move window
 	void TTSChat::TTSChatWidget::mouseMoveEvent(QMouseEvent *e)
     {

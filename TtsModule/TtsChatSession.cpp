@@ -14,7 +14,8 @@
 
 namespace TTS
 {
-
+	namespace TTSChat
+	{
 		std::string TtsChatSession::type_name_static_ = "Tts";
 
         TtsChatSession::TtsChatSession(Foundation::Framework* framework) : 
@@ -22,6 +23,7 @@ namespace TTS
             framework_(framework),
             description_("Esta es la sesión del tts")
         {
+			configuration_=new TtsChatConfiguration();
         }
 
         TtsChatSession::~TtsChatSession()
@@ -36,12 +38,12 @@ namespace TTS
             }
         }
 
-        TtsSessionInterface::State TtsChatSession::GetState() const
+        const TtsSessionInterface::State TtsChatSession::GetState() 
         {
             return state_;
         }
 
-        QString TtsChatSession::Description() const
+        const QString TtsChatSession::Description()
         {
             return description_;
         }
@@ -52,7 +54,18 @@ namespace TTS
 		void TtsChatSession::SpeakTextMessage(bool self_sent_message, QString sender, QString timestamp, QString message)
 		{
 			//Aqui llamamos al festival según las opciones establecidas, por ahora solo muestra un mensaje
-			LogError("Manda hablar al festival");
+			std::stringstream commandoss;
+			std::string commandos;
+			commandoss << "festival.exe --libdir \"festival/lib\" "; 
+			if(self_sent_message)
+				commandoss << configuration_->getOwnVoice();
+			else
+				commandoss << configuration_->getOthersVoice();
+			commandoss << " -A -T \"";
+			commandoss << message.toStdString();
+			commandoss << "\"";
+			commandos = commandoss.str();
+			system(commandos.c_str());
 		}
         bool TtsChatSession::GetOwnAvatarPosition(Vector3df& position, Vector3df& direction)
         {
@@ -117,4 +130,21 @@ namespace TTS
             return "";
         }
 
+		const Voice TtsChatSession::GetOwnVoice()
+		{
+			return configuration_->getOwnVoice();
+		}
+		const Voice TtsChatSession::GetOthersVoice()
+		{
+			return configuration_->getOthersVoice();
+		}
+		void TtsChatSession::SetOwnVoice(Voice voice)
+		{
+			configuration_->setOwnVoice(voice);
+		}
+		void TtsChatSession::SetOthersVoice(Voice voice)
+		{
+			configuration_->setOthersVoice(voice);
+		}
+	}
 } // TTS

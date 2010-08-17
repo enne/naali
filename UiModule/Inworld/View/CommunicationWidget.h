@@ -104,9 +104,6 @@ namespace CoreUi
         void SendMessageRequested();
         void InitializeInWorldVoice();
         void InitializeInWorldChat();
-		//H2
-		//Initialize TTSChat
-		void InitializeTTSChat();
 		//ToggleTTSChatWidget is a slot to show/hide the Qwidget
 		void ToggleTTSChatWidget();
 		//Muestran u ocultan el boton TTS
@@ -167,7 +164,7 @@ namespace CoreUi
         Communications::InWorldChat::SessionInterface* in_world_chat_session_;
 
 		//TTS
-		TTS::TtsSessionInterface* in_world_tts_chat_session_;
+		TTS::TTSChat::TtsSessionInterface* in_world_tts_chat_session_;
 
     signals:
         void SendMessageToServer(const QString &message);
