@@ -339,11 +339,14 @@ namespace CoreUi
 
 	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message)
 	{
-		//Envia el mensaje al TtsChatSession
-        QString hour_str = QString::number(message.TimeStamp().time().hour());
-        QString minute_str = QString::number(message.TimeStamp().time().minute());
-        QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
-		in_world_tts_chat_session_->SpeakTextMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, message.Text());
+		//Envia el mensaje al TtsChatSession si el flag está activo
+		if((message.IsOwnMessage() && in_world_tts_chat_session_->IsActiveOwnVoice()) || (!message.IsOwnMessage() && in_world_tts_chat_session_->IsActiveOthersVoice()))
+		{		
+			QString hour_str = QString::number(message.TimeStamp().time().hour());
+			QString minute_str = QString::number(message.TimeStamp().time().minute());
+			QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
+			in_world_tts_chat_session_->SpeakTextMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, message.Text());
+		}
 	}
 
     void CommunicationWidget::hoverMoveEvent(QGraphicsSceneHoverEvent *mouse_hover_move_event)

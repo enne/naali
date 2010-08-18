@@ -37,6 +37,10 @@ namespace TTS
 			virtual const Voice GetOthersVoice();
 			virtual void SetOwnVoice(Voice voice);
 			virtual void SetOthersVoice(Voice voice);
+			virtual void SetActiveOwnVoice(bool active);
+			virtual bool IsActiveOwnVoice();
+			virtual void SetActiveOthersVoice(bool active);
+			virtual bool IsActiveOthersVoice();
 
 			//! Logging
 		    MODULE_LOGGING_FUNCTIONS
@@ -55,6 +59,7 @@ namespace TTS
             TtsSessionInterface::State state_;
             QString description_;
 			TtsChatConfigurationInterface* configuration_;
+			bool activeOwnVoice_,activeOthersVoice_;
 
 		};
 	}

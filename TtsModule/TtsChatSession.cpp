@@ -21,7 +21,9 @@ namespace TTS
         TtsChatSession::TtsChatSession(Foundation::Framework* framework) : 
             state_(STATE_CONNECTING),
             framework_(framework),
-            description_("Esta es la sesión del tts")
+            description_("Esta es la sesión del tts"),
+			activeOwnVoice_(false),
+			activeOthersVoice_(false)
         {
 			configuration_=new TtsChatConfiguration();
         }
@@ -145,6 +147,22 @@ namespace TTS
 		void TtsChatSession::SetOthersVoice(Voice voice)
 		{
 			configuration_->setOthersVoice(voice);
+		}
+		void TtsChatSession::SetActiveOwnVoice(bool active)
+		{
+			activeOwnVoice_=active;
+		}
+		bool TtsChatSession::IsActiveOwnVoice()
+		{
+			return activeOwnVoice_;
+		}
+		void TtsChatSession::SetActiveOthersVoice(bool active)
+		{
+			activeOthersVoice_=active;
+		}
+		bool TtsChatSession::IsActiveOthersVoice()
+		{
+			return activeOthersVoice_;
 		}
 	}
 } // TTS

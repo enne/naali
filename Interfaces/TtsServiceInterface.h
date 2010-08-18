@@ -58,7 +58,10 @@ namespace TTS
 			virtual const Voice GetOthersVoice() = 0;
 			virtual void SetOwnVoice(Voice voice) = 0;
 			virtual void SetOthersVoice(Voice voice) = 0;
-
+			virtual void SetActiveOwnVoice(bool active) = 0;
+			virtual bool IsActiveOwnVoice() = 0;
+			virtual void SetActiveOthersVoice(bool active) = 0;
+			virtual bool IsActiveOthersVoice() = 0;
 		};
 	typedef boost::shared_ptr<TtsSessionInterface> TtsSessionPtr;  
 

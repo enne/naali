@@ -51,6 +51,7 @@ namespace Communications //Needed
 		//If own voice enabled, save values from combobox
 		if(ui.ownEnableCheckBox->isChecked())
 		{
+			session_->SetActiveOwnVoice(true);
 			//If index is 0, Selected language is ES
 			if(!ui.ownLangComboBox->currentIndex())
 			{
@@ -69,18 +70,20 @@ namespace Communications //Needed
 					session_->SetOwnVoice(TTS::TTSChat::Voices.EN1);
 				//Female
 				else
-					session_->SetOwnVoice(TTS::TTSChat::Voices.EN1);
-			}
-			//TODO: It should EMIT a signal to TTSModule, to update configuration.
-			
+					session_->SetOwnVoice(TTS::TTSChat::Voices.EN2);
+			}	
 		}
-		
-		
+		else
+		{
+			session_->SetActiveOwnVoice(false);
+		}
+				
 		//If others voice enabled, save values from combobox
 		//This is exactly the same but with others.
 		if(ui.othersEnableCheckBox->isChecked())
 		{
-			//
+			session_->SetActiveOthersVoice(true);
+
 			if(!ui.othersLangComboBox->currentIndex())
 			{
 				if(!ui.othersGendComboBox->currentIndex())
@@ -96,7 +99,10 @@ namespace Communications //Needed
 					session_->SetOthersVoice(TTS::TTSChat::Voices.EN2);
 			}
 		}
-		
+		else
+		{
+			session_->SetActiveOthersVoice(false);
+		}	
 		
 	}
 	
