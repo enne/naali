@@ -5,14 +5,7 @@
 
 #include "TtsServiceInterface.h"
 
-#include "NetworkEvents.h"
 #include "Framework.h"
-#include "EventManager.h"
-
-namespace Foundation
-{
-    class Framework;
-}
 
 namespace TTS
 {
@@ -23,6 +16,7 @@ namespace TTS
 
     public:
 
+		// Constructor
 		TtsService(Foundation::Framework* framework_);
 
         //! Destructor
@@ -54,9 +48,6 @@ namespace TTS
         //! Framework we belong to
         Foundation::Framework* framework_;
         
-        //! Asset event category
-        event_category_id_t event_category_;
-
 		//! Vector of Providers which are registered on the service
 		TTSChat::TtsProviderInterface* tts_chat_provider_;
 

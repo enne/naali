@@ -1,16 +1,13 @@
 #include "StableHeaders.h"
-#include "TtsModule.h"
+
 #include "TtsService.h"
-#include "Framework.h"
-#include "EventManager.h"
 #include "TtsChatProvider.h"
 
 namespace TTS
 {
 	TtsService::TtsService(Foundation::Framework* framework) : 
         framework_(framework),
-		tts_chat_provider_(0),
-		event_category_(0)
+		tts_chat_provider_(0)
     {
     }
     

@@ -7,11 +7,6 @@
 #include "TtsService.h"
 #include "Framework.h"
 
-namespace Foundation
-{
-    class Framework;
-}
-
 namespace TTS
 {
 	namespace TTSChat
@@ -33,7 +28,6 @@ namespace TTS
             Foundation::Framework* framework_;
             QString description_;
 			TtsSessionInterface* session_;
-            event_category_id_t networkstate_event_category_;
         };
 	}
 } // TTS

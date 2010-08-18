@@ -1,9 +1,9 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
- *  @file   TtsChatModule.h
- *  @brief  Simple OpenSim world chat module. Listens for ChatFromSimulator packets and shows the chat on the UI.
- *          Outgoing chat sent using ChatFromViewer packets. Manages EC_ChatBubbles, EC_Billboards, chat logging etc.
+ *  @file   TtsModule.h
+ *  @brief  Simple OpenSim TTS module. receives the chat message and plays it 
+ *			using the Festival TTS wuth the configuration established in the current session.
  */
 
 #ifndef incl_TtsModule_h
@@ -31,46 +31,36 @@ namespace Foundation
 namespace ProtocolUtilities
 {
     class ProtocolModuleInterface;
-    class WorldStream;
     typedef boost::weak_ptr<ProtocolModuleInterface> ProtocolWeakPtr;
-    typedef boost::shared_ptr<WorldStream> WorldStreamPtr;
 }
-
-namespace UiServices
-{
-    class UiModule;
-}
-
-QT_BEGIN_NAMESPACE
-class QColor;
-class QFile;
-QT_END_NAMESPACE
 
 namespace TTS
 {
-
-	class TtsService;
 
     class TTS_MODULE_API TtsModule :  public QObject, public Foundation::ModuleInterface
     {
         Q_OBJECT
 
     public:
-        /// Default constructor.
+        // Default constructor.
         TtsModule();
 
-        /// Destructor 
+        // Destructor 
         virtual ~TtsModule();
-
-        /// ModuleInterfaceImpl overrides.
+        // Load function,if it has any component, are loaded here. It is not use now
         void Load();
+		// Unload function. It is not use now
 		void UnLoad();
+		// Initializes and registers the service and emits signal of service available
         void Initialize();
+		// PostInitialize function. It is not use now
         void PostInitialize();
+		// Unregisters and destroys the service. 
         void Uninitialize();
+		// It is not use now
         void Update(f64 frametime);
+		// Initializes and registers the chat provider when the world is ready
         bool HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface* data);
-        
         /// Returns name of this module. Needed for logging.
         static const std::string &NameStatic() { return moduleName_; } 
 
@@ -79,21 +69,11 @@ namespace TTS
 
 	signals:
 
+		// Signal of Service available
 		void ServiceTtsAvailable();
 
     private:
         Q_DISABLE_COPY(TtsModule);
-
-        /// Returns primitive or avatar entity with the wanted ID.
-        /// @param id ID of the entity.
-        /// @return Entity pointer matching the id or 0 if not found.
-        Scene::Entity *GetEntityWithId(const RexUUID &id);
-        /// Creates file for logging.
-        /// @return True if the creation was succesful, false otherwise.
-        bool CreateLogFile();
-		// Recoge la información sobre el avatar
-		//virtual bool GetAvatarPosition(Vector3df& position, Vector3df& direction);
-
 
         /// Name of this module.
         static const std::string moduleName_;
@@ -109,16 +89,6 @@ namespace TTS
         event_category_id_t networkInEventCategory_;
         /// Framework event category
         event_category_id_t frameworkEventCategory_;
-
-        /// WorldStream pointer
-        ProtocolUtilities::WorldStreamPtr currentWorldStream_ ;
-        /// UiModule pointer.
-        boost::weak_ptr<UiServices::UiModule> uiModule_;
-
-        /// Do we want to log the chat messages.
-        bool logging_;
-        /// Log file.
-        QFile *logFile_;
     };
 }  // end of namespace: TTS
 
