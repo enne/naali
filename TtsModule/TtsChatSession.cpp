@@ -2,6 +2,7 @@
 
 #include "TtsChatSession.h"
 
+
 namespace TTS
 {
 	namespace TTSChat
@@ -57,7 +58,7 @@ namespace TTS
 			commandoss << message.toStdString();
 			commandoss << "\"";
 			commandos = commandoss.str();
-			system(commandos.c_str());
+			system(commandos.c_str());	
 		}
 		const Voice TtsChatSession::GetOwnVoice()
 		{
@@ -91,5 +92,6 @@ namespace TTS
 		{
 			return activeOthersVoice_;
 		}
+
 	}
 } // TTS

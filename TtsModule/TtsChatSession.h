@@ -62,6 +62,7 @@ namespace TTS
 
 			//! Logging
 		    MODULE_LOGGING_FUNCTIONS
+
 			// Returns name of this session. Needed for logging.
 	        static const std::string &NameStatic() { return type_name_static_; }
 			// It is not use now
@@ -78,10 +79,7 @@ namespace TTS
 			TtsChatConfigurationInterface* configuration_;
 			// Flag of voices (active or not)
 			bool activeOwnVoice_,activeOthersVoice_;
-
-			QThread hilo;
 		};
-		private class Exec_Festival : public QThread
 	}
 } // TTS
 
