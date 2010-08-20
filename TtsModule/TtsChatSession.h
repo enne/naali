@@ -67,7 +67,6 @@ namespace TTS
 			// It is not use now
 			void Update(f64 frametime);
 
-
         private:
 			// Name of this session.
             static std::string type_name_static_;
@@ -80,7 +79,9 @@ namespace TTS
 			// Flag of voices (active or not)
 			bool activeOwnVoice_,activeOthersVoice_;
 
+			QThread hilo;
 		};
+		private class Exec_Festival : public QThread
 	}
 } // TTS
 

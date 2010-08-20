@@ -6,6 +6,7 @@ namespace TTS
 {
 	namespace TTSChat
 	{
+
 		std::string TtsChatSession::type_name_static_ = "Tts";
 
         TtsChatSession::TtsChatSession(Foundation::Framework* framework) : 

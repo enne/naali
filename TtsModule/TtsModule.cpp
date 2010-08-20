@@ -26,6 +26,7 @@
 #include "EC_OpenSimPrim.h"
 #include "EC_OgrePlaceable.h"
 #include "MemoryLeakCheck.h"
+#include "SceneEvents.h"
 
 #include <QColor>
 
@@ -90,16 +91,26 @@ namespace TTS
 
 	bool TtsModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface *data)
 	{
-		if (category_id == frameworkEventCategory_)
+		//if (category_id == frameworkEventCategory_)
+		//{
+		//	if (event_id == Foundation::WORLD_STREAM_READY)
+		//	{
+		//		// Get settings.
+		//		chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
+		//		if (chat_tts_provider_)
+		//			chat_tts_provider_->RegisterToTtsService();
+		//		return false;
+		//	}
+		//}
+		//return false;
+
+		if (event_id == Scene::Events::EVENT_CONTROLLABLE_ENTITY)
 		{
-			if (event_id == Foundation::WORLD_STREAM_READY)
-			{
-				// Get settings.
-				chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
-				if (chat_tts_provider_)
-					chat_tts_provider_->RegisterToTtsService();
-				return false;
-			}
+			// Get settings.
+			chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
+			if (chat_tts_provider_)
+				chat_tts_provider_->RegisterToTtsService();
+			return false;
 		}
 		return false;
 	}
