@@ -530,6 +530,7 @@ namespace CoreUi
 			connect(tts.get(),SIGNAL(TtsUnavailable()),SLOT(UninitializeInWorldTts()) );
         }
 	}
+
 	void CommunicationWidget::InitializeInWorldTts()
 	{
 		if (framework_ &&  framework_->GetServiceManager())

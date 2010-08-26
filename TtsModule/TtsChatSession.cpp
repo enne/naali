@@ -2,13 +2,12 @@
 
 #include "TtsChatSession.h"
 
-
 namespace TTS
 {
 	namespace TTSChat
 	{
 
-		std::string TtsChatSession::type_name_static_ = "Tts";
+		std::string TtsChatSession::type_name_static_ = "TtsChat";
 
         TtsChatSession::TtsChatSession(Foundation::Framework* framework) : 
             state_(STATE_CONNECTING),
@@ -46,16 +45,18 @@ namespace TTS
         }
 		void TtsChatSession::SpeakTextMessage(bool self_sent_message, QString sender, QString timestamp, QString message)
 		{
-			//Aqui llamamos al festival según las opciones establecidas, por ahora solo muestra un mensaje
+			std::string msg;
 			std::stringstream commandoss;
 			std::string commandos;
-			commandoss << "festival.exe --libdir \"festival/lib\" "; 
+			commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
 			if(self_sent_message)
 				commandoss << configuration_->getOwnVoice();
 			else
 				commandoss << configuration_->getOthersVoice();
 			commandoss << " -A -T \"";
-			commandoss << message.toStdString();
+			msg=message.toStdString();
+			std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
+			commandoss << msg;
 			commandoss << "\"";
 			commandos = commandoss.str();
 			system(commandos.c_str());	

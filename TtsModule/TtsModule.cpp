@@ -93,17 +93,6 @@ namespace TTS
 	{
 		//if (category_id == frameworkEventCategory_)
 		//{
-		//	if (event_id == Foundation::WORLD_STREAM_READY)
-		//	{
-		//		// Get settings.
-		//		chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
-		//		if (chat_tts_provider_)
-		//			chat_tts_provider_->RegisterToTtsService();
-		//		return false;
-		//	}
-		//}
-		//return false;
-
 		if (event_id == Scene::Events::EVENT_CONTROLLABLE_ENTITY)
 		{
 			// Get settings.
@@ -112,6 +101,7 @@ namespace TTS
 				chat_tts_provider_->RegisterToTtsService();
 			return false;
 		}
+		//}
 		return false;
 	}
 
