@@ -108,7 +108,8 @@ namespace TTS
 
 	signals:
 
-		void TtsAvailable();
+		//void TtsAvailable();
+		//void TtsProviderAvailable();
 		void TtsUnavailable();
 
 	};

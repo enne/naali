@@ -33,7 +33,7 @@ namespace TTS
 
 		tts_chat_provider_=tts_provider;
 		connect(tts_chat_provider_, SIGNAL(SessionUnavailable()), SLOT(TtsChatSessionUnavailable()) );
-		emit TtsAvailable(); //envía la señal y la recoge communicationwidget
+		//emit TtsProviderAvailable(); //envía la señal y la recoge communicationwidget
 		return true;
     }
     

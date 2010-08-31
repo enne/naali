@@ -6,12 +6,10 @@
 #include <QGraphicsProxyWidget>
 #include "ui_CommunicationWidget.h"
 
-
 //H2
 //Include TTSChat widget
 //Todo: Why is necessary? How to avoid this here?
 #include "TTSChatWidget.h"
-//#include "CommunicationsService.h"
 //
 
 
@@ -34,7 +32,7 @@ namespace Communications
         class SessionInterface;
         class TextMessageInterface;
     }
-
+	
 	//H2
 	//Namespace added
 	namespace TTSChat
@@ -42,13 +40,6 @@ namespace Communications
 		class TTSChatWidget;
 	}
 	//
-}
-
-
-namespace TTS
-{
-	class TtsSessionInterface;
-	class TtsServiceInterface;
 }
 
 namespace CommUI
@@ -101,22 +92,22 @@ namespace CoreUi
         void SendMessageRequested();
         void InitializeInWorldVoice();
         void InitializeInWorldChat();
-		//ToggleTTSChatWidget is a slot to show/hide the Qwidget
-		void ToggleTTSChatWidget();
-		//Muestran u ocultan el boton TTS
-		void ShowTTSChatControls();
-        void HideTTSChatControls();
-		//
-		void InitializeTts();
-		void InitializeInWorldTts();
-		void UninitializeInWorldTts();
         void UninitializeInWorldVoice();
         void UpdateInWorldVoiceIndicator();
         void ShowVoiceControls();
         void HideVoiceControls();
         void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message);
-
+		//H2
+		void ToggleTTSChatWidget();
+		//Muestran u ocultan el boton TTS
+		void ShowTTSChatControls();
+        void HideTTSChatControls();
+		//
+		//void InitializeTts();
+		void InitializeInWorldTts();
+		void UninitializeInWorldTts();
 		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
+		//
 
     private:
         Foundation::Framework* framework_;
@@ -141,27 +132,18 @@ namespace CoreUi
         CommUI::VoiceUsersWidget* voice_users_widget_;
         QGraphicsProxyWidget* voice_users_proxy_widget_;
 
+        Communications::InWorldChat::SessionInterface* in_world_chat_session_;
 
 		
 		//H2
 		//TTSChat Widget
 		Communications::TTSChat::TTSChatWidget* TTS_chat_widget;
-		//ESTO HAY QUE CAMBIARLO A LA SESION DE TTS
-        //Communications::InWorldVoice::SessionInterface* in_world_TTSChat_session_;
 
-		//TTSChat proxy
-		//Todo: Describe a bit both widgets, and why they are needed
-		//QGraphicsProxyWidget*  tts_chat_proxy_widget_;
-	
-
-		
-		//
-
-
-        Communications::InWorldChat::SessionInterface* in_world_chat_session_;
-
+		int first,last;
+		QString text_;
 		//TTS
 		TTS::TTSChat::TtsSessionInterface* in_world_tts_chat_session_;
+
 
     signals:
         void SendMessageToServer(const QString &message);

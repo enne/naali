@@ -49,12 +49,27 @@ namespace TTS
 			std::stringstream commandoss;
 			std::string commandos;
 			commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
-			if(self_sent_message)
+			/*if(self_sent_message)
 				commandoss << configuration_->getOwnVoice();
 			else
-				commandoss << configuration_->getOthersVoice();
+				commandoss << configuration_->getOthersVoice();*/
+
+			//H5 Aquí coge la voz del.
+		
+			QRegExp rxlen("^<voice>(.*)</voice>(.*)$");
+			int pos = rxlen.indexIn(message);
+			QString voice;
+			
+			if (pos > -1) {
+				voice = rxlen.cap(1); 
+				msg = rxlen.cap(2).toStdString();
+			}
+
+		
+
+			commandoss << voice.toStdString();
 			commandoss << " -A -T \"";
-			msg=message.toStdString();
+			//msg=message.toStdString();
 			std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
 			commandoss << msg;
 			commandoss << "\"";

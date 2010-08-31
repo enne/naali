@@ -70,7 +70,7 @@ namespace TTS
 	signals:
 
 		// Signal of Service available
-		void ServiceTtsAvailable();
+		//void ServiceTtsAvailable();
 
     private:
         Q_DISABLE_COPY(TtsModule);

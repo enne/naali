@@ -64,7 +64,7 @@ namespace TTS
 		tts_service_ = TtsServicePtr(new TtsService(framework_));
 		framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_Tts, tts_service_);
 
-		emit ServiceTtsAvailable();
+		//emit ServiceTtsAvailable();
 
 		// Recoge los eventos del framework
 		frameworkEventCategory_ = framework_->GetEventManager()->QueryEventCategory("Framework");
@@ -91,17 +91,17 @@ namespace TTS
 
 	bool TtsModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface *data)
 	{
-		//if (category_id == frameworkEventCategory_)
-		//{
-		if (event_id == Scene::Events::EVENT_CONTROLLABLE_ENTITY)
+		if (category_id == frameworkEventCategory_)
 		{
-			// Get settings.
-			chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
-			if (chat_tts_provider_)
-				chat_tts_provider_->RegisterToTtsService();
-			return false;
+			if(event_id == Foundation::WORLD_STREAM_READY)
+			{
+				// Get settings.
+				chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
+				if (chat_tts_provider_)
+					chat_tts_provider_->RegisterToTtsService();
+				return false;
+			}
 		}
-		//}
 		return false;
 	}
 

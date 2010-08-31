@@ -368,17 +368,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>ChatSessionWidget</name>
-    <message>
-        <source>ChatSessionWidget</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>ClassicalLoginWidget</name>
     <message>
         <source>ClassicalLoginWidget</source>
@@ -1481,43 +1470,6 @@ QLabel {
     </message>
 </context>
 <context>
-    <name>FrienListWidget</name>
-    <message>
-        <source>Friends List</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>QPushButton {
-	border: 0px;
-	background-color: rgba(255, 255, 255, 0);
-}
-
-QPushButton:hover {
-	border: 0px;
-	background-color: rgba(255, 255, 255, 0);
-	color: rgb(51, 98, 255);
-}
-
-QPushButton::pressed {
-	border: 0px;
-	background-color: rgba(255, 255, 255, 0);
-	color: rgb(74, 122, 255);
-}</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>x new friend request</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>QListView::item {
-     min-height: 30px;
- }
-</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>HoveringButtonsWidget</name>
     <message>
         <source>HoveringButtonsWidget</source>
@@ -1683,17 +1635,6 @@ QPushButton::pressed {
     </message>
 </context>
 <context>
-    <name>LoadingWidget</name>
-    <message>
-        <source>Connecting...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>LoginControllerWidget</name>
     <message>
         <source>Login Controller</source>
@@ -1717,49 +1658,6 @@ QPushButton::pressed {
     </message>
     <message>
         <source>temp</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>LoginWidget</name>
-    <message>
-        <source>IM Login</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Provide your IM credentials</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Username</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Password</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Server</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Presets</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Last stored credentials</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Google account</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Facebook account</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connect</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2157,13 +2055,6 @@ Pituus: %1 sec</translation>
     </message>
 </context>
 <context>
-    <name>OpenSimChatWidget</name>
-    <message>
-        <source>OpenSimChatWidget</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>PersonalWidget</name>
     <message>
         <source>PersonalWidget</source>
@@ -2243,13 +2134,6 @@ Pituus: %1 sec</translation>
     </message>
 </context>
 <context>
-    <name>RequestManagerWidget</name>
-    <message>
-        <source>Pending Friend Requests</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>RexLogic::AvatarEditor</name>
     <message>
         <source>Avatar Editor</source>
@@ -2291,63 +2175,6 @@ Pituus: %1 sec</translation>
     <message>
         <source>Toggle postprocessing effects</source>
         <translation>Aseta jälkikäsittely</translation>
-    </message>
-</context>
-<context>
-    <name>SessionManagerWidget</name>
-    <message>
-        <source>IM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Question label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>username@server.com</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>status message</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>QWidget {
-	background-color: #f4f4f4;
-}
-
-QLabel {
-	color: rgb(0, 0, 0);
-}</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>color: rgb(69, 159, 255);</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hello and Welcome to Naali Communications Widget!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You can find all important functionality from the menu that is located at the top of this window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>To start click the Show Friend List button. There you can start chat,  video or audio sessions with your friends.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>  Connected</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2425,26 +2252,50 @@ QLabel {
     </message>
 </context>
 <context>
-    <name>SpatialVoiceConfigureWidget</name>
+    <name>TTSChatWidgetClass</name>
     <message>
-        <source>3D Voice Configuration</source>
+        <source>Text To Speech Configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select avatar and start tracking</source>
+        <source>Own Voice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Update Avatar List</source>
+        <source>Enable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Start Tracking</source>
+        <source>Language: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Stop Tracking</source>
+        <source>Spanish</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gender:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Male</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Female</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Others Voice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished">Tallenna</translation>
     </message>
 </context>
 <context>
@@ -2563,20 +2414,6 @@ Third option is to login into realXtend Taiga and ScienceSim servers that are ba
     </message>
 </context>
 <context>
-    <name>UiHelpers::FriendHelper</name>
-    <message>
-        <source>Friend Requests</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UiManagers::SessionManager</name>
-    <message>
-        <source>Friends List</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UploadProgress</name>
     <message>
         <source>UploadProgressBarWidget</source>
@@ -2584,52 +2421,6 @@ Third option is to login into realXtend Taiga and ScienceSim servers that are ba
     </message>
     <message>
         <source>Uploading file </source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>VideoSessionControlsWidget</name>
-    <message>
-        <source>VideoSessionControlsWidget</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Video</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>VideoSessionWidget</name>
-    <message>
-        <source>VideoSessionWidget</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>color: rgb(0,0,0);</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>-</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Video:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
