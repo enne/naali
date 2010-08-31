@@ -16,7 +16,7 @@
 // For ModuleWidgets this is what the toolbar is for.
 //
 // UiServices::UiWidgetProperties properties("My Widget Name", UiServices::ModuleWidget);
-// UiServices::UiProxyWidget *proxy_widget = new UiServices::UiProxyWidget(my_q_widget, properties);
+// UiProxyWidget *proxy_widget = new UiProxyWidget(my_q_widget, properties);
 //
 // Now you can add the UiProxyWidget to the ui by calling the InworldSceneController
 // ui_module->GetInworldSceneController()->AddProxyWidget(proxy_widget);
@@ -26,7 +26,7 @@
 
 #include "Inworld/InworldSceneController.h"
 
-#include "Inworld/View/UiWidgetProperties.h"
-#include "Inworld/View/UiProxyWidget.h"
+#include "UiWidgetProperties.h"
+#include "UiProxyWidget.h"
 
 #endif

@@ -37,7 +37,7 @@ namespace RexLogic
             virtual void ClearHistory();
 
             bool is_closed_;
-			QString self_uuid_;
+            QString self_uuid_;
 
             QList<TextMessage*> messages_;
         };

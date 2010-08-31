@@ -20,6 +20,7 @@ namespace OgreRenderer
 {
 
 EC_OgreMovableTextOverlay::EC_OgreMovableTextOverlay(Foundation::ModuleInterface* module) :
+    Foundation::ComponentInterface(module->GetFramework()),
     text_element_(0),
     container_(0),
     overlay_(0),
@@ -163,7 +164,7 @@ void EC_OgreMovableTextOverlay::SetPlaceable(Foundation::ComponentPtr placeable)
     EC_OgrePlaceable* placeableptr = dynamic_cast<EC_OgrePlaceable*>(placeable.get());
     if (!placeableptr)
     {
-        OgreRenderingModule::LogError("Placeable is not" + EC_OgrePlaceable::TypeNameStatic());
+        OgreRenderingModule::LogError("Placeable is not" + EC_OgrePlaceable::TypeNameStatic().toStdString());
         return;
     }
 

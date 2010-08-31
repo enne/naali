@@ -4,7 +4,7 @@
 #define incl_UiModule_UiStateMachine_h
 
 #include "UiModuleApi.h"
-#include "UiDefines.h"
+#include "UiTypes.h"
 
 #include <QStateMachine>
 #include <QParallelAnimationGroup>
@@ -29,11 +29,39 @@ namespace CoreUi
         void SwitchToInworldScene();
         void SwitchToEtherScene();
         void SwitchToBuildScene();
-        void RegisterScene(QString name, QGraphicsScene *scene);
-        void SwitchToScene(QString name);
         void ToggleEther();
 
-        void SetConnectionState(UiDefines::ConnectionState new_connection_state);
+        /** Registers new scene.
+         *  The instance which creates new scene is also responsible for its deletion.
+         *  @param name Name of the scene.
+         *  @param scene Graphics scene.
+         *  @sa UnregisterScene.
+         */
+        void RegisterScene(const QString &name, QGraphicsScene *scene);
+
+        /** Unregisters graphics scene.
+         *  @param name Name of the scene.
+         *  @return True if the scene was found and deleted succesfully, false otherwise.
+         *  @note Does not delete the scene, only removes it from the scene map.
+         */
+        bool UnregisterScene(const QString &name);
+
+        /** Switches the active scene.
+         *  @param name Name of the scene.
+         *  @return True if the scene existed and was activate ok, false otherwise.
+         */
+        bool SwitchToScene(const QString &name);
+
+        /** Returns scene with the requested name for introspection.
+         *  @param name Name of the scene.
+         *  @return Graphic scene with the requested name, or null if not found.
+         */
+        QGraphicsScene *GetScene(const QString &name) const;
+
+        /// Returns name of the current scene.
+        QString GetCurrentSceneName() const { return current_scene_name_;}
+
+        void SetConnectionState(UiServices::ConnectionState new_connection_state);
         void SetServiceGetter(QObject *service_getter);
 
     private slots:
@@ -61,7 +89,7 @@ namespace CoreUi
         QMap<QString, QGraphicsScene*> scene_map_;
         QMap<QGraphicsScene*, QParallelAnimationGroup*> animations_map_;
 
-        UiDefines::ConnectionState connection_state_;
+        UiServices::ConnectionState connection_state_;
 
         QList<QKeySequence> ether_toggle_seq_list_;
 
@@ -71,7 +99,7 @@ namespace CoreUi
     signals:
         void EtherTogglePressed();
         void SceneOutAnimationFinised();
-        void SceneChangedTo(QString old_scene_name, QString new_scene_name);
+        void SceneChanged(const QString &oldName, const QString &newName);
 
     };
 }

@@ -7,15 +7,17 @@
 #include "ModuleLoggingFunctions.h"
 
 #include <QObject>
+#include <QPointer>
 
 namespace ECEditor
 {
+    class ECEditorWindow;
+    class EcXmlEditorWidget;
+
     //! EC Editor module
     /*! \defgroup ECEditorModuleClient ECEditorModule Client interface.
      *  EC Editor implements a way of adding arbitrary EC's to world entities, using (so far) xml-formatted data typed in RexFreeData
      */
-    class ECEditorWindow;
-
     class ECEditorModule : public QObject, public Foundation::ModuleInterface
     {
         Q_OBJECT
@@ -38,6 +40,17 @@ namespace ECEditor
         //! Show EC editor window.
         Console::CommandResult ShowWindow(const StringVector &params);
 
+        //! Added for testing EC_DynamicComponent.
+        /*! @param params Params should be following:
+         *  0 = entity id.
+         *  1 = operation (add or rem)
+         *  2 = component type.(ec. EC_DynamicComponent)
+         *  3 = attribute name.
+         *  4 = attribute type. !Only rem dont use in rem operation.
+         *  5 = attribute value. !Only rem dont use in rem operation.
+         */
+        Console::CommandResult EditDynamicComponent(const StringVector &params);
+
         //! returns name of this module. Needed for logging.
         static const std::string &NameStatic() { return name_static_; }
 
@@ -51,14 +64,19 @@ namespace ECEditor
         //! \param entity Entity pointer.
         void CreateXmlEditor(Scene::EntityPtr entity);
 
+        //! Creates EC attribute XML editor widget for entity.
+        //! \param entities List of entity pointers.
+        void CreateXmlEditor(const QList<Scene::EntityPtr> &entities);
+
         //! Creates EC attribute XML editor widget for component.
         //! \param component Component pointer.
         void CreateXmlEditor(Foundation::ComponentPtr component);
 
-    private:
-        //! EC editor window
-        ECEditorWindow* editor_window_;
+        //! Creates EC attribute XML editor widget for component.
+        //! \param components List of component pointers.
+        void CreateXmlEditor(const QList<Foundation::ComponentPtr> &components);
 
+    private:
         //! Static name of the module
         static std::string name_static_;
 
@@ -76,6 +94,12 @@ namespace ECEditor
 
         //! Id for Input event category
         event_category_id_t input_event_category_;
+
+        //! EC editor window
+        ECEditorWindow* editor_window_;
+
+        //! EC XML editor window
+        QPointer<EcXmlEditorWidget> xmlEditor_;
     };
 }
 

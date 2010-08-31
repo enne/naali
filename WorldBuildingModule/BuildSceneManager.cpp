@@ -1,20 +1,24 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include "StableHeaders.h"
-#include "ModuleInterface.h"
+#include "DebugOperatorNew.h"
+
 #include "BuildSceneManager.h"
-
-#include <UiModule.h>
-#include <EC_OpenSimPrim.h>
-
 #include "BuildScene.h"
 #include "AnchorLayout.h"
 #include "PropertyEditorHandler.h"
-#include "WorldObjectView.h"
-#include <EC_OgrePlaceable.h>
+#include "BuildingWidget.h"
+#include "UiHelper.h"
+
+#include "ModuleInterface.h"
+#include "EC_OpenSimPrim.h"
+#include "EC_OgrePlaceable.h"
+#include "UiServiceInterface.h"
 
 #include <QPixmap>
 #include <QDebug>
+
+#include "MemoryLeakCheck.h"
 
 namespace WorldBuilding
 {
@@ -48,12 +52,13 @@ namespace WorldBuilding
         scene_ = new BuildScene(this);
         layout_ = new AnchorLayout(this, scene_);
 
-        // Register scene to ui module
-        StateMachine *machine = GetStateMachine();
-        if (machine)
+        // Register scene to ui service
+        Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+        if (ui)
         {
-            machine->RegisterScene(scene_name_, scene_);
-            connect(machine, SIGNAL(SceneChangedTo(QString, QString)), SLOT(SceneChangedNotification(QString, QString)));
+            ui->RegisterScene(scene_name_, scene_);
+            connect(ui, SIGNAL(SceneChanged(const QString&, const QString &)),
+                SLOT(SceneChangedNotification(const QString&, const QString&)));
         }
 
         // Init info widget
@@ -99,20 +104,20 @@ namespace WorldBuilding
         // Init camera handler
         camera_handler_ = new View::CameraHandler(framework_, this);
         connect(world_object_view_, SIGNAL(RotateObject(qreal, qreal)), this, SLOT(RotateObject(qreal, qreal))); 
+        connect(world_object_view_, SIGNAL(Zoom(qreal)), this, SLOT(Zoom(qreal))); 
+        
 
         // Setup ui helper
         ui_helper_->SetupRotateControls(&object_manip_ui, python_handler_);
-        connect(world_object_view_, SIGNAL(Zoom(qreal)), this, SLOT(Zoom(qreal))); 
-        
     }
 
-    void BuildSceneManager::KeyPressed(KeyEvent &key)
+    void BuildSceneManager::KeyPressed(KeyEvent *key)
     {
-        if (key.IsRepeat())
+        if (key->IsRepeat())
             return;
 
         // Ctrl + B to toggle build scene
-        if (key.HasCtrlModifier() && key.keyCode == Qt::Key_B)
+        if (key->HasCtrlModifier() && key->keyCode == Qt::Key_B)
         {
             ToggleBuildScene();
             return;
@@ -122,38 +127,38 @@ namespace WorldBuilding
             return;
 
         PythonParams::ManipulationMode mode = PythonParams::MANIP_NONE;
-        if (key.HasCtrlModifier())
+        if (key->HasCtrlModifier())
         {
             mode = PythonParams::MANIP_MOVE;
-            if (key.HasAltModifier() && (python_handler_->GetCurrentManipulationMode() != PythonParams::MANIP_ROTATE))
+            if (key->HasAltModifier() && (python_handler_->GetCurrentManipulationMode() != PythonParams::MANIP_ROTATE))
                 mode = PythonParams::MANIP_SCALE;
-            if (key.HasShiftModifier() && (python_handler_->GetCurrentManipulationMode() != PythonParams::MANIP_SCALE))
+            if (key->HasShiftModifier() && (python_handler_->GetCurrentManipulationMode() != PythonParams::MANIP_SCALE))
                 mode = PythonParams::MANIP_ROTATE;
         }
         if (mode != PythonParams::MANIP_NONE)
             ManipModeChanged(mode);
     }
 
-    void BuildSceneManager::KeyReleased(KeyEvent &key)
+    void BuildSceneManager::KeyReleased(KeyEvent *key)
     {
         if (!scene_->isActive() || !property_editor_handler_->HasCurrentPrim() || !prim_selected_)
             return;
-        if (key.IsRepeat())
+        if (key->IsRepeat())
             return;
 
         PythonParams::ManipulationMode mode = PythonParams::MANIP_NONE;
-        if (key.keyCode == Qt::Key_Control && (python_handler_->GetCurrentManipulationMode() == PythonParams::MANIP_MOVE))
+        if (key->keyCode == Qt::Key_Control && (python_handler_->GetCurrentManipulationMode() == PythonParams::MANIP_MOVE))
             mode = PythonParams::MANIP_FREEMOVE;
-        if (key.keyCode == Qt::Key_Alt && (python_handler_->GetCurrentManipulationMode() == PythonParams::MANIP_SCALE))
+        if (key->keyCode == Qt::Key_Alt && (python_handler_->GetCurrentManipulationMode() == PythonParams::MANIP_SCALE))
         {
-            if (key.HasCtrlModifier())
+            if (key->HasCtrlModifier())
                 mode = PythonParams::MANIP_MOVE;
             else
                 mode = PythonParams::MANIP_FREEMOVE;
         }
-        if (key.keyCode == Qt::Key_Shift && (python_handler_->GetCurrentManipulationMode() == PythonParams::MANIP_ROTATE))
+        if (key->keyCode == Qt::Key_Shift && (python_handler_->GetCurrentManipulationMode() == PythonParams::MANIP_ROTATE))
         {
-            if (key.HasCtrlModifier())
+            if (key->HasCtrlModifier())
                 mode = PythonParams::MANIP_MOVE;
             else
                 mode = PythonParams::MANIP_FREEMOVE;
@@ -252,15 +257,6 @@ namespace WorldBuilding
         return python_handler_; 
     }
 
-    StateMachine *BuildSceneManager::GetStateMachine()
-    {
-        UiServices::UiModule *ui_module = framework_->GetModule<UiServices::UiModule>();
-        if (ui_module)
-            return ui_module->GetUiStateMachine();
-        else
-            return 0;
-    }
-
     void BuildSceneManager::ToggleBuildScene()
     {
         if (!scene_->isActive())
@@ -274,10 +270,10 @@ namespace WorldBuilding
         if (!inworld_state)
             return;
 
-        StateMachine *machine = GetStateMachine();
-        if (machine)
+        Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+        if (ui)
         {
-            machine->SwitchToScene(scene_name_);
+            ui->SwitchToScene(scene_name_);
 
             object_info_widget_->CheckSize();
             object_manipulations_widget_->CheckSize();
@@ -288,25 +284,23 @@ namespace WorldBuilding
 
     void BuildSceneManager::HideBuildScene()
     {
-        StateMachine *machine = GetStateMachine();
-        if (machine)
-        {
+        Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+        if (ui)
             if (inworld_state)
-                machine->SwitchToScene("Inworld");
+                ui->SwitchToScene("Inworld");
             else
-                machine->SwitchToScene("Ether");
-        }
+                ui->SwitchToScene("Ether");
     }
 
-    void BuildSceneManager::SceneChangedNotification(QString old_scene_name, QString new_scene_name)
+    void BuildSceneManager::SceneChangedNotification(const QString &old_name, const QString &new_name)
     {
-        if (new_scene_name == scene_name_)
+        if (new_name == scene_name_)
         {
             object_info_widget_->CheckSize();
-            object_manipulations_widget_->CheckSize();         
+            object_manipulations_widget_->CheckSize();
             python_handler_->EmitEditingActivated(true);
         }
-        else if (old_scene_name == scene_name_)
+        else if (old_name == scene_name_)
         {
             ObjectSelected(false);
             python_handler_->EmitEditingActivated(false);

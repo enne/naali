@@ -33,14 +33,6 @@ namespace RexLogic
 
         bool Provider::HandleNetworkStateEvent(event_id_t event_id, Foundation::EventDataInterface* data)
         {
-    //        if (event_id == ProtocolUtilities::Events::EVENT_SERVER_CONNECTED)
-    //        {
-				//session_ = new InWorldChat::Session(OwnAvatarId());
-    //            //session_ = new InWorldChat::Session();
-    //            connect(session_, SIGNAL(UserEnteredText(const QString&)), SLOT(SendChatMessgeToServer(const QString&)) );
-    //            emit SessionAvailable();
-    //        }
-
             if (event_id == ProtocolUtilities::Events::EVENT_SERVER_DISCONNECTED)
             {
                 if (session_)
@@ -55,7 +47,7 @@ namespace RexLogic
             return false;
         }
 
-		bool Provider::HandleSceneEvent(event_id_t event_id, Foundation::EventDataInterface* data)
+        bool Provider::HandleSceneEvent(event_id_t event_id, Foundation::EventDataInterface* data)
         {
             if (event_id == Scene::Events::EVENT_CONTROLLABLE_ENTITY)
             {
@@ -107,7 +99,7 @@ namespace RexLogic
             connection->SendChatFromViewerPacket( std::string(text.toUtf8()) );
         }
 
-		QString Provider::OwnAvatarId()
+        QString Provider::OwnAvatarId()
         {
             using namespace Foundation;
             boost::shared_ptr<WorldLogicInterface> world_logic = framework_->GetServiceManager()->GetService<WorldLogicInterface>(Service::ST_WorldLogic).lock();

@@ -26,7 +26,8 @@ class IncomingMessagesHandler():
             
             self.proxywidget.hide()
             uism = r.getUiSceneManager()
-            uism.RemoveProxyWidgetFromScene(self.proxywidget)
+            uism.RemoveWidgetFromMenu(self.proxywidget)
+            uism.RemoveWidgetFromScene(self.proxywidget)
             return True
         except:
             r.logInfo("LocalSceneWindow failure:")
@@ -76,15 +77,18 @@ class EstateManagementWindow(QWidget, IncomingMessagesHandler):
         IncomingMessagesHandler.__init__(self, queue, self.endMethod)        
         
         uism = r.getUiSceneManager()
-        uiprops = r.createUiWidgetProperty(1) #1 is ModuleWidget, shown at toolbar
-        uiprops.SetMenuGroup(2) #2 is server tools group
-        uiprops.widget_name_ = "Estate Management"
+#        uiprops = r.createUiWidgetProperty(1) # 1 = Qt::Dialog
+#        uiprops.SetMenuGroup("Server Tools")
+#        uiprops.name_ = "Estate Management"
         
-        self.proxywidget = r.createUiProxyWidget(self.gui, uiprops)
-        
-        if not uism.AddProxyWidget(self.proxywidget):
-            r.logInfo("Adding the ProxyWidget to the bar failed.")
-        
+        self.proxywidget = r.createUiProxyWidget(self.gui)
+        self.proxywidget.setWindowTitle("Estate Management")
+
+        if not uism.AddWidgetToScene(self.proxywidget):
+            r.logInfo("Adding ProxyWidget failed.")
+
+        uism.AddWidgetToMenu(self.proxywidget, "Estate Management", "Server Tools", "./data/ui/images/menus/edbutton_ESMNG_normal.png")
+
         self.btnLoadEstate = self.gui.findChild("QPushButton", "btnLoadEstate")
         self.listWEI = self.gui.findChild("QListWidget","listWidgetEstateInfo")
         self.listWRU = self.gui.findChild("QListWidget","listWidgetRegionUsers")
@@ -185,7 +189,8 @@ class EstateManagementWindow(QWidget, IncomingMessagesHandler):
             
             self.proxywidget.hide()
             uism = r.getUiSceneManager()
-            uism.RemoveProxyWidgetFromScene(self.proxywidget)
+            uism.RemoveWidgetFromMenu(self.proxywidget)
+            uism.RemoveWidgetFromScene(self.proxywidget)
             return True
         except:
             r.logInfo("Estate Window failure:")

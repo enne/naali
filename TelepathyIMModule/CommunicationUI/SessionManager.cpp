@@ -2,12 +2,8 @@
 
 #include "StableHeaders.h"
 #include "DebugOperatorNew.h"
+
 #include "SessionManager.h"
-
-#include <UiModule.h>
-#include <Inworld/View/UiProxyWidget.h>
-#include <Inworld/InworldSceneController.h>
-
 #include "MasterWidget.h"
 #include "SessionHelper.h"
 #include "FriendListWidget.h"
@@ -16,6 +12,8 @@
 #include "ConnectionInterface.h"
 #include "ChatSessionInterface.h"
 #include "Framework.h"
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -108,17 +106,17 @@ namespace UiManagers
 
         set_status_message->setIcon(QIcon(":images/iconRename.png"));
         available_status->setCheckable(true);
-        available_status->setIcon(UiDefines::PresenceStatus::GetIconForStatusCode("available"));
+        available_status->setIcon(ImUiDefines::PresenceStatus::GetIconForStatusCode("available"));
         chatty_status->setCheckable(true);
-        chatty_status->setIcon(UiDefines::PresenceStatus::GetIconForStatusCode("chat"));
+        chatty_status->setIcon(ImUiDefines::PresenceStatus::GetIconForStatusCode("chat"));
         away_status->setCheckable(true);
-        away_status->setIcon(UiDefines::PresenceStatus::GetIconForStatusCode("away"));
+        away_status->setIcon(ImUiDefines::PresenceStatus::GetIconForStatusCode("away"));
         extended_away_status->setCheckable(true);
-        extended_away_status->setIcon(UiDefines::PresenceStatus::GetIconForStatusCode("xa"));
+        extended_away_status->setIcon(ImUiDefines::PresenceStatus::GetIconForStatusCode("xa"));
         busy_status->setCheckable(true);
-        busy_status->setIcon(UiDefines::PresenceStatus::GetIconForStatusCode("dnd"));
+        busy_status->setIcon(ImUiDefines::PresenceStatus::GetIconForStatusCode("dnd"));
         hidden_status->setCheckable(true);
-        hidden_status->setIcon(UiDefines::PresenceStatus::GetIconForStatusCode("hidden"));
+        hidden_status->setIcon(ImUiDefines::PresenceStatus::GetIconForStatusCode("hidden"));
 
         QActionGroup *status_group = new QActionGroup(main_parent_);            
         status_group->addAction(available_status);
@@ -161,16 +159,16 @@ namespace UiManagers
 
     void SessionManager::CreateFriendListWidget()
     {
+        // Add friend list to scene, no toolbar button
+        Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
+            return;
+
         SAFE_DELETE(friend_list_widget_);
         friend_list_widget_ = new CommunicationUI::FriendListWidget(im_connection_, session_helper_, framework_);
+        friend_list_widget_->setWindowTitle(tr("Friends List"));
+        ui->AddWidgetToScene(friend_list_widget_);
 
-        // Add friend list to scene, no toolbar button
-        boost::shared_ptr<UiServices::UiModule> ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (ui_module.get())
-        {
-            UiServices::UiWidgetProperties widget_properties("Friends List", UiServices::SceneWidget);
-            ui_module->GetInworldSceneController()->AddWidgetToScene(friend_list_widget_, widget_properties);
-        }
         connect(friend_list_widget_, SIGNAL( StatusChanged(const QString &) ),
                 session_helper_, SLOT( SetMyStatus(const QString &) ));
         connect(friend_list_widget_, SIGNAL( NewChatSessionStarted(Communication::ChatSessionInterface *, QString &) ),
@@ -239,7 +237,7 @@ namespace UiManagers
         im_connection_->Close();          
         friend_list_widget_->close(); 
         SAFE_DELETE(friend_list_widget_);
-        emit StateChange(UiDefines::UiStates::Disconnected);
+        emit StateChange(ImUiDefines::UiStates::Disconnected);
     }
 
     void SessionManager::Show3DSoundManager()

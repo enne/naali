@@ -9,6 +9,7 @@
 #include "OgreModuleApi.h"
 #include "RenderServiceInterface.h"
 #include "CompositionHandler.h"
+#include "CAVEManager.h"
 
 #include <QObject>
 #include <QVariant>
@@ -21,6 +22,7 @@ namespace Foundation
 {
     class Framework;
     class KeyBindings;
+    class MainWindow;
 }
 
 namespace Ogre
@@ -37,6 +39,19 @@ class QWidget;
 
 namespace OgreRenderer
 {
+    enum ShadowQuality
+    {
+        Shadows_Off = 0,
+        Shadows_Low,
+        Shadows_High // PSSM, Direct3D only
+    };
+    
+    enum TextureQuality
+    {
+        Texture_Low = 0, // Halved resolution
+        Texture_Normal
+    };
+    
     class OgreRenderingModule;
     class LogListener;
     class ResourceHandler;
@@ -48,23 +63,6 @@ namespace OgreRenderer
     typedef boost::shared_ptr<LogListener> OgreLogListenerPtr;
     typedef boost::shared_ptr<ResourceHandler> ResourceHandlerPtr;
     typedef boost::shared_ptr<RenderableListener> RenderableListenerPtr;
-    
-    //! Naali main window, which overrides the closeEvent
-    class OGRE_MODULE_API NaaliMainWindow : public QWidget
-    {
-    public:
-        NaaliMainWindow(Foundation::Framework* framework) :
-            QWidget(),
-            framework_(framework)
-        {
-        }
-        
-    protected:
-        void closeEvent(QCloseEvent* e);
-        
-    private:
-        Foundation::Framework* framework_;
-    };
 
     //! Ogre renderer
     /*! Created by OgreRenderingModule. Implements the RenderServiceInterface.
@@ -90,6 +88,8 @@ namespace OgreRenderer
 
         //! Shows world view
         void ShowCurrentWorldView();
+
+
 
         //! Adds a directory into the Ogre resource system, to be able to load local Ogre resources from there
         /*! \param directory Directory path to add
@@ -142,6 +142,9 @@ namespace OgreRenderer
 
         //! force UI repaint
         virtual void RepaintUi();
+
+        //!Is window fullscreen?
+        bool IsFullScreen();
 
         //! get visible entities last frame
         virtual const std::set<entity_id_t>& GetVisibleEntities() { return visible_entities_; }
@@ -248,14 +251,27 @@ namespace OgreRenderer
         void UpdateKeyBindings(Foundation::KeyBindings *bindings);
 
         //! Returns the main window.
-        QWidget *GetMainWindow() const { return main_window_; }
+        Foundation::MainWindow *GetMainWindow() const { return main_window_; }
 
         /// Returns the backbuffer image that contains the UI layer of the application screen.
         /// Used to perform alpha-keying based input.
         QImage &GetBackBuffer() { return backBuffer; }
 
+        //! Returns shadow quality
+        ShadowQuality GetShadowQuality() { return shadowquality_; }
+        
+        //! Sets shadow quality. Note: changes need viewer restart to take effect due to Ogre resource system
+        void SetShadowQuality(ShadowQuality newquality);
+        
+        //! Returns texture quality
+        TextureQuality GetTextureQuality() { return texturequality_; }
+        
+        //! Sets texture quality. Note: changes need viewer restart to take effect
+        void SetTextureQuality(TextureQuality newquality);
+        
     public slots:
-
+        //! Toggles fullscreen
+        void SetFullScreen(bool value);
 
     private:
         //! Initialises Qt
@@ -274,6 +290,9 @@ namespace OgreRenderer
 
         //! Creates scenemanager & camera
         void SetupScene();
+
+        //! Initializes shadows. Called by SetupScene().
+        void InitShadows();
 
         //! Successfully initialized flag
         bool initialized_;
@@ -336,7 +355,7 @@ namespace OgreRenderer
         StringVector added_resource_directories_;
 
         //! Qt main window widget
-        QWidget *main_window_;
+        Foundation::MainWindow *main_window_;
 
         //! Ogre UI View Widget, inherits QGraphicsView
         QOgreUIView *q_ogre_ui_view_;
@@ -357,6 +376,8 @@ namespace OgreRenderer
         //! resized dirty count
         int resized_dirty_;
 
+        CAVEManager cave_manager_;
+
         //! For render function
         QImage ui_buffer_;
         QRect last_view_rect_;
@@ -364,6 +385,15 @@ namespace OgreRenderer
         
         //! Visible entities
         std::set<entity_id_t> visible_entities_;
+        
+        //! Shadow quality
+        ShadowQuality shadowquality_;
+        
+        //! Texture quality
+        TextureQuality texturequality_;
+        
+        //! Soft shadow gaussian listeners
+        std::list<OgreRenderer::GaussianListener *> gaussianListeners_;
     };
 }
 

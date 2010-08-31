@@ -9,11 +9,13 @@
 #include <QMap>
 #include <QPair>
 #include <QTimer>
+#include <QReadWriteLock>
 #include "Core.h"
 #include "MumbleDefines.h"
 
 class QNetworkReply;
 class QNetworkAccessManager;
+
 namespace MumbleClient
 {
     class MumbleClient;
@@ -21,18 +23,22 @@ namespace MumbleClient
     class User;
 }
 
+namespace MumbleVoip
+{
+    class ServerInfo;
+    class PCMAudioFrame;
+}
+
 struct CELTMode;
 struct CELTEncoder;
 struct CELTDecoder;
 
-namespace MumbleVoip
+namespace MumbleLib
 {
     class Channel;
     class User;
-    class PCMAudioFrame;
-    class ServerInfo;
 
-    typedef QPair<User*, PCMAudioFrame*> AudioPacket;
+    typedef QPair<User*, MumbleVoip::PCMAudioFrame*> AudioPacket;
 
     //! Connection to a single mumble server.
     //!
@@ -51,7 +57,7 @@ namespace MumbleVoip
         enum State { STATE_CONNECTING, STATE_AUTHENTICATING, STATE_OPEN, STATE_CLOSED, STATE_ERROR };
 
         //! Default constructor
-        Connection(ServerInfo &info);
+        Connection(MumbleVoip::ServerInfo &info);
 
         //! Default deconstructor
         virtual ~Connection();
@@ -76,18 +82,18 @@ namespace MumbleVoip
 
         //! Encode and send given frame to Mumble server
         //! Frame object is NOT deleted by this method 
-        virtual void SendAudioFrame(PCMAudioFrame* frame, Vector3df users_position);
+        virtual void SendAudioFrame(MumbleVoip::PCMAudioFrame* frame, Vector3df users_position);
 
         //! @return list of channels available
         //! @todo CONSIDER TO USE boost::weak_ptr HERE
         virtual QList<Channel*> ChannelList();
 
         //! @return channel by id. Return 0 if channel cannot be found
-        virtual MumbleVoip::Channel* ChannelById(int id);
+        virtual MumbleLib::Channel* ChannelById(int id);
 
         //! @param name The full name of the channel e.g "Root/mychannel"
         //! @return channel by name. Return 0 if channel cannot be found
-        virtual MumbleVoip::Channel* ChannelByName(QString name);
+        virtual MumbleLib::Channel* ChannelByName(QString name);
 
         //! Set audio sending true/false 
         //! @param send true if audio want to be sent to mumble server, otherwise false
@@ -156,23 +162,25 @@ namespace MumbleVoip
 
     private:
         static const int MUMBLE_DEFAULT_PORT_ = 64738;
-        static const int AUDIO_QUALITY_MAX_ = 90000; 
-        static const int AUDIO_QUALITY_MIN_ = 32000; 
+        static const int AUDIO_BITRATE_MAX_ = 90000; 
+        static const int AUDIO_BITRATE_MIN_ = 32000; 
         static const int ENCODE_BUFFER_SIZE_ = 4000;
         static const int USER_STATE_CHECK_TIME_MS = 1000;
+        static const int FRAME_BUFFER_SIZE = 256;
+
+        char encoded_frame_data_[MumbleVoip::FRAMES_PER_PACKET][FRAME_BUFFER_SIZE];
+        int encoded_frame_length_[MumbleVoip::FRAMES_PER_PACKET];
 
         void InitializeCELT();
         void UninitializeCELT();
         CELTDecoder* CreateCELTDecoder();
-        int AudioQuality();
-
-        bool CheckState(QList<State> allowed_states); // testing
+        int BitrateForDecoder();
 
         State state_;
         QString reason_;
         MumbleClient::MumbleClient* client_;
         QString join_request_; // queued request to join a channel @todo IMPLEMENT BETTER
-        QList<PCMAudioFrame*> encode_queue_;
+        QList<MumbleVoip::PCMAudioFrame*> encode_queue_;
         QList<Channel*> channels_; // @todo Use shared ptr
         QMap<int, User*> users_; // maps: session id <-> User object
 
@@ -194,31 +202,32 @@ namespace MumbleVoip
         QMutex mutex_encode_queue_;
         QMutex mutex_encoding_quality_;
         QMutex mutex_raw_udp_tunnel_;
-        QMutex mutex_users_;
-        QMutex mutex_state_;
         QMutex mutex_client_;
-//        QMutex mutex_celt_decoder_;
+        QReadWriteLock lock_state_;
+        QReadWriteLock lock_users_;
         
     signals:
-        void StateChanged(State state);
+        void StateChanged(const State &state);
         void TextMessageReceived(QString &text); 
         void AudioDataAvailable(short* data, int size);
-        //! emited when user left from server
-        void UserLeftFromServer(User* user);
-        //! emited when user join to server
-        void UserJoinedToServer(User* user);
+
+        /// emited when user left from server
+        void UserLeftFromServer(MumbleLib::User* user);
+        /// emited when user join to server
+        void UserJoinedToServer(MumbleLib::User* user);
+
 //        void UserJoinedToChannel(User* user);
+
         void ChannelAdded(Channel* channel); 
         void ChannelRemoved(Channel* channel);
 
         // private
         void UserObjectCreated(User*);
         void CELTFrameReceived(int session, unsigned char*data, int size);
-//        void UserPositionUpdated(User* user, Vector3df position)
     };
 
-} // namespace MumbleVoip
+} // namespace MumbleLib
 
-//Q_DECLARE_METATYPE(MumbleClient::User)
+//Q_DECLARE_METATYPE(MumbleClient::User) // not needed
 
 #endif // incl_MumbleVoipModule_Connection_h

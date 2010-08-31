@@ -10,6 +10,7 @@
 namespace OgreRenderer
 {
     EC_OgreCamera::EC_OgreCamera(Foundation::ModuleInterface* module) :
+        Foundation::ComponentInterface(module->GetFramework()),
         renderer_(checked_static_cast<OgreRenderingModule*>(module)->GetRenderer()),
         attached_(false),
         camera_(0)
@@ -51,7 +52,7 @@ namespace OgreRenderer
     {
         if (!dynamic_cast<EC_OgrePlaceable*>(placeable.get()))
         {
-            OgreRenderingModule::LogError("Attempted to set placeable which is not " + EC_OgrePlaceable::TypeNameStatic());
+            OgreRenderingModule::LogError("Attempted to set placeable which is not " + EC_OgrePlaceable::TypeNameStatic().toStdString());
             return;
         }       
         

@@ -10,7 +10,6 @@
 #include <QPointF>
 #include <QMap>
 
-#include "UiDefines.h"
 #include "ui_MenuNode.h"
 
 #define MOVE_ANIM_LENGTH 350
@@ -19,6 +18,7 @@
 
 class QParallelAnimationGroup;
 class QPropertyAnimation;
+class QLabel;
 
 namespace CoreUi
 {
@@ -29,13 +29,13 @@ namespace CoreUi
         Q_OBJECT
 
     public:
-        MenuNode(const QString& node_name, const QIcon &icon, UiDefines::MenuNodeStyleMap map, QUuid id = QUuid());
+        MenuNode(const QString& node_name, const QString &icon, const QUuid &id = QUuid::createUuid());
         ~MenuNode();
 
     public slots:
-        QUuid GetID() const;
+        QUuid GetID() const { return id_; }
 
-        void SetTreeDepth(int tree_depth)   { tree_depth_ = tree_depth; }
+        void SetTreeDepth(int tree_depth) { tree_depth_ = tree_depth; }
         int GetTreeDepth() const { return tree_depth_; }
         int GetExpandedWidth() const { return expanded_width_; }
 
@@ -53,7 +53,7 @@ namespace CoreUi
         void ResizeStateChanged(QAbstractAnimation::State new_state, QAbstractAnimation::State old_state);
         void ResizeFinished();
         void ChangeMoveState(bool show_borders);
-        
+
         // Reimplement in subclass
         virtual void NodeClicked() = 0;
         virtual void AddChildNode(MenuNode *node) = 0;
@@ -88,11 +88,12 @@ namespace CoreUi
         int expanded_width_;
         int center_image_width_;
 
-        UiDefines::MenuNodeStyleMap style_to_path_map_;
+        QLabel *label_;
+        QString icon_filepath_;
         QPropertyAnimation *resize_animation_;
 
     signals:
-        void ActionButtonClicked(QUuid);
+        void ActionButtonClicked(const QUuid &);
         void NodeGroupClicked(GroupNode *clicked_node, QParallelAnimationGroup *move_animations, QParallelAnimationGroup *size_animations);
     };
 }

@@ -21,6 +21,7 @@ using namespace RexTypes;
 using namespace OgreRenderer;
 
 EC_Light::EC_Light(Foundation::ModuleInterface *module) :
+    Foundation::ComponentInterface(module->GetFramework()),
     light_(0),
     attached_(false),
     typeAttr_(this, "light type", LT_Point),
@@ -35,6 +36,17 @@ EC_Light::EC_Light(Foundation::ModuleInterface *module) :
     innerAngleAttr_(this, "light inner angle", 30.0f),
     outerAngleAttr_(this, "light outer angle", 40.0f)
 {
+    static Foundation::AttributeMetadata typeAttrData;
+    static bool metadataInitialized = false;
+    if(!metadataInitialized)
+    {
+        typeAttrData.enums[LT_Point]       = "Point";
+        typeAttrData.enums[LT_Spot]        = "Spot";
+        typeAttrData.enums[LT_Directional] = "Directional";
+        metadataInitialized = true;
+    }
+    typeAttr_.SetMetadata(&typeAttrData);
+
     boost::shared_ptr<Renderer> renderer = module->GetFramework()->GetServiceManager()->GetService
         <Renderer>(Foundation::Service::ST_Renderer).lock();
     if (!renderer)

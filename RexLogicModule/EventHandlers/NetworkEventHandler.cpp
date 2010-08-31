@@ -25,6 +25,8 @@
 #include "Entity.h"
 #include "ModuleManager.h"
 #include "EventManager.h"
+
+#ifndef UISERVICE_TEST
 #include "UiModule.h"
 #include "Inworld/InworldSceneController.h"
 #include "Inworld/ControlPanel/TeleportWidget.h"
@@ -32,6 +34,8 @@
 #include "Inworld/ControlPanelManager.h"
 #include "Inworld/Notifications/QuestionNotification.h"
 #include "Ether/EtherLoginNotifier.h"
+#endif
+
 #include "ServiceManager.h"
 #include "SoundServiceInterface.h"
 #include "AssetServiceInterface.h"
@@ -223,13 +227,12 @@ bool NetworkEventHandler::HandleOSNE_RegionHandshake(ProtocolUtilities::NetworkE
 
     const ProtocolUtilities::ClientParameters& client = sp->GetClientParameters();
     owner_->GetServerConnection()->SendRegionHandshakeReplyPacket(client.agentID, client.sessionID, 0);
-
+#ifndef UISERVICE_TEST
     // Tell teleportWidget current region name
-    boost::shared_ptr<UiServices::UiModule> ui_module =
-        owner_->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
+    UiServices::UiModule *ui_module = owner_->GetFramework()->GetModule<UiServices::UiModule>();
     if (ui_module)
         ui_module->GetInworldSceneController()->GetControlPanelManager()->GetTeleportWidget()->SetCurrentRegion(QString(owner_->GetServerConnection()->GetSimName().c_str()));
-
+#endif
     return false;
 }
 
@@ -494,11 +497,11 @@ bool NetworkEventHandler::HandleOSNE_MapBlock(ProtocolUtilities::NetworkEventInb
         block.mapImageID = msg.ReadUUID();
         mapBlocks.append(block);
     }
-
-    boost::shared_ptr<UiServices::UiModule> ui_module =
-        owner_->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
+#ifndef UISERVICE_TEST
+    UiServices::UiModule *ui_module = owner_->GetFramework()->GetModule<UiServices::UiModule>();
     if (ui_module)
         ui_module->GetInworldSceneController()->GetControlPanelManager()->GetTeleportWidget()->SetMapBlocks(mapBlocks);
+#endif
     return false;
 }
 
@@ -515,49 +518,44 @@ bool NetworkEventHandler::HandleOSNE_ScriptTeleport(ProtocolUtilities::NetworkEv
     if (region_name.empty())
         return false;
 
-    // Ui module
-    boost::shared_ptr<UiServices::UiModule> ui_module =
-        owner_->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
+#ifndef UISERVICE_TEST
+    UiServices::UiModule *ui_module = owner_->GetFramework()->GetModule<UiServices::UiModule>();
     if (!ui_module)
         return false;
-            
+
     // Notifier qobject ptr
-    QObject *object = ui_module->GetEtherLoginNotifier();
-    if (!object)
+    Ether::Logic::EtherLoginNotifier* notifier = ui_module->GetEtherLoginNotifier();
+    if (!notifier)
         return false;
 
-    // Cast to actual class from qobject ptr
-    Ether::Logic::EtherLoginNotifier* notifier = dynamic_cast<Ether::Logic::EtherLoginNotifier*>(object);
-    if (notifier)
+    if (!notifier->IsTeleporting())
+        ongoing_script_teleport_ = false;
+
+    if (!ongoing_script_teleport_)
     {
-        if (!notifier->IsTeleporting())
-            ongoing_script_teleport_ = false;
-        
-        if (!ongoing_script_teleport_)
-        {
-            // Create question notification
-            QString posx = "";
-            QString posy = "";
-            QString posz = "";
-            posx.setNum(position.x);
-            posy.setNum(position.y);
-            posz.setNum(position.z);
+        // Create question notification
+        QString posx = "";
+        QString posy = "";
+        QString posz = "";
+        posx.setNum(position.x);
+        posy.setNum(position.y);
+        posz.setNum(position.z);
 
-            UiServices::QuestionNotification *question_notification = 
-                new UiServices::QuestionNotification(QString("Do you want to teleport to region %1.").arg(region_name.c_str()),
-                    "Yes", "No", "", QString(region_name.c_str())+"&"+posx+"&"+posy+"&"+posz, 7000);
+        UiServices::QuestionNotification *question_notification = 
+            new UiServices::QuestionNotification(QString("Do you want to teleport to region %1.").arg(region_name.c_str()),
+                "Yes", "No", "", QString(region_name.c_str())+"&"+posx+"&"+posy+"&"+posz, 7000);
 
-            // Connect notifier to recieve the answer signal
-            QObject::connect(question_notification, SIGNAL(QuestionAnswered(QString, QString)), notifier, SLOT(ScriptTeleportAnswer(QString, QString)));
+        // Connect notifier to recieve the answer signal
+        QObject::connect(question_notification, SIGNAL(QuestionAnswered(QString, QString)), notifier, SLOT(ScriptTeleportAnswer(QString, QString)));
 
-            // Send notification
-            ui_module->GetNotificationManager()->ShowNotification(question_notification);
+        // Send notification
+        ui_module->GetNotificationManager()->ShowNotification(question_notification);
 
-            // Set bools that we dont get spam notification if you are standing in the script zone
-            ongoing_script_teleport_ = true;
-            notifier->SetIsTeleporting(true);
-        }
+        // Set bools that we dont get spam notification if you are standing in the script zone
+        ongoing_script_teleport_ = true;
+        notifier->SetIsTeleporting(true);
     }
+#endif
     return false;
 }
 

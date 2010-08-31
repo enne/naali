@@ -5,6 +5,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+
 class QGraphicsView;
 class QGraphicsScene;
 class QGraphicsWidget;
@@ -30,9 +31,6 @@ namespace UiServices
 {
     class InworldSceneController;
     class NotificationManager;
-    
-    class UiProxyWidget;
-    class UiWidgetProperties;
     class UiModule;
 }
 
@@ -45,6 +43,8 @@ namespace Ether
     {
         class EtherLogic;
         class EtherSceneController;
+        class EtherStateMachine;
+        class EtherLoginNotifier;
     }
     namespace View
     {

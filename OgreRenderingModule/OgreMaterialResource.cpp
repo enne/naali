@@ -11,13 +11,15 @@
 
 namespace OgreRenderer
 {
-    OgreMaterialResource::OgreMaterialResource(const std::string& id) : 
-        ResourceInterface(id)
+    OgreMaterialResource::OgreMaterialResource(const std::string& id, ShadowQuality shadowquality) : 
+        ResourceInterface(id),
+        shadowquality_(shadowquality)
     {
     }
 
-    OgreMaterialResource::OgreMaterialResource(const std::string& id, Foundation::AssetPtr source) : 
-        ResourceInterface(id)
+    OgreMaterialResource::OgreMaterialResource(const std::string& id, ShadowQuality shadowquality, Foundation::AssetPtr source) : 
+        ResourceInterface(id),
+        shadowquality_(shadowquality)
     {
         SetData(source);
     }
@@ -135,13 +137,20 @@ namespace OgreRenderer
 
                 return false;
             }
+            if(!tempmat->getNumTechniques())
+            {
+                OgreRenderingModule::LogWarning("Failed to create an Ogre material from material asset "  +
+                    source->GetId());
+
+                return false;
+            }
                         
             ogre_material_ = tempmat->clone(id_);
             tempmat.setNull();
             matmgr.remove(tempname);
 
             //workaround: if receives shadows, check the amount of shadowmaps. If only 1 specified, add 2 more to support 3 shadowmaps
-            if(ogre_material_->getReceiveShadows())
+            if(ogre_material_->getReceiveShadows() && shadowquality_ == Shadows_High && ogre_material_->getNumTechniques() > 0)
             {
                 Ogre::Technique *tech = ogre_material_->getTechnique(0);
                 if(tech)

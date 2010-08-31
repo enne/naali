@@ -69,14 +69,14 @@ namespace RexLogic
     class Primitive;
     class AvatarControllable;
     class CameraControllable;
-    class OpenSimLoginHandler;
-    class TaigaLoginHandler;
     class MainPanelHandler;
     class WorldInputLogic;
-    namespace InWorldChat
-    {
-        class Provider;
-    }
+    class LoginHandler;
+    namespace InWorldChat { class Provider; }
+
+    //! @todo remove when can.
+    class ComponentResourceHandler;
+
     typedef boost::shared_ptr<InWorldChat::Provider> InWorldChatProviderPtr;
 
     typedef boost::shared_ptr<Avatar> AvatarPtr;
@@ -84,6 +84,7 @@ namespace RexLogic
     typedef boost::shared_ptr<Primitive> PrimitivePtr;
     typedef boost::shared_ptr<AvatarControllable> AvatarControllablePtr;
     typedef boost::shared_ptr<CameraControllable> CameraControllablePtr;
+    typedef boost::shared_ptr<ComponentResourceHandler> ComponentResourceHandlerPtr;
 
     //! Camera states handled by rex logic
     enum CameraState
@@ -122,7 +123,7 @@ namespace RexLogic
         //=============== WorldLogicInterface API ===============/
         Scene::EntityPtr GetUserAvatarEntity() const;
         Scene::EntityPtr GetCameraEntity() const;
-        Scene::EntityPtr GetEntityWithComponent(uint entity_id, const std::string &component) const;
+        Scene::EntityPtr GetEntityWithComponent(uint entity_id, const QString &component) const;
 
         //=============== RexLogicModule API ===============/
 
@@ -273,9 +274,6 @@ namespace RexLogic
          */
         void UpdateObjects(f64 frametime);
 
-        //! Update avatar overlays. Must be done after other object update
-        void UpdateAvatarOverlays();
-        
         //! Update sound listener position
         /*! Uses current camera for now
          */
@@ -290,9 +288,11 @@ namespace RexLogic
         //! Handle an asset event.
         bool HandleAssetEvent(event_id_t event_id, Foundation::EventDataInterface* data);
 
-        //! Does preparations before logout/delete of scene
-        //! For example: Takes ui screenshots of world/avatar with rendering service.
-        //! Add functionality if you need something done before logout.
+        /*! Does preparations before logout/delete of scene
+         *  For example: Takes ui screenshots of world/avatar with rendering service.
+         *  Add functionality if you need something done before logout.
+         *  \todo Move the av&world screenshot functionality to Ether/UiModule?
+         */
         void AboutToDeleteWorld();
 
         //! Gets a map of all avatars in world and the distance from users avatar,
@@ -366,9 +366,6 @@ namespace RexLogic
         void DebugSanityCheckOgreCameraTransform();
 #endif
 
-        //! workaround for not being able to send events during initialization
-        bool send_input_state_;
-
         //! Mapping for full uuids - localids
         typedef std::map<RexUUID, entity_id_t> IDMap;
         IDMap UUIDs_;
@@ -394,16 +391,16 @@ namespace RexLogic
         //! current camera state
         CameraState camera_state_;
 
-        //! OpenSim login handler
-        OpenSimLoginHandler *os_login_handler_;
-
-        //! Taiga login handler
-        TaigaLoginHandler *taiga_login_handler_;
-
         //! MainPanel handler
         MainPanelHandler *main_panel_handler_;
 
         InWorldChatProviderPtr in_world_chat_provider_;
+
+        //! @todo remove this while can.
+        ComponentResourceHandlerPtr component_res_handler_;
+
+        //! Login service.
+        boost::shared_ptr<LoginHandler> login_service_;
     };
 }
 

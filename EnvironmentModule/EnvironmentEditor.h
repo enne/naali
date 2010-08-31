@@ -9,10 +9,10 @@
 
 #include "InputServiceInterface.h"
 
-#include <QObject>
 #include <QPair>
 #include <QTimer>
 #include <QVector>
+#include <QWidget>
 
 class QImage;
 class QColor;
@@ -41,11 +41,6 @@ namespace Foundation
     class TextureInterface;
 }
 
-namespace UiServices
-{
-    class UiProxyWidget;
-}
-
 namespace Environment
 {
     class EnvironmentModule;
@@ -65,7 +60,7 @@ namespace Environment
     //! Fog: Change water/ground fog color and distances (start and end distances).
     //! Light: Change sunlight direction and color and change ambient light color.
     //! \ingroup EnvironmentModuleClient.
-    class EnvironmentEditor: public QObject
+    class EnvironmentEditor: public QWidget
     {
         Q_OBJECT
 
@@ -96,10 +91,8 @@ namespace Environment
 
         enum TerrainPaintMode
         {
-            //!Only 2D painting is enabled.
-            Paint2D,
-            //!Both 2D and 3D painting are enabled.
-            Paint3D
+            ACTIVE,
+            INACTIVE
         };
 
         //! Constuctor
@@ -120,6 +113,15 @@ namespace Environment
         //! How many textures terrain is using
         static const int cNumberOfTerrainTextures = 4;
  
+        void InitTerrainTabWindow();
+        void InitTerrainTextureTabWindow();
+        void InitWaterTabWindow();
+        void InitSkyTabWindow();
+        void InitFogTabWindow();
+        void InitAmbientTabWindow();
+    
+        bool Showed() { return editor_widget_->isVisible(); }
+
     public slots:
         //! Toggle between Paint2D and Paint3D mode.
         void ToggleTerrainPaintMode();
@@ -172,9 +174,9 @@ namespace Environment
         //! Change state of sky enable check box.
         void ToggleSkyCheckButton(bool enabled);
 
-        void HandleKeyInputEvent(KeyEvent &key);
+        void HandleKeyInputEvent(KeyEvent *key);
 
-        void HandleMouseInputEvent(MouseEvent &mouse);
+        void HandleMouseInputEvent(MouseEvent *mouse);
 
         //! Called when QMouseEvent event is generated inside the TerrainLabel.
         //! ev mouse event pointer.
@@ -250,7 +252,11 @@ namespace Environment
         void TimeOfDayOverrideChanged(int state);
         void TimeValueChanged(int new_value);
 
-        void ChangeLanguage();
+        void InitializeTabs();
+
+    protected:
+        /// QWidget override.
+        void changeEvent(QEvent* e);
 
     private:
         Q_DISABLE_COPY(EnvironmentEditor);
@@ -289,12 +295,6 @@ namespace Environment
 
         //! Create a window for terrain editor.
         void InitEditorWindow();
-        void InitTerrainTabWindow();
-        void InitTerrainTextureTabWindow();
-        void InitWaterTabWindow();
-        void InitSkyTabWindow();
-        void InitFogTabWindow();
-        void InitAmbientTabWindow();
 
         //! Create a new heightmap image that will show heightmap values in grayscale.format.
         void CreateHeightmapImage();
@@ -333,15 +333,13 @@ namespace Environment
 
         //! Main widget for editor
         QWidget *editor_widget_;
+        //Editor* editor_widget_;
 
         //! Brush size (small, medium and large).
         BrushSize brush_size_;
 
         //! Terrain actions (Flatten, Raise, Lower, Smooth, Roughen and Revert).
         ModifyLandAction action_;
-
-        //! Proxy Widget for ui
-        UiServices::UiProxyWidget *editorProxy_;
 
         QSlider *timeof_day_slider_;
 
@@ -373,7 +371,6 @@ namespace Environment
 
         //! Scene node that will hold spesific paint area mesh object.
         Ogre::SceneNode *manual_paint_node_;
-
     };
 }
 

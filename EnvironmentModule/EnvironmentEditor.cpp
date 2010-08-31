@@ -1,8 +1,9 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include "StableHeaders.h"
-#include "EnvironmentEditor.h"
 #include "DebugOperatorNew.h"
+
+#include "EnvironmentEditor.h"
 #include "EnvironmentModule.h"
 #include "Entity.h"
 #include "Terrain.h"
@@ -11,27 +12,22 @@
 #include "Sky.h"
 #include "Environment.h"
 #include "EC_OgreEnvironment.h"
+
 #include "ModuleManager.h"
 #include "ServiceManager.h"
-#include "Inworld/InworldSceneController.h"
-
+#include "OgreMaterialUtils.h"
 #include "TextureInterface.h"
 #include "TextureServiceInterface.h"
 #include "InputEvents.h"
 #include "InputServiceInterface.h"
 #include "OgreRenderingModule.h"
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 
-#include <UiModule.h>
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/View/UiWidgetProperties.h"
-
-// Ogre renderer -specific.
 #include <OgreManualObject.h>
 #include <OgreSceneManager.h>
 #include <OgreMesh.h>
 #include <OgreEntity.h>
-#include "OgreMaterialUtils.h"
-#include "LoggingFunctions.h"
 
 #include <QUiLoader>
 #include <QFile>
@@ -50,26 +46,27 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QScrollArea>
-#include <QApplication>
-#include "MemoryLeakCheck.h"
 
+#include "LoggingFunctions.h"
 DEFINE_POCO_LOGGING_FUNCTIONS("EnvironmentEditor")
 
-namespace Environment 
+#include "MemoryLeakCheck.h"
+
+namespace Environment
 {
     EnvironmentEditor::EnvironmentEditor(EnvironmentModule* environment_module):
-    environment_module_(environment_module),
-    editor_widget_(0),
-    action_(Flatten),
-    brush_size_(Small),
-    terrainPaintMode_(Paint2D),
-    sky_type_(OgreRenderer::SKYTYPE_NONE),
-    ambient_(false),
-    edit_terrain_active_(false),
-    sun_color_picker_(0),
-    ambient_color_picker_(0),
-    manual_paint_object_(0),
-    manual_paint_node_(0)
+        environment_module_(environment_module),
+        editor_widget_(0),
+        action_(Flatten),
+        brush_size_(Small),
+        terrainPaintMode_(INACTIVE),
+        sky_type_(OgreRenderer::SKYTYPE_NONE),
+        ambient_(false),
+        edit_terrain_active_(false),
+        sun_color_picker_(0),
+        ambient_color_picker_(0),
+        manual_paint_object_(0),
+        manual_paint_node_(0)
     {
         // Those two arrays size should always be the same as how many terrain textures we are using.
         terrain_texture_id_list_.resize(cNumberOfTerrainTextures);
@@ -80,17 +77,17 @@ namespace Environment
         InitEditorWindow();
         mouse_position_[0] = 0;
         mouse_position_[1] = 0;
-    
-        QObject::connect(qApp, SIGNAL(LanguageChanged()), this, SLOT(ChangeLanguage()));
     }
 
     EnvironmentEditor::~EnvironmentEditor()
     {
-        editorProxy_ = 0;
         delete sun_color_picker_;
         delete ambient_color_picker_;
         sun_color_picker_ = 0;
         ambient_color_picker_ = 0;
+        delete editor_widget_;
+        editor_widget_ = 0;
+        
     }
 
     void EnvironmentEditor::CreateHeightmapImage()
@@ -192,15 +189,6 @@ namespace Environment
         }
     }
 
-    void EnvironmentEditor::ChangeLanguage()
-    {
-        UiServices::UiWidgetProperties properties = editorProxy_->GetWidgetProperties();
-        QString orginal = properties.GetWidgetName();
-        QString translation = QApplication::translate("Environment::EnvironmentEditor", orginal.toStdString().c_str());
-        editorProxy_->setWindowTitle(translation);
-    
-    }
-
     MinMaxValue EnvironmentEditor::GetMinMaxHeightmapValue(const EC_Terrain &terrain) const
     {
         float min, max;
@@ -234,7 +222,10 @@ namespace Environment
 
     void EnvironmentEditor::InitEditorWindow()
     {
-        assert(environment_module_);
+        Foundation::UiServiceInterface *ui = environment_module_->GetFramework()->GetService<Foundation::UiServiceInterface>();
+        if (!ui) // If this occurs, we're most probably operating in headless mode.
+            return;
+
         QUiLoader loader;
         loader.setLanguageChangeEnabled(true);
         QFile file("./data/ui/environment_editor.ui");
@@ -243,35 +234,20 @@ namespace Environment
             EnvironmentModule::LogError("Cannot find terrain editor ui file");
             return;
         }
-        editor_widget_ = loader.load(&file);
 
-        boost::shared_ptr<UiServices::UiModule> ui_module = environment_module_->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module.get())
+        editor_widget_ = loader.load(&file, this);
+        if (editor_widget_ == 0)
             return;
 
-        UiServices::UiWidgetProperties env_editor_properties(tr("Environment Editor"), UiServices::ModuleWidget);
+        QVBoxLayout *layout = new QVBoxLayout(this);
+        layout->addWidget(editor_widget_);
+        layout->setContentsMargins(0, 0, 0, 0);
+        setLayout(layout);
 
-        // Menu graphics
-        UiDefines::MenuNodeStyleMap image_path_map;
-        QString base_url = "./data/ui/images/menus/"; 
-        image_path_map[UiDefines::TextNormal] = base_url + "edbutton_ENVEDtxt_normal.png";
-        image_path_map[UiDefines::TextHover] = base_url + "edbutton_ENVEDtxt_hover.png";
-        image_path_map[UiDefines::TextPressed] = base_url + "edbutton_ENVEDtxt_click.png";
-        image_path_map[UiDefines::IconNormal] = base_url + "edbutton_ENVED_normal.png";
-        image_path_map[UiDefines::IconHover] = base_url + "edbutton_ENVED_hover.png";
-        image_path_map[UiDefines::IconPressed] = base_url + "edbutton_ENVED_click.png";
-        
-        env_editor_properties.SetMenuNodeStyleMap(image_path_map);
-        env_editor_properties.SetMenuGroup(UiDefines::WorldToolsGroup);
+        setWindowTitle(tr("Environment Editor"));
 
-        editorProxy_ = ui_module->GetInworldSceneController()->AddWidgetToScene(editor_widget_, env_editor_properties);
-
-        InitTerrainTabWindow();
-        InitTerrainTextureTabWindow();
-        InitWaterTabWindow();
-        InitSkyTabWindow();
-        InitFogTabWindow();
-        InitAmbientTabWindow();
+        ui->AddWidgetToScene(this);
+        ui->AddWidgetToMenu(this, tr("Environment Editor"), tr("World Tools"), "./data/ui/images/menus/edbutton_ENVED_normal");
 
         // Tab window signals
         QTabWidget *tab_widget = editor_widget_->findChild<QTabWidget *>("tabWidget");
@@ -280,11 +256,39 @@ namespace Environment
 
         QObject::connect(&terrain_paint_timer_, SIGNAL(timeout()), this, SLOT(TerrainEditTimerTick()));
 
+       // bool s = QObject::connect(editor_widget_, SIGNAL(open()), this, SLOT(InitializeTabs()));
+       // if ( s == false)
+       //     return;
+
         /*TerrainPtr terrain = environment_module_->GetTerrainHandler();
         if(terrain.get())
         {
             QObject::connect(terrain.get(), SIGNAL(HeightmapGeometryUpdated()), this, SLOT(UpdateTerrain()));
         }*/
+    }
+
+    void EnvironmentEditor::changeEvent(QEvent* e)
+    {
+       if (e->type() == QEvent::LanguageChange)
+        {
+            QString text = tr("Environment Editor");
+            setWindowTitle(text);
+            graphicsProxyWidget()->setWindowTitle(text);
+        }
+        else
+        {
+            QWidget::changeEvent(e);
+        }
+    }
+
+    void EnvironmentEditor::InitializeTabs()
+    {
+        InitTerrainTabWindow();
+        InitTerrainTextureTabWindow();
+        InitWaterTabWindow();
+        InitSkyTabWindow();
+        InitFogTabWindow();
+        InitAmbientTabWindow();
     }
 
     void EnvironmentEditor::InitTerrainTabWindow()
@@ -663,8 +667,7 @@ namespace Environment
                 QObject::connect(sun_direction_z, SIGNAL(valueChanged(double)), this, SLOT(UpdateSunDirection(double)));
 
                 QVector<float> sun_color = environment->GetSunColor();
-              
-                
+             
                 QLabel* label = editor_widget_->findChild<QLabel* >("sun_color_img");
                 if ( label != 0)
                 {
@@ -704,6 +707,7 @@ namespace Environment
                 }
 
                 QVector<float> ambient_light = environment->GetAmbientLight();
+             
                 label = editor_widget_->findChild<QLabel* >("ambient_color_img");
                 
                 if ( label != 0)
@@ -1781,8 +1785,8 @@ namespace Environment
         terrainPaintInputContext->SetTakeKeyboardEventsOverQt(true); // To be able to process ESC over Qt and Ether.
         terrainPaintInputContext->SetTakeMouseEventsOverQt(true);
 
-        connect(terrainPaintInputContext.get(), SIGNAL(OnMouseEvent(MouseEvent &)), this, SLOT(HandleMouseInputEvent(MouseEvent &)));
-        connect(terrainPaintInputContext.get(), SIGNAL(OnKeyEvent(KeyEvent &)), this, SLOT(HandleKeyInputEvent(KeyEvent &)));
+        connect(terrainPaintInputContext.get(), SIGNAL(OnMouseEvent(MouseEvent *)), this, SLOT(HandleMouseInputEvent(MouseEvent *)));
+        connect(terrainPaintInputContext.get(), SIGNAL(OnKeyEvent(KeyEvent *)), this, SLOT(HandleKeyInputEvent(KeyEvent *)));
     }
 
     void EnvironmentEditor::ToggleTerrainPaintMode()
@@ -1790,22 +1794,22 @@ namespace Environment
         if(!editor_widget_)
             return;
 
-        QLabel *textLabel = editor_widget_->findChild<QLabel*>("terrain_paint_3d_label");
-        if(!textLabel)
+        QPushButton *paintButton = editor_widget_->findChild<QPushButton*>("paint_terrain_button");
+        if(!paintButton)
             return;
 
-        if(terrainPaintMode_ == Paint2D)
+        if(terrainPaintMode_ == INACTIVE)
         {
-            terrainPaintMode_ = Paint3D;
-            textLabel->setText("Active");
+            terrainPaintMode_ = ACTIVE;
+            paintButton->setText("Active");
 
             // Create an input context 
             CreateInputContext();
         }
-        else if(terrainPaintMode_ == Paint3D)
+        else if(terrainPaintMode_ == ACTIVE)
         {
-            terrainPaintMode_ = Paint2D;
-            textLabel->setText("Inactive");
+            terrainPaintMode_ = INACTIVE;
+            paintButton->setText("Inactive");
 
             // Release the terrain painting input context.
             terrainPaintInputContext.reset();
@@ -1851,12 +1855,12 @@ namespace Environment
         }
     }
 
-    void EnvironmentEditor::HandleKeyInputEvent(KeyEvent &key)
+    void EnvironmentEditor::HandleKeyInputEvent(KeyEvent *key)
     {
         // The 'ESC' key cancels terrain height painting, if it is active.
-        if (key.eventType == KeyEvent::KeyPressed && key.keyCode == Qt::Key_Escape && GetTerrainPaintMode() == Paint3D)
+        if (key->eventType == KeyEvent::KeyPressed && key->keyCode == Qt::Key_Escape && GetTerrainPaintMode() == ACTIVE)
         {
-            key.Suppress();
+            key->Suppress();
 
             CreateHeightmapImage();
             terrain_paint_timer_.stop();
@@ -1864,20 +1868,20 @@ namespace Environment
             ReleasePaintMeshOnScene();
 
             // Disable terrain paint mode.
-            if (GetTerrainPaintMode() == Paint3D)
+            if (GetTerrainPaintMode() == ACTIVE)
                 ToggleTerrainPaintMode();
         }
     }
 
-    void EnvironmentEditor::HandleMouseInputEvent(MouseEvent &mouse)
+    void EnvironmentEditor::HandleMouseInputEvent(MouseEvent *mouse)
     {
-        if (mouse.IsLeftButtonDown() && !mouse.IsRightButtonDown() && !edit_terrain_active_)
+        if (mouse->IsLeftButtonDown() && !mouse->IsRightButtonDown() && !edit_terrain_active_)
         {
             edit_terrain_active_ = true;
             terrain_paint_timer_.start(250);
         }
 
-        if ((!mouse.IsLeftButtonDown() || mouse.IsRightButtonDown()) && edit_terrain_active_)
+        if ((!mouse->IsLeftButtonDown() || mouse->IsRightButtonDown()) && edit_terrain_active_)
         {
             CreateHeightmapImage();
             terrain_paint_timer_.stop();
@@ -1885,7 +1889,7 @@ namespace Environment
             ReleasePaintMeshOnScene();
         }
 
-        if (mouse.eventType == MouseEvent::MouseMove)
+        if (mouse->eventType == MouseEvent::MouseMove)
         {
             int mapX;
             int mapY;
@@ -1895,15 +1899,15 @@ namespace Environment
             assert(label);
 
             // If we are pointing the mouse over the 2D map image, no need to raycast.
-//            QPoint posOnLabel = label->mapFromGlobal(QPoint(mouse.globalX, mouse.globalY));
-            QPoint posOnLabel = label->mapFromGlobal(QPoint(mouse.x, mouse.y));
+//            QPoint posOnLabel = label->mapFromGlobal(QPoint(mouse->globalX, mouse->globalY));
+            QPoint posOnLabel = label->mapFromGlobal(QPoint(mouse->x, mouse->y));
             if (posOnLabel.x() >= 0 && posOnLabel.y() >= 0 && posOnLabel.x() < label->size().width() && posOnLabel.y() < label->size().height())
             {
                 mapX = posOnLabel.x();
                 mapY = posOnLabel.y();
             }
             else
-                RaycastScreenPosToTerrainPos(mouse.x, mouse.y, mapX, mapY);
+                RaycastScreenPosToTerrainPos(mouse->x, mouse->y, mapX, mapY);
 
             // Calling this function also stores the updated terrain edit coordinates as the current coordinates.
             // In Update() loop, if editing is active, the editor position will be updated.
@@ -2009,11 +2013,11 @@ namespace Environment
 
             if(textLabel->text() == "Active")
             {
-                terrainPaintMode_ = Paint3D;
+                terrainPaintMode_ = ACTIVE;
             }
             else
             {
-                terrainPaintMode_ = Paint2D;
+                terrainPaintMode_ = INACTIVE;
             }
         }
         else if(tab->objectName() == "edit_terrain_texture") // Texture tab
@@ -2046,10 +2050,10 @@ namespace Environment
 
                 terrain_texture_requests_[i] = RequestTerrainTexture(i);
             }
-            terrainPaintMode_ = Paint2D;
+            terrainPaintMode_ = INACTIVE;
         }
         else
-            terrainPaintMode_ = Paint2D;
+            terrainPaintMode_ = INACTIVE;
     }
 
     void EnvironmentEditor::HandleResourceReady(Resource::Events::ResourceReady *res)

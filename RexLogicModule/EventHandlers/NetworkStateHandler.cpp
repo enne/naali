@@ -8,18 +8,20 @@
 #include "StableHeaders.h"
 #include "EventHandlers/NetworkStateEventHandler.h"
 #include "RexLogicModule.h"
+#include "Communications/InWorldChat/Provider.h"
+
 #include "NetworkEvents.h"
 #include "Framework.h"
 #include "EventManager.h"
 #include "ModuleManager.h"
 #include "WorldStream.h"
+
+#ifndef UISERVICE_TEST
 #include "UiModule.h"
 #include "Inworld/NotificationManager.h"
 #include "Inworld/Notifications/MessageNotification.h"
-#include "Communications/InWorldChat/Provider.h"
-#include "Renderer.h"
-
-#include <QMessageBox>
+#endif
+//#include <QMessageBox>
 
 namespace RexLogic
 {
@@ -38,6 +40,11 @@ bool NetworkStateEventHandler::HandleNetworkStateEvent(event_id_t event_id, Foun
     {
     case ProtocolUtilities::Events::EVENT_SERVER_CONNECTED:
     {
+        // Set auth data to the current world stream
+        ProtocolUtilities::AuthenticationEventData *inbound_event_data = checked_static_cast<ProtocolUtilities::AuthenticationEventData*>(data);
+        if (inbound_event_data)
+            owner_->GetServerConnection()->SetAuthenticationType(inbound_event_data->type);
+            
         // The client has connected to the server. Create a new scene for that.
         owner_->CreateNewActiveScene("World");
         // Send WorldStream as internal event
@@ -48,6 +55,9 @@ bool NetworkStateEventHandler::HandleNetworkStateEvent(event_id_t event_id, Foun
     }
     case ProtocolUtilities::Events::EVENT_SERVER_DISCONNECTED:
     {
+        // Reset the authentication type
+        owner_->GetServerConnection()->SetAuthenticationType(ProtocolUtilities::AT_Unknown);
+        
         // Might be user quitting or server dropping connection.
         // This event occurs when OpenSimProtocolModule has already closed connection. 
         // Make sure the rexlogic also thinks connection is closed.
@@ -64,12 +74,12 @@ bool NetworkStateEventHandler::HandleNetworkStateEvent(event_id_t event_id, Foun
         assert(event_data);
         if (!event_data)
             return false;
-
-        UiModulePtr ui_module = owner_->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>(
-            ).lock();
-        if (ui_module.get())
+#ifndef UISERVICE_TEST
+        UiServices::UiModule *ui_module = owner_->GetFramework()->GetModule<UiServices::UiModule>();
+        if (ui_module)
             ui_module->GetNotificationManager()->ShowNotification(new UiServices::MessageNotification(
                 QString("%1 joined the world").arg(event_data->fullName.c_str())));
+#endif
         break;
     }
     case ProtocolUtilities::Events::EVENT_USER_DISCONNECTED:
@@ -78,12 +88,12 @@ bool NetworkStateEventHandler::HandleNetworkStateEvent(event_id_t event_id, Foun
         assert(event_data);
         if (!event_data)
             return false;
-
-        UiModulePtr ui_module = owner_->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>(
-            ).lock();
-        if (ui_module.get())
+#ifndef UISERVICE_TEST
+        UiServices::UiModule *ui_module = owner_->GetFramework()->GetModule<UiServices::UiModule>();
+        if (ui_module)
             ui_module->GetNotificationManager()->ShowNotification(new UiServices::MessageNotification(
                 QString("%1 logged out").arg(event_data->fullName.c_str())));
+#endif
         break;
     }
     case ProtocolUtilities::Events::EVENT_USER_KICKED_OUT:
@@ -96,7 +106,7 @@ bool NetworkStateEventHandler::HandleNetworkStateEvent(event_id_t event_id, Foun
         boost::shared_ptr<OgreRenderer::Renderer> renderer =
             owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
         if (renderer)
-            mainwindow = renderer->GetMainWindow();
+            mainwindow = owner_->GetFramework()->GetMainWindow();
         QMessageBox msgBox(QMessageBox::Warning, QApplication::translate("RexLogic", "Kicked Out"), 
             QApplication::translate("RexLogic", "You were kicked out from the server."), QMessageBox::Ok, mainwindow);
         msgBox.exec();*/

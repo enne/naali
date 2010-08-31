@@ -41,19 +41,6 @@ else:
     window = reload(window)
     manipulator = reload(manipulator)
     
-#NOTE: these are not ported yet after using OIS was dropped, so don't work
-OIS_KEY_ALT = 256
-OIS_KEY_CTRL = 16
-OIS_KEY_M = 50
-OIS_KEY_S = 31
-OIS_KEY_R = 19
-OIS_KEY_U = 22
-OIS_KEY_D = 32
-OIS_KEY_Z = 44
-OIS_KEY_ESC = 1
-OIS_KEY_DEL = 211
-
- 
 class ObjectEdit(Component):
     EVENTHANDLED = False
  
@@ -75,13 +62,9 @@ class ObjectEdit(Component):
         self.usingManipulator = False
         self.useLocalTransform = False
         self.cpp_python_handler = None
-        
-        self.mouse_events = {
-            43 : self.LeftMousePressed,
-            44 : self.LeftMouseReleased,
-            45 : self.RightMousePressed,
-            46 : self.RightMouseReleased
-        }
+        self.left_button_down = False
+        self.right_button_down = False
+        self.keypressed = False
 
         self.shortcuts = {
             (Qt.Key_Z, Qt.ControlModifier) : self.undo,
@@ -93,24 +76,31 @@ class ObjectEdit(Component):
             (Qt.Key_L, Qt.ControlModifier|Qt.ShiftModifier) : self.unlinkObjects,
         }
 
-        # Removed for ugly printing and does nothing really, enable back when handling types is fixed
-        #inputcontext.disconnect('KeyPressed(KeyEvent&)', self.inp_on_keyevent)
-        #inputcontext.connect('KeyPressed(KeyEvent&)', self.inp_on_keyevent)
+        # Connect to key pressed signal from input context
+        inputcontext.connect('KeyPressed(KeyEvent*)', self.on_keypressed)
+
+        # Connect to mouse events
+        inputcontext.connect('MouseScroll(MouseEvent*)', self.on_mousescroll)
+        inputcontext.connect('MouseLeftPressed(MouseEvent*)', self.on_mouseleftpressed)
+        inputcontext.connect('MouseLeftReleased(MouseEvent*)', self.on_mouseleftreleased)
+        inputcontext.connect('MouseRightPressed(MouseEvent*)', self.on_mouserightpressed)
+        inputcontext.connect('MouseRightReleased(MouseEvent*)', self.on_mouserightreleased)
+        inputcontext.connect('MouseMove(MouseEvent*)', self.on_mousemove)
         
         self.resetManipulators()
         
         loader = QUiLoader()
         selectionfile = QFile(self.SELECTIONRECT)
         self.selection_rect = loader.load(selectionfile)
-        rectprops = r.createUiWidgetProperty(2)
+        #rectprops = r.createUiWidgetProperty(2)
         #~ print type(rectprops), dir(rectprops)
         #print rectprops.WidgetType
         #uiprops.widget_name_ = "Selection Rect"
         
         #uiprops.my_size_ = QSize(width, height) #not needed anymore, uimodule reads it
-        proxy = r.createUiProxyWidget(self.selection_rect, rectprops)
+        proxy = r.createUiProxyWidget(self.selection_rect)
         uism = r.getUiSceneManager()
-        uism.AddProxyWidget(proxy)
+        uism.AddWidgetToScene(proxy)
         proxy.setWindowFlags(0) #changing it to Qt::Widget
         
         self.selection_rect.setGeometry(0,0,0,0)
@@ -131,8 +121,24 @@ class ObjectEdit(Component):
             self.cpp_python_handler.connect('DuplicateObject()', self.duplicate)
             self.cpp_python_handler.connect('DeleteObject()', self.deleteObject)
             
+<<<<<<< HEAD
     def inp_on_keyevent(self, k):
         print k, dir(k)
+=======
+    def on_keypressed(self, k):
+        trigger = (k.keyCode, k.modifiers)
+        if self.windowActive:
+            # update manipulator for constant size
+            self.manipulator.showManipulator(self.sels)
+            # check to see if a shortcut we understand was pressed, if so, trigger it
+            if trigger in self.shortcuts:
+                self.keypressed = True
+                self.shortcuts[trigger]()
+
+    def on_mousescroll(self, m):
+        if self.windowActive:
+            self.manipulator.showManipulator(self.sels)
+>>>>>>> c6152cc940ac1e7fb1bac33954d1a1727f3e2995
         
     def resetValues(self):
         self.left_button_down = False
@@ -165,6 +171,7 @@ class ObjectEdit(Component):
         self.worldstream.SendObjectSelectPacket(ent.id)
         #self.updateSelectionBox(ent)
         self.highlight(ent)
+        self.soundRuler(ent)
         self.changeManipulator(self.MANIPULATE_FREEMOVE)
 
         #print "selected", ent
@@ -225,10 +232,12 @@ class ObjectEdit(Component):
             self.window.addToList(child)
             self.window.highlightEntityFromList(child)
             self.highlight(child)
+            self.soundRuler(child)
             #self.sels.append(child)
             
     def deselect(self, ent):
         self.remove_highlight(ent)
+        self.removeSoundRuler(ent)
         for _ent in self.sels: #need to find the matching id in list 'cause PyEntity instances are not reused yet XXX
             if _ent.id == ent.id:
                 self.sels.remove(_ent)
@@ -240,6 +249,7 @@ class ObjectEdit(Component):
             
             for ent in self.sels:
                 self.remove_highlight(ent)
+                self.removeSoundRuler(ent)
             self.sels = []
             #self.hideSelector()
             
@@ -284,7 +294,29 @@ class ObjectEdit(Component):
         except AttributeError:
             r.logInfo("objectedit.remove_highlight called for a non-hilited entity: %d" % ent.id)
         else:
-            h.Hide()        
+            h.Hide()
+
+    def soundRuler(self, ent):
+        if ent.prim.SoundID:
+            try:
+                ent.soundruler
+            except AttributeError:
+                ent.createComponent("EC_SoundRuler")
+
+            sr = ent.soundruler
+            sr.SetVolume(ent.prim.SoundVolume)
+            sr.SetRadius(ent.prim.SoundRadius)
+            sr.Show()
+            sr.UpdateSoundRuler()
+
+    def removeSoundRuler(self, ent):
+        if ent.prim.SoundID:
+            try:
+                sr = ent.soundruler
+            except AttributeError:
+                r.logInfo("objectedit.removeSoundRuler called for an object without one: %d" % ent.id)
+            else:
+                sr.Hide()
 
     def changeManipulator(self, id):
         #r.logInfo("changing manipulator to " + str(id))
@@ -331,15 +363,12 @@ class ObjectEdit(Component):
         ids = self.getSelectedObjectIds()
         self.worldstream.SendObjectDelinkPacket(ids)
         self.deselect_all()
-        
-    def LeftMousePressed(self, mouseinfo):
-        #r.logDebug("LeftMousePressed") #, mouseinfo, mouseinfo.x, mouseinfo.y
-        #r.logDebug("point " + str(mouseinfo.x) + "," + str(mouseinfo.y))
-        
+
+    def on_mouseleftpressed(self, mouseinfo):
+        if not self.windowActive:
+            return
+
         self.dragStarted(mouseinfo) #need to call this to enable working dragging
-        
-#         if self.selection_box is None:
-#             self.selection_box = r.createEntity("Selection.mesh", -10000)
         
         self.left_button_down = True
         
@@ -362,8 +391,6 @@ class ObjectEdit(Component):
         if ent is not None:
             #print "Got entity:", ent, ent.editable
             if not self.manipulator.compareIds(ent.id) and ent.editable: #ent.id != self.selection_box.id and 
-                #if self.sel is not ent: #XXX wrappers are not reused - there may now be multiple wrappers for same entity
-                
                 r.eventhandled = self.EVENTHANDLED
                 found = False
                 for entity in self.sels:
@@ -393,7 +420,7 @@ class ObjectEdit(Component):
         self.prev_mouse_abs_x = mouse_abs_x
         self.prev_mouse_abs_y = mouse_abs_y
 
-    def LeftMouseReleased(self, mouseinfo):
+    def on_mouseleftreleased(self, mouseinfo):
         self.left_button_down = False
         if self.active: #XXX something here?
             if self.sel_activated and self.dragging:
@@ -441,8 +468,8 @@ class ObjectEdit(Component):
             rectheight *= -1
             
         return rectx, recty, rectwidth, rectheight
-        
-    def RightMousePressed(self, mouseinfo):
+
+    def on_mouserightpressed(self, mouseinfo):
         #r.logInfo("rightmouse down")
         if self.windowActive:
             self.right_button_down = True
@@ -481,37 +508,31 @@ class ObjectEdit(Component):
                     return True
         return False
         
-    def RightMouseReleased(self, mouseinfo):
-        #r.logInfo("rightmouse up")
+    def on_mouserightreleased(self, mouseinfo):
         self.right_button_down = False
-        
-    def on_mouseclick(self, click_id, mouseinfo):
-        if self.windowActive: #XXXnot self.canvas.IsHidden():
-            if self.mouse_events.has_key(click_id):
-                self.mouse_events[click_id](mouseinfo)
-                #~ r.logInfo("on_mouseclick %d %s" % (click_id, self.mouse_events[click_id]))
-        #r.logInfo("on_mouseclick %d" % (click_id))
 
-    def on_mousemove(self, event_id, mouseinfo):
-        """for hilighting manipulator parts when hovering over them"""
-        #print "m"
-        if self.windowActive:# and event_id == :
-            #~ print "m"
-            results = []
-            results = r.rayCast(mouseinfo.x, mouseinfo.y)
-            if results is not None and results[0] != 0:
-                id = results[0]
-                
-                if self.manipulator.compareIds(id):
-                    self.manipulator.highlight(results)
+    def on_mousemove(self, mouseinfo):
+        """Handle mouse move events. When no button is pressed, just check
+        for hilites necessity in manipulators. When a button is pressed, handle
+        drag logic."""
+        if self.windowActive:
+            if self.left_button_down:
+                self.on_mousedrag(mouseinfo)
             else:
-                self.manipulator.resethighlight()
-        
-                
-    def on_mousedrag(self, move_id, mouseinfo):
+                # check for manipulator hilites
+                results = []
+                results = r.rayCast(mouseinfo.x, mouseinfo.y)
+                if results is not None and results[0] != 0:
+                    id = results[0]
+                    
+                    if self.manipulator.compareIds(id):
+                        self.manipulator.highlight(results)
+                else:
+                    self.manipulator.resethighlight()
+
+    def on_mousedrag(self, mouseinfo):
         """dragging objects around - now free movement based on view,
         dragging different axis etc in the manipulator to be added."""
-        #print "mousedrag:", move_id, mouseinfo
         if self.windowActive:
             width, height = r.getScreenSize()
             
@@ -524,19 +545,15 @@ class ObjectEdit(Component):
             movedy = mouse_abs_y - self.prev_mouse_abs_y
             
             if self.left_button_down:
-                if self.selection_rect_startpos is not None:# and self.active is None:
+                if self.selection_rect_startpos is not None:
                     rectx, recty, rectwidth, rectheight = self.selectionRectDimensions(mouseinfo)
                     self.selection_rect.setGeometry(rectx, recty, rectwidth, rectheight)
                     self.selection_rect.show() #XXX change?
                     
-                    #r.logInfo("The selection rect was at: (" +str(rectx) + ", " +str(recty) + ") and size was: (" +str(rectwidth) +", "+str(rectheight)+")")
                     rect = self.selection_rect.rect #0,0 - x, y
                     rect.translate(mouseinfo.x, mouseinfo.y)
-                    #print rect.left(), rect.top(), rect.right(), rect.bottom()
                     rend = r.getQRenderer()
                     hits = rend.FrustumQuery(rect) #the wish
-                    #hits = r.frustumQuery(rect.left(), rect.top(), rect.right(), rect.bottom()) #current workaround
-                    print hits
 
                 else:
                     if self.duplicateDragStart:
@@ -545,7 +562,6 @@ class ObjectEdit(Component):
                         self.duplicateDragStart = False
                             
                     ent = self.active
-                    #print "on_mousemove + hold:", mouseinfo
                     if ent is not None and self.sel_activated and self.canmove:
                         self.dragging = True
 
@@ -556,15 +572,6 @@ class ObjectEdit(Component):
                         
                         self.window.update_guivals(ent)
    
-    def on_keydown(self, keycode, keymod):
-        trigger = (keycode, keymod)
-        if self.windowActive:
-            # check to see if a shortcut we understand was pressed, if so, trigger it and consume the event
-            if trigger in self.shortcuts:
-                self.keypressed = True
-                self.shortcuts[trigger]()
-                return True
-        
     def on_inboundnetwork(self, evid, name):
         #return False
         print "editgui got an inbound network event:", id, name
@@ -722,12 +729,12 @@ class ObjectEdit(Component):
     active = property(getActive)
     
     def on_exit(self):
-        r.logInfo("Object Edit exiting...")
-
+        r.logInfo("Object Edit exiting..")
+        # Connect to key pressed signal from input context
+        inputcontext.disconnectAll()
         self.deselect_all()
-        self.window.on_exit()  
-
-        r.logInfo("         ...exit done.")
+        self.window.on_exit()
+        r.logInfo(".. done")
 
     def on_hide(self, shown):
         self.windowActive = shown
@@ -755,6 +762,7 @@ class ObjectEdit(Component):
                 self.deselect_all()
                 for ent in self.sels:
                     self.remove_highlight(ent)
+                    self.removeSoundRuler(ent)
 
         # Store the state before build scene activated us
         if activate == True and self.windowActiveStoredState == None:
@@ -784,7 +792,7 @@ class ObjectEdit(Component):
                         r.logDebug("update: scene not found")
    
     def on_logout(self, id):
-        r.logInfo("Object Edit resetting due to Logout.")
+        r.logInfo("Object Edit resetting due to logout")
         self.deselect_all()
         self.sels = []
         self.selection_box = None

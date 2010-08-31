@@ -1,6 +1,7 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include "StableHeaders.h"
+#include "DebugOperatorNew.h"
 
 #include "MumbleVoipModule.h"
 #include "LinkPlugin.h"
@@ -14,13 +15,13 @@
 #include "LinkPlugin.h"
 #include "Provider.h"
 #include "ApplicationManager.h"
-#include "DebugOperatorNew.h" 
-#include "MemoryLeakCheck.h" 
 #include "MumbleLibrary.h"
+
+#include "MemoryLeakCheck.h"
 
 namespace MumbleVoip
 {
-    std::string MumbleVoipModule::module_name_ = "MumbleVoipModule";
+    std::string MumbleVoipModule::module_name_ = "MumbleVoip";
 
     MumbleVoipModule::MumbleVoipModule()
         : ModuleInterface(module_name_),
@@ -55,7 +56,7 @@ namespace MumbleVoip
         }
         else
         {
-            in_world_voice_provider_ = new InWorldVoice::Provider(framework_);
+            in_world_voice_provider_ = new Provider(framework_);
         }
 
         link_plugin_ = new LinkPlugin();
@@ -94,7 +95,7 @@ namespace MumbleVoip
         }
         else
         {
-            MumbleLibrary::Stop();
+            MumbleLib::MumbleLibrary::Stop();
         }
     }
 

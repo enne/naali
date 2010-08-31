@@ -109,7 +109,8 @@ namespace TaigaProtocol
             }
             else if (loginWorker_.GetState() == ProtocolUtilities::Connection::STATE_LOGIN_FAILED)
             {
-                eventManager_->SendEvent(networkStateEventCategory_, ProtocolUtilities::Events::EVENT_CONNECTION_FAILED, 0);
+                ProtocolUtilities::ConnectionFailedEvent data(loginWorker_.GetErrorMessage().c_str());
+                eventManager_->SendEvent(networkStateEventCategory_, ProtocolUtilities::Events::EVENT_CONNECTION_FAILED, &data);
                 loginWorker_.SetConnectionState(ProtocolUtilities::Connection::STATE_DISCONNECTED);
             }
             
@@ -173,7 +174,8 @@ namespace TaigaProtocol
             // Send event indicating a succesfull connection.
             ProtocolUtilities::AuthenticationEventData auth_data(authenticationType_);
             auth_data.inventorySkeleton = GetClientParameters().inventory;
-
+            auth_data.type = ProtocolUtilities::AT_OpenSim;
+            
             // Fill in webdav information if exists
             if (loginWorker_.GetClientParameters().webdavInventoryUrl != "")
             {

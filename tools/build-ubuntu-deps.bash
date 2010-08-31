@@ -6,8 +6,12 @@ set -x
 # following ppa sources using add-apt-repository or the software
 # sources gui tool: ppa:mapopa/qt4.6
 
-deps=$HOME/src/rex-deps
-viewer=$deps/../rex-viewer
+viewer=$(dirname $(readlink -f $0))/..
+deps=$viewer/../naali-deps
+mkdir -p $deps
+deps=$(cd $deps && pwd)
+viewer=$(cd $viewer && pwd)
+
 viewerdeps_svn=http://realxtend-naali-deps.googlecode.com/svn/
 prefix=$deps/install
 build=$deps/build
@@ -39,7 +43,7 @@ if lsb_release -c | grep -q lucid; then
 	 python-gtk2-dev libdbus-glib-1-dev ccache libqt4-dev python-dev \
          libtelepathy-farsight-dev libnice-dev libgstfarsight0.10-dev \
          libtelepathy-qt4-dev python-gst0.10-dev \
-	 libxmlrpc-epi-dev bison flex libxml2-dev liboil-dev cmake libalut-dev
+	 libxmlrpc-epi-dev bison flex libxml2-dev libois-dev cmake libalut-dev
 
 	
 fi
@@ -49,7 +53,7 @@ if lsb_release -c | grep -q karmic; then
 	 libopenjpeg-dev libcurl4-gnutls-dev libexpat1-dev libphonon-dev \
 	 build-essential g++ libglib libogre-dev \
 	 python-gtk2-dev libdbus-glib-1-dev ccache libqt4-dev python-dev \
-	 libxmlrpc-epi-dev bison flex libxml2-dev liboil-dev cmake libalut-dev
+	 libxmlrpc-epi-dev bison flex libxml2-dev libois-dev cmake libalut-dev
 	sudo apt-get install 'libboost1.38.*-dev' 
 	
 fi
@@ -58,7 +62,7 @@ if lsb_release -c | grep -q jaunty; then
 	sudo aptitude -y install build-essential libboost1.37-dev \
 	 libopenjpeg-dev libxmlrpc-epi-dev libcurl4-gnutls-dev libqt4-dev \
 	 libexpat1-dev libphonon-dev python-dev scons g++ python-gtk2-dev \
-	 libdbus-glib-1-dev ccache bison flex libxml2-dev liboil-dev \
+	 libdbus-glib-1-dev ccache bison flex libxml2-dev libois-dev \
 	 libalut-dev libvorbis-dev libogg-dev
 	sudo apt-get install 'libboost1.37.*-dev' cmake
 	 
@@ -177,7 +181,7 @@ else
     build-regular http://gstreamer.freedesktop.org/src/gst-plugins-base/ gst-plugins-base 0.10.25
     build-regular http://gstreamer.freedesktop.org/src/gst-python/ gst-python 0.10.17
     build-regular http://farsight.freedesktop.org/releases/farsight2/ farsight2 0.0.17
-    build-regular http://farsight.freedesktop.org/releases/gst-plugins-farsight/ gst-plugins-farsight 0.12.11
+    build-regular http://farsight.freedesktop.org/releases/obsolete/gst-plugins-farsight/ gst-plugins-farsight 0.12.11
     build-regular http://telepathy.freedesktop.org/releases/telepathy-glib/ telepathy-glib 0.9.1
     build-regular http://telepathy.freedesktop.org/releases/telepathy-farsight/ telepathy-farsight 0.0.13
     build-regular http://telepathy.freedesktop.org/releases/telepathy-qt4/ telepathy-qt4 0.2.1

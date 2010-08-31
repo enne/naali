@@ -1,4 +1,8 @@
+// For conditions of distribution and use, see copyright notice in license.txt
+
 #include "StableHeaders.h"
+#include "DebugOperatorNew.h"
+
 #include "MumbleLibrary.h"
 #include "MumbleMainLoopThread.h"
 #define BUILDING_DLL // for dll import/export declarations
@@ -6,7 +10,9 @@
 #include <mumbleclient/client_lib.h>
 #undef BUILDING_DLL // for dll import/export declarations
 
-namespace MumbleVoip
+#include "MemoryLeakCheck.h"
+
+namespace MumbleLib
 {
     QString MumbleLibrary::reason_ = "";
     MumbleMainLoopThread* MumbleLibrary::mumble_main_loop_ = 0;
@@ -72,4 +78,4 @@ namespace MumbleVoip
         return mumble_main_loop_;
     }
 
-} // MumbleVoip
+} // MumbleLib

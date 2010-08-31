@@ -5,6 +5,8 @@
  *  @brief  Abstract base class and template class for entity-component attributes.
  */
 
+#include "StableHeaders.h"
+
 #include "AttributeInterface.h"
 #include "ComponentInterface.h"
 #include "AssetInterface.h"
@@ -12,6 +14,7 @@
 #include "CoreStdIncludes.h"
 
 #include <QVariant>
+#include <QStringList>
 
 // Implementation code for some common attributes
 
@@ -22,7 +25,8 @@ AttributeInterface::AttributeInterface(ComponentInterface* owner, const char* na
     owner_(owner),
     name_(name),
     change_(AttributeChange::None),
-    null_(false)
+    null_(false),
+    metadata_(0)
 {
     if (owner)
         owner->AddAttribute(this);
@@ -98,7 +102,7 @@ template<> std::string Attribute<AssetReference>::ToString() const
 {
     AssetReference value = Get();
     
-    return value.type_ + ":" + value.id_;
+    return value.type_ + "," + value.id_;
 }
 
 template<> std::string Attribute<QVariant>::ToString() const
@@ -106,6 +110,20 @@ template<> std::string Attribute<QVariant>::ToString() const
     QVariant value = Get();
     
     return value.toString().toStdString();
+}
+
+template<> std::string Attribute<std::vector<QVariant> >::ToString() const
+{
+    std::vector<QVariant> values = Get();
+
+    std::string stringValue = "";
+    for(uint i = 0; i < values.size(); i++)
+    {
+        stringValue += values[i].toString().toStdString();
+        if(i < values.size() - 1)
+            stringValue += ";";
+    }
+    return stringValue;
 }
 
 // TYPENAMETOSTRING TEMPLATE IMPLEMENTATIONS.
@@ -158,6 +176,11 @@ template<> std::string Attribute<AssetReference>::TypenameToString() const
 template<> std::string Attribute<QVariant>::TypenameToString() const
 {
     return "qvariant";
+}
+
+template<> std::string Attribute<std::vector<QVariant> >::TypenameToString() const
+{
+    return "qvariantarray";
 }
 
     // FROMSTRING TEMPLATE IMPLEMENTATIONS.
@@ -273,8 +296,8 @@ template<> void Attribute<Quaternion>::FromString(const std::string& str, Attrib
 
 template<> void Attribute<AssetReference>::FromString(const std::string& str, AttributeChange::Type change)
 {
-    // We store type first, then ":", then asset id
-    std::string::size_type pos = str.find(':');
+    // We store type first, then ",", then asset id
+    std::string::size_type pos = str.find(',');
     if (pos == std::string::npos)
         return;
     std::string type = str.substr(0, pos);
@@ -287,6 +310,20 @@ template<> void Attribute<AssetReference>::FromString(const std::string& str, At
 template<> void Attribute<QVariant>::FromString(const std::string& str, AttributeChange::Type change)
 {
     QVariant value(QString(str.c_str()));
+    Set(value, change);
+}
+
+template<> void Attribute<std::vector<QVariant> >::FromString(const std::string& str, AttributeChange::Type change)
+{
+    std::vector<QVariant> value;
+    QString strValue = QString::fromStdString(str);
+    QStringList components = strValue.split(';');
+
+    for(uint i = 0; i < components.size(); i++)
+        value.push_back(QVariant(components[i]));
+    if(value.size() == 1)
+        if(value[0] == "")
+            value.pop_back();
     Set(value, change);
 }
 

@@ -6,7 +6,7 @@
 #include "RexPythonQt.h"
 #include <PythonQt.h>
 #include <PythonQt_QtAll.h>
-#include "Inworld/View/UiWidgetProperties.h"
+//#include "UiWidgetProperties.h"
 //#include "UiProxyWidget.h"
 
 //#include <QGroupBox> //just for testing addObject
@@ -27,8 +27,8 @@ namespace PythonScript
         // init PythonQt, but not Python 'cause PythonScriptModule has already done that.
         PythonQt::init(PythonQt::PythonAlreadyInitialized);
         PythonQt_QtAll::init();
-        //PythonQt::self()->registerClass(&UiServices::UiProxyWidget::staticMetaObject);
-        PythonQt::self()->registerClass(&UiServices::UiWidgetProperties::staticMetaObject);
+        //PythonQt::self()->registerClass(&UiProxyWidget::staticMetaObject);
+//        PythonQt::self()->registerClass(&UiServices::UiWidgetProperties::staticMetaObject);
         // get the __main__ python module
         //PythonQtObjectPtr mainModule = PythonQt::self()->getMainModule();
   

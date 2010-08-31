@@ -6,6 +6,7 @@ try:
 except ImportError: #not running under rex
     import mockviewer as r
 from circuits import Component
+from naali import inputcontext
 
 from PythonQt.QtCore import Qt
 
@@ -28,17 +29,24 @@ class KeyCommander(Component):
             }
             #r.MoveForwardPressed: self.overrideForwardWalking #overrides the moveforward event
 
+        inputcontext.connect('KeyPressed(KeyEvent*)', self.on_keypressed)
         #XXX a temp hack to have restart work in login screen / ether too
         uiview = r.getUiView()
-        uiview.connect("PythonRestartRequest()", self.restart_modulemanager)
+        uiview.connect('PythonRestartRequest()', self.restart_modulemanager)
         
-    def on_keydown(self, keycode, keymod):
-        #print "Commander got input", keycode, keymod
-        keyb = (keycode, keymod)
+    # handle KeyPressed event from naali.inputcontext
+    def on_keypressed(self, key):
+        keyb = (key.keyCode, key.modifiers)
         if keyb in self.inputmap:
             return self.inputmap[keyb]()
         else:
             return False
+
+    def on_exit(self):
+        r.logInfo("Key Commands exiting...")
+        inputcontext.disconnectAll()
+        r.disconnectUiViewSignals()
+        r.logInfo("    ... done exiting Key Commands")
     
     #uncomment this for raycasting tests
     #~ def on_mousemove(self, mouseinfo):

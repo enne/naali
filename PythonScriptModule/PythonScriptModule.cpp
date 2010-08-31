@@ -19,7 +19,6 @@
 18:05 < sempuki> Stinkfist: yes
 18:05 < antont> yep was thinking of that too, there'd be some session service
                 thing or something by the new module
-18:06 < antont> ok i copy-paste this to a note in the source so can perhaps remove the rexlogic dep at some point
 
 rexlogic_->GetInventory()->GetFirstChildFolderByName("Trash");
 18:16 < antont> ah it's world_stream_->GetInfo().inventory
@@ -78,28 +77,30 @@ rexlogic_->GetInventory()->GetFirstChildFolderByName("Trash");
 #include "Environment/PrimGeometryUtils.h"
 #include "CameraControllable.h"
 #include "EntityComponent/EC_NetworkPosition.h"
+#include "EntityComponent/EC_AttachedSound.h"
 
 //for CreateEntity. to move to an own file (after the possible prob with having api code in diff files is solved)
 //#include "../OgreRenderingModule/EC_OgreMesh.h"
 #include "Renderer.h"
 #include "EC_OgrePlaceable.h"
+#include "EC_OgreCamera.h"
 #include "EC_OgreMesh.h"
 #include "EC_OgreCustomObject.h"
 #include "EC_OgreMovableTextOverlay.h"
 
-#include "UiModule.h"
-#include "UiDefines.h"
-#include "Inworld/InworldSceneController.h"
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/View/UiWidgetProperties.h"
+//#include "UiModule.h"
+//#include "Inworld/InworldSceneController.h"
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 
 #include "EC_OpenSimPresence.h"
 #include "EC_OpenSimPrim.h"
 #include "EC_3DCanvas.h"
-#include "EC_3DCanvasSource.h"
+#include "EC_Touchable.h"
 
 //ECs declared by PythonScriptModule
 #include "EC_DynamicComponent.h"
+
 
 //for py_print
 //#include <stdio.h>
@@ -116,7 +117,7 @@ rexlogic_->GetInventory()->GetFirstChildFolderByName("Trash");
 #include <propertyeditor.h>
 
 // =========== Note py developers: MemoryLeakCheck must be the last include =========== //
-#include <PlayerService.h>
+#include <MediaPlayerService.h>
 #include <WorldBuildingServiceInterface.h>
 
 #include "QtInputKeyEvent.h"
@@ -165,7 +166,7 @@ namespace PythonScript
         em_ = framework_->GetEventManager();
         
         // Reprioritize to be able to override behaviour
-        em_->RegisterEventSubscriber(framework_->GetModuleManager()->GetModule(this), 105);
+        em_->RegisterEventSubscriber(this, 105);
 
         // Get Framework category, so we can listen to its event about protocol module ready,
         // then we can subscribe to the other networking categories
@@ -178,8 +179,6 @@ namespace PythonScript
         
         // Create a new input context with a default priority of 100.
         input = framework_->Input().RegisterInputContext("PythonInput", 100);
-        QObject::connect(input.get(), SIGNAL(OnKeyEvent(KeyEvent &)), this, SLOT(HandleKeyEvent(KeyEvent &)));
-        QObject::connect(input.get(), SIGNAL(OnMouseEvent(MouseEvent &)), this, SLOT(HandleMouseEvent(MouseEvent &)));
 
         /* add events constants - now just the input events */
         //XXX move these to some submodule ('input'? .. better than 'constants'?)
@@ -546,31 +545,6 @@ namespace PythonScript
 
         //XXX not ported to UImodule / OIS replacement yet
    //     boost::shared_ptr<Input::InputModuleOIS> input = framework_->GetModuleManager()->GetModule<Input::InputModuleOIS>(Foundation::Module::MT_Input).lock();
-   //     if (input)
-   //     {
-   //         //boost::optional<const Input::Events::Movement&> movement = input->PollSlider(Input::Events::MOUSELOOK);
-   //         boost::optional<const Input::Events::Movement&> movement = input->GetMouseMovement();
-   //         if (movement)
-   //         {
-   //             //LogDebug("me sees mouse move too");
-
-   //             //might perhaps wrap that nice pos class later but this is simpler now
-   //             //float x_abs = static_cast<float>(movement->x_.abs_);
-   //             //float y_abs = static_cast<float>(movement->y_.abs_);
-   //             //
-   //             //float x_rel = static_cast<float>(movement->x_.rel_);
-   //             //float y_rel = static_cast<float>(movement->y_.rel_);
-
-   //             int x_abs = movement->x_.abs_;
-   //             int y_abs = movement->y_.abs_;
-   //             int x_rel = movement->x_.rel_;
-   //             int y_rel = movement->y_.rel_;
-
-            //    //was only sending the mouse_movement event if one of the buttons is pressed, XXX change?
-            //    //if (mouse_left_button_down_ || mouse_right_button_down_)
-   //             PyObject_CallMethod(pmmInstance, "MOUSE_MOVEMENT", "iiii", x_abs, y_abs, x_rel, y_rel);                
-            //}
-   //     }
     }
 
     PythonScriptModule* PythonScriptModule::GetInstance()
@@ -597,6 +571,32 @@ namespace PythonScript
 
         return 0;
     }
+    
+    OgreRenderer::EC_OgreCamera* PythonScriptModule::GetCamera() const
+    {
+        RexLogic::RexLogicModule *rexlogic = PythonScript::self()->GetFramework()->GetModule<RexLogic::RexLogicModule>();
+        if (rexlogic)
+        {
+            Scene::EntityPtr camentptr = rexlogic->GetCameraEntity();
+            if (camentptr) {
+                OgreRenderer::EC_OgreCamera* camera = camentptr->GetComponent<OgreRenderer::EC_OgreCamera>().get();
+                return camera;
+            }
+        }
+        return 0;
+    }
+    
+    Scene::Entity* PythonScriptModule::GetCameraEntity() const
+    {
+        RexLogic::RexLogicModule *rexlogic = PythonScript::self()->GetFramework()->GetModule<RexLogic::RexLogicModule>();
+        if (rexlogic)
+        {
+            Scene::EntityPtr camentptr = rexlogic->GetCameraEntity();
+            if(camentptr)
+                return camentptr.get();
+        }
+        return 0;
+    }
 
     Scene::SceneManager* PythonScriptModule::GetScene(const QString &name) const
     {
@@ -614,7 +614,7 @@ namespace PythonScript
 
     void PythonScriptModule::RunJavascriptString(const QString &codestr, const QVariantMap &context)
     {
-        Foundation::ScriptServiceInterface *js = framework_->GetService<Foundation::ScriptServiceInterface>();
+        boost::shared_ptr<Foundation::ScriptServiceInterface> js = framework_->GetService<Foundation::ScriptServiceInterface>(Foundation::Service::ST_JavascriptScripting).lock();
         if (js)
             js->RunString(codestr, context);
         else
@@ -881,9 +881,9 @@ PyObject* ApplyUICanvasToSubmeshesWithTexture(PyObject* self, PyObject* args)
     uint refresh_rate;
 
     if(!PyArg_ParseTuple(args, "OsI", &qwidget, &uuidstr, &refresh_rate))
-        return NULL;
+        Py_RETURN_NONE;
     if (!PyObject_TypeCheck(qwidget, &PythonQtInstanceWrapper_Type))
-        return NULL;
+        Py_RETURN_NONE;
 
     // Prepare QWidget and texture UUID
     PythonQtInstanceWrapper* wrapped_qwidget = (PythonQtInstanceWrapper*)qwidget;
@@ -891,7 +891,7 @@ PyObject* ApplyUICanvasToSubmeshesWithTexture(PyObject* self, PyObject* args)
     QWidget* qwidget_ptr = (QWidget*)qobject_ptr;
     
     if (!qwidget_ptr)
-        return NULL;
+        Py_RETURN_NONE;
 
     RexUUID texture_uuid = RexUUID();
     texture_uuid.FromString(std::string(uuidstr));
@@ -904,11 +904,12 @@ PyObject* ApplyUICanvasToSubmeshesWithTexture(PyObject* self, PyObject* args)
     if (!scene) 
     { 
         PyErr_SetString(PyExc_RuntimeError, "Default scene is not there in GetEntityMatindicesWithTexture.");
-        return NULL;   
+        Py_RETURN_NONE;   
     }
 
     // Iterate the scene to find all submeshes that use this texture uuid
     QList<uint> submeshes_;
+    QList<entity_id_t> affected_entitys_;
     for (Scene::SceneManager::iterator iter = scene->begin(); iter != scene->end(); ++iter)
     {
         Scene::Entity &entity = **iter;
@@ -981,11 +982,145 @@ PyObject* ApplyUICanvasToSubmeshesWithTexture(PyObject* self, PyObject* args)
                 continue;
 
             if (submeshes_.size() > 0)
+            {
                 PythonScriptModule::Add3DCanvasComponents(primentity.get(), qwidget_ptr, submeshes_, refresh_rate);
+                affected_entitys_.append(entity.GetId());
+            }
         }
     }
 
-    Py_RETURN_NONE;
+    PythonScriptModule *owner = PythonScriptModule::GetInstance();
+    if (owner && affected_entitys_.count() > 0)
+    {
+        PyObject *py_ent_ptr_list = PyList_New(affected_entitys_.size());
+        int i = 0;
+        foreach(entity_id_t entity_id, affected_entitys_)
+        {
+            PyList_SET_ITEM(py_ent_ptr_list, i, owner->entity_create(entity_id));
+            ++i;
+        }
+        return py_ent_ptr_list;            
+    }
+    else
+        Py_RETURN_NONE;
+}
+
+PyObject* CheckSceneForTexture(PyObject* self, PyObject* args)
+{
+    char* uuidstr;
+
+    if(!PyArg_ParseTuple(args, "s", &uuidstr))
+        return NULL;
+
+    RexUUID texture_uuid = RexUUID();
+    texture_uuid.FromString(std::string(uuidstr));
+    
+    // Get RexLogic and Scene
+    RexLogic::RexLogicModule *rexlogicmodule_;
+    rexlogicmodule_ = dynamic_cast<RexLogic::RexLogicModule *>(PythonScript::self()->GetFramework()->GetModuleManager()->GetModule("RexLogic").lock().get());
+    Scene::ScenePtr scene = rexlogicmodule_->GetCurrentActiveScene(); 
+
+    if (!scene) 
+    { 
+        PyErr_SetString(PyExc_RuntimeError, "Default scene is not there in GetEntityMatindicesWithTexture.");
+        return NULL;   
+    }
+
+    // Iterate the scene to find all submeshes that use this texture uuid
+    QList<uint> submeshes_;
+    bool submeshes_found_ = false;
+    for (Scene::SceneManager::iterator iter = scene->begin(); iter != scene->end(); ++iter)
+    {
+        Scene::Entity &entity = **iter;
+        submeshes_.clear();
+
+        Scene::EntityPtr primentity = rexlogicmodule_->GetPrimEntity(entity.GetId());
+        if (!primentity) 
+            continue;
+        
+        EC_OpenSimPrim &prim = *checked_static_cast<EC_OpenSimPrim*>(entity.GetComponent(EC_OpenSimPrim::TypeNameStatic()).get());
+
+        if (prim.DrawType == RexTypes::DRAWTYPE_MESH || prim.DrawType == RexTypes::DRAWTYPE_PRIM)
+        {
+            Foundation::ComponentPtr mesh = entity.GetComponent(OgreRenderer::EC_OgreMesh::TypeNameStatic());
+            Foundation::ComponentPtr custom_object = entity.GetComponent(OgreRenderer::EC_OgreCustomObject::TypeNameStatic());
+            
+            OgreRenderer::EC_OgreMesh *meshptr = 0;
+            OgreRenderer::EC_OgreCustomObject *custom_object_ptr = 0;
+
+            if (mesh) 
+            {
+                meshptr = checked_static_cast<OgreRenderer::EC_OgreMesh*>(mesh.get());
+                if (!meshptr)
+                    continue;
+                if (!meshptr->GetEntity())
+                    continue;
+            }
+            else if (custom_object)
+            {
+                custom_object_ptr = checked_static_cast<OgreRenderer::EC_OgreCustomObject*>(custom_object.get());
+                if (!custom_object_ptr)
+                    continue;
+                if (!custom_object_ptr->GetEntity())
+                    continue;
+                Ogre::ManualObject* manual = RexLogic::CreatePrimGeometry(PythonScript::self()->GetFramework(), prim, false);
+                custom_object_ptr->CommitChanges(manual);
+            }
+            else
+                continue;
+            
+            // Iterate mesh materials map
+            if (meshptr)
+            {
+                MaterialMap material_map = prim.Materials;
+                MaterialMap::const_iterator i = material_map.begin();
+                while (i != material_map.end())
+                {
+                    // Store sumbeshes to list where we want to apply the new widget as texture
+                    uint submesh_id = i->first;
+                    if ((i->second.Type == RexTypes::RexAT_Texture))
+                    {
+                        if ((i->second.asset_id.compare(texture_uuid.ToString()) == 0))
+                        {
+                            submeshes_.append(submesh_id);
+                        }
+                        else
+                        {
+                            // Url asset id check for containing texture UUID
+                            QString q_asset_id(i->second.asset_id.c_str());
+                            if (q_asset_id.contains(texture_uuid.ToString().c_str()))
+                                submeshes_.append(submesh_id);
+                        }
+                    }
+                    ++i;
+                }
+            }
+            // Iterate custom object texture map
+            else if (custom_object_ptr && prim.PrimTextures.size() > 0 )
+            {
+                TextureMap texture_map = prim.PrimTextures;
+                TextureMap::const_iterator i = texture_map.begin();
+
+                while (i != texture_map.end()) /// @todo This causes unresolved crash in some cases!
+                {
+                    uint submesh_id = i->first;
+                    if (i->second == texture_uuid.ToString())
+                        submeshes_.append(submesh_id);
+                    ++i;
+                }
+            }
+            else
+                continue;
+
+            if (submeshes_.size() > 0)
+                Py_RETURN_TRUE; // No need to iterate further if any submeshes were found
+        }
+    }
+
+    if (submeshes_found_)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
 }
 
 PyObject* ApplyUICanvasToSubmeshes(PyObject* self, PyObject* args)
@@ -1045,10 +1180,10 @@ PyObject* ApplyUICanvasToSubmeshes(PyObject* self, PyObject* args)
 
 void PythonScriptModule::Add3DCanvasComponents(Scene::Entity *entity, QWidget *widget, const QList<uint> &submeshes, int refresh_rate)
 {
-    // Always create new EC_3DCanvas component
     if (submeshes.isEmpty())
         return;
-
+    
+    // Always create new EC_3DCanvas component
     EC_3DCanvas *ec_canvas = entity->GetComponent<EC_3DCanvas>().get();
     if (ec_canvas)
         entity->RemoveComponent(entity->GetComponent<EC_3DCanvas>());    
@@ -1064,82 +1199,18 @@ void PythonScriptModule::Add3DCanvasComponents(Scene::Entity *entity, QWidget *w
         ec_canvas->Start();
     }
 
-    // Only create EC_3DCanvasSource if it doesent exist laready
-    QWebView *webview = dynamic_cast<QWebView*>(widget);
-    if (webview)
+    // Touchable 
+    EC_Touchable *ec_touchable = entity->GetComponent<EC_Touchable>().get();
+    if (!ec_touchable)
     {
-        EC_3DCanvasSource *ec_canvas_source = entity->GetComponent<EC_3DCanvasSource>().get();
-        if (!ec_canvas_source)
-        {
-            entity->AddComponent(PythonScript::self()->GetFramework()->GetComponentManager()->CreateComponent(EC_3DCanvasSource::TypeNameStatic()), AttributeChange::LocalOnly);
-            ec_canvas_source = entity->GetComponent<EC_3DCanvasSource>().get();
-        }
-        if (ec_canvas_source)
-        {
-            QString url = webview->url().toString();
-            ec_canvas_source->manipulate_ec_3dcanvas = false;
-            ec_canvas_source->source_.Set(url.toStdString(), AttributeChange::LocalOnly);
-            ec_canvas_source->ComponentChanged(AttributeChange::LocalOnly);
-        }
+        entity->AddComponent(PythonScript::self()->GetFramework()->GetComponentManager()->CreateComponent(EC_Touchable::TypeNameStatic()));
+        ec_touchable = entity->GetComponent<EC_Touchable>().get();
     }
-}
-
-void PythonScriptModule::HandleKeyEvent(KeyEvent &key)
-{
-    static const event_id_t KEY_PRESSED = 39;
-    static const event_id_t KEY_RELEASED = 40;
-
-    if (key.eventType == KeyEvent::KeyPressed)
-        PyObject_CallMethod(pmmInstance, "KEY_INPUT_EVENT", "iii", KEY_PRESSED, key.keyCode, key.modifiers);
-//        if (!PyObject_CallMethod(pmmInstance, "KEY_INPUT_EVENT", "iii", KEY_PRESSED, key.keyCode, key.modifiers))
-//            LogWarning("PyObject_CallMethod(KEY_INPUT_EVENT, KEY_PRESSED) failed!");
-
-    else if (key.eventType == KeyEvent::KeyReleased)
-        PyObject_CallMethod(pmmInstance, "KEY_INPUT_EVENT", "iii", KEY_RELEASED, key.keyCode, key.modifiers);
-//        if (!PyObject_CallMethod(pmmInstance, "KEY_INPUT_EVENT", "iii", KEY_RELEASED, key.keyCode, key.modifiers))
-//            LogWarning("PyObject_CallMethod(KEY_INPUT_EVENT, KEY_RELEASED) failed!");
-}
-
-void PythonScriptModule::HandleMouseEvent(MouseEvent &mouse)
-{
-    int eventID = 0;
-
-    static const event_id_t LEFT_MOUSECLICK_PRESSED = 43;
-    static const event_id_t LEFT_MOUSECLICK_RELEASED = 44;
-    static const event_id_t RIGHT_MOUSECLICK_PRESSED = 45;
-    static const event_id_t RIGHT_MOUSECLICK_RELEASED = 46;
-
-    switch(mouse.eventType)
+    if (ec_touchable)
     {
-    case MouseEvent::MouseMove:
-        if (mouse.IsLeftButtonDown())
-        {
-            PyObject_CallMethod(pmmInstance, "MOUSE_DRAG_INPUT_EVENT", "iiiii", Input::Events::MOUSEDRAG, mouse.x, mouse.y, mouse.relativeX, mouse.relativeY);
-//            if (!PyObject_CallMethod(pmmInstance, "MOUSE_DRAG_INPUT_EVENT", "iiiii", Input::Events::MOUSEDRAG, mouse.x, mouse.y, mouse.relativeX, mouse.relativeY))
-//                LogWarning("PyObject_CallMethod(MOUSE_DRAG_INPUT_EVENT) failed!");
-            return;
-        }
-        else
-            eventID = Input::Events::MOUSEMOVE;
-        break;
-    case MouseEvent::MouseScroll:
-        break;
-    case MouseEvent::MousePressed:
-        if (mouse.button == MouseEvent::LeftButton) eventID = LEFT_MOUSECLICK_PRESSED;
-        if (mouse.button == MouseEvent::RightButton) eventID = RIGHT_MOUSECLICK_PRESSED;
-        break;
-    case MouseEvent::MouseReleased:
-        if (mouse.button == MouseEvent::LeftButton) eventID = LEFT_MOUSECLICK_RELEASED;
-        if (mouse.button == MouseEvent::RightButton) eventID = RIGHT_MOUSECLICK_RELEASED;
-        break;
+        ec_touchable->SetHighlightOnHover(false);
+        ec_touchable->SetHoverCursor(Qt::PointingHandCursor);
     }
-
-    if (eventID != 0)
-        PyObject_CallMethod(pmmInstance, "MOUSE_INPUT_EVENT", "iiiii", eventID, mouse.x, mouse.y, mouse.relativeX, mouse.relativeY);
-//        if (!PyObject_CallMethod(pmmInstance, "MOUSE_INPUT_EVENT", "iiiii", eventID, mouse.x, mouse.y, mouse.relativeX, mouse.relativeY))
-//            LogWarning("PyObject_CallMethod(MOUSE_INPUT_EVENT) failed!");
-
-    ///\todo Don't know when to call the INPUT_EVENT function.
 }
 
 PyObject* GetSubmeshesWithTexture(PyObject* self, PyObject* args)
@@ -1259,75 +1330,26 @@ PyObject* GetApplicationDataDirectory(PyObject *self)
     //return QString(cache_path.c_str());
 }
 
-PyObject* IsMimeTypeSupportedForVideoWidget(PyObject* self, PyObject* args)
+MediaPlayer::ServiceInterface* PythonScriptModule::GetMediaPlayerService() const
 {
-    char* mimetype;
-    if(!PyArg_ParseTuple(args, "s", &mimetype))
-        return 0;   
-
     Foundation::Framework* framework = PythonScript::self()->GetFramework();
-    Foundation::ServiceManagerPtr service_manager = framework->GetServiceManager();
-    if (service_manager)
+    if (!framework)
     {
-        boost::shared_ptr<Player::PlayerServiceInterface> player_service = service_manager->GetService<Player::PlayerServiceInterface>(Foundation::Service::ST_Player).lock();
-        if (player_service)
-        {
-            bool supported = player_service->IsMimeTypeSupported(QString(mimetype));
-            
-            if (supported)
-                Py_RETURN_TRUE;
-            else
-                Py_RETURN_FALSE;
-        }
+        PythonScriptModule::LogCritical("Framework object doesn't exist!");
+        return 0;
     }
-    Py_RETURN_FALSE;
-}
 
-PyObject* CreateVideoWidget(PyObject* self, PyObject* args)
-{
-    char* media_url;
-    if(!PyArg_ParseTuple(args, "s", &media_url))
-        return 0;  
-
-    QString url_string(media_url);
-
-    Foundation::Framework* framework = PythonScript::self()->GetFramework();
-    Foundation::ServiceManagerPtr service_manager = framework->GetServiceManager();
-    if (service_manager)
+    MediaPlayer::ServiceInterface *player_service = framework_->GetService<MediaPlayer::ServiceInterface>();
+    if (player_service)
     {
-        boost::shared_ptr<Player::PlayerServiceInterface> player_service = service_manager->GetService<Player::PlayerServiceInterface>(Foundation::Service::ST_Player).lock();
-        if (player_service.get())
-        {
-            QWidget* player = player_service->GetPlayer(url_string);
-            if (player)
-                return PythonScriptModule::GetInstance()->WrapQObject(player);
-            else
-                return 0;
-        }
+        PythonQt::self()->registerClass(player_service->metaObject());
+        return player_service;
     }
+    else
+        PythonScriptModule::LogError("Cannot find PlayerServiceInterface implementation.");
     return 0;
 }
 
-PyObject* DeleteVideoWidget(PyObject* self, PyObject* args)
-{
-    char* url_string;
-    if(!PyArg_ParseTuple(args, "s", &url_string))
-        return 0;  
-
-    QString url(url_string);
-
-    Foundation::Framework* framework = PythonScript::self()->GetFramework();
-    Foundation::ServiceManagerPtr service_manager = framework->GetServiceManager();
-    if (service_manager)
-    {
-        boost::shared_ptr<Player::PlayerServiceInterface> player_service = service_manager->GetService<Player::PlayerServiceInterface>(Foundation::Service::ST_Player).lock();
-        if (player_service)
-        {
-            player_service->DeletePlayer(url);
-        }
-    }
-    Py_RETURN_NONE;
-}
 
 //returns the internal Entity that's now a QObject, 
 //with no manual wrapping (just PythonQt exposing qt things)
@@ -1413,11 +1435,11 @@ PyObject* CreateEntity(PyObject *self, PyObject *value)
 
     entity_id_t ent_id = scene->GetNextFreeId(); //instead of using the id given
     
-    StringVector defaultcomponents;
-    defaultcomponents.push_back(OgreRenderer::EC_OgrePlaceable::TypeNameStatic());
-    //defaultcomponents.push_back(OgreRenderer::EC_OgreMovableTextOverlay::TypeNameStatic());
-    defaultcomponents.push_back(OgreRenderer::EC_OgreMesh::TypeNameStatic());
-    //defaultcomponents.push_back(OgreRenderer::EC_OgreAnimationController::TypeNameStatic());
+    QStringList defaultcomponents;
+    defaultcomponents.append(OgreRenderer::EC_OgrePlaceable::TypeNameStatic());
+    //defaultcomponents.append(OgreRenderer::EC_OgreMovableTextOverlay::TypeNameStatic());
+    defaultcomponents.append(OgreRenderer::EC_OgreMesh::TypeNameStatic());
+    //defaultcomponents.append(OgreRenderer::EC_OgreAnimationController::TypeNameStatic());
         
     Scene::EntityPtr entity = scene->CreateEntity(ent_id, defaultcomponents);
 
@@ -1511,7 +1533,6 @@ PyObject* PyLogInfo(PyObject *self, PyObject *args)
         return NULL;
     }
     PythonScript::self()->LogInfo(message);
-    
     Py_RETURN_NONE;
 }
 
@@ -1524,9 +1545,34 @@ PyObject* PyLogDebug(PyObject *self, PyObject *args)
         return NULL;
     }
     PythonScript::self()->LogDebug(message);
+    Py_RETURN_NONE;
+}
+
+PyObject* PyLogWarning(PyObject *self, PyObject *args) 
+{
+    const char* message;
+    if(!PyArg_ParseTuple(args, "s", &message))
+    {
+        PyErr_SetString(PyExc_ValueError, "Needs a string.");
+        return NULL;
+    }
+    PythonScript::self()->LogWarning(message);
+    Py_RETURN_NONE;
+}
+
+PyObject* PyLogError(PyObject *self, PyObject *args) 
+{
+    const char* message;
+    if(!PyArg_ParseTuple(args, "s", &message))
+    {
+        PyErr_SetString(PyExc_ValueError, "Needs a string.");
+        return NULL;
+    }
+    PythonScript::self()->LogError(message);
     
     Py_RETURN_NONE;
 }
+
 PyObject* SetAvatarYaw(PyObject *self, PyObject *args)
 {
     Real newyaw;
@@ -1594,99 +1640,51 @@ PyObject* SetAvatarYaw(PyObject *self, PyObject *args)
 //    return can;
 //}
 
+/*
 PyObject* CreateUiWidgetProperty(PyObject *self, PyObject *args)
-{        
+{
     if (!PythonScript::self()->GetFramework())//PythonScript::staticframework)
     {
         //std::cout << "Oh crap staticframework is not there! (py)" << std::endl;
         PythonScript::self()->LogInfo("PythonScript's framework is not present!");
         return NULL;
     }
-    UiServices::WidgetType type;
+    Qt::WindowFlags type;
     if(!PyArg_ParseTuple(args, "i", &type))
     {
         return NULL;
     }
 
-    UiServices::UiWidgetProperties* prop = new UiServices::UiWidgetProperties("", type);
-    return PythonScriptModule::GetInstance()->WrapQObject(prop);;
+//    UiServices::UiWidgetProperties* prop = new UiServices::UiWidgetProperties("");
+    return PythonScriptModule::GetInstance()->WrapQObject(prop);
 }
+*/
 
 PyObject* CreateUiProxyWidget(PyObject* self, PyObject *args)
 {
-    boost::shared_ptr<UiServices::UiModule> ui_module = PythonScript::self()->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-    
-    PyObject* pywidget;
-    PyObject* pyuiprops;
-
-    if(!PyArg_ParseTuple(args, "OO", &pywidget, &pyuiprops))
+    Foundation::UiServiceInterface *ui = PythonScript::self()->GetFramework()->GetService<Foundation::UiServiceInterface>();
+    if (!ui)
     {
+        // If this occurs, we're most probably operating in headless mode.
+        //XXX perhaps should not be an error, 'cause some things should just work in headless without complaining
+        PyErr_SetString(PyExc_RuntimeError, "UI service is missing.");
         return NULL;
     }
+
+//    if(!PyArg_ParseTuple(args, "OO", &pywidget, &pyuiprops))
+    PyObject* pywidget;
+    if (!PyArg_ParseTuple(args, "O", &pywidget))
+        return NULL;
 
     if (!PyObject_TypeCheck(pywidget, &PythonQtInstanceWrapper_Type))
-    {
         return NULL;
-    }
-
-    if (!PyObject_TypeCheck(pyuiprops, &PythonQtInstanceWrapper_Type))
-    {
-        return NULL;
-    }
 
     PythonQtInstanceWrapper* wrapped_widget = (PythonQtInstanceWrapper*)pywidget;
-    PythonQtInstanceWrapper* wrapped_uiproperty = (PythonQtInstanceWrapper*)pyuiprops;
-
     QObject* widget_ptr = wrapped_widget->_obj;
-    QObject* uiproperty_ptr = wrapped_uiproperty->_obj;
-
     QWidget* widget = (QWidget*)widget_ptr;
-    UiServices::UiWidgetProperties uiproperty = *(UiServices::UiWidgetProperties*)uiproperty_ptr;
-    // If this occurs, we're most probably operating in headless mode.
-    if (ui_module.get() == 0)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "UiModule is missing."); //XXX perhaps should not be an error, 'cause some things should just work in headless without complaining
-        return NULL;
-    }
 
-    UiDefines::MenuNodeStyleMap map;
-    if (uiproperty.GetWidgetName() == "Object Edit")
-    {
-        QString base_url = "./data/ui/images/menus/";
-        map[UiDefines::TextNormal] = base_url + "edbutton_OBJEDtxt_normal.png";
-        map[UiDefines::TextHover] = base_url + "edbutton_OBJEDtxt_hover.png";
-        map[UiDefines::TextPressed] = base_url + "edbutton_OBJEDtxt_click.png";
-        map[UiDefines::IconNormal] = base_url + "edbutton_OBJED_normal.png";
-        map[UiDefines::IconHover] = base_url + "edbutton_OBJED_hover.png";
-        map[UiDefines::IconPressed] = base_url + "edbutton_OBJED_click.png";
-        uiproperty.SetMenuNodeStyleMap(map);
-    }
-
-    if (uiproperty.GetWidgetName() == "Local Scene")
-    {
-        QString base_url = "./data/ui/images/menus/";
-        map[UiDefines::TextNormal] = base_url + "edbutton_LSCENEtxt_normal.png";
-        map[UiDefines::TextHover] = base_url + "edbutton_LSCENEtxt_hover.png";
-        map[UiDefines::TextPressed] = base_url + "edbutton_LSCENEtxt_click.png";
-        map[UiDefines::IconNormal] = base_url + "edbutton_LSCENE_normal.png";
-        map[UiDefines::IconHover] = base_url + "edbutton_LSCENE_hover.png";
-        map[UiDefines::IconPressed] = base_url + "edbutton_LSCENE_click.png";
-        uiproperty.SetMenuNodeStyleMap(map);
-    }
-    if (uiproperty.GetWidgetName() == "Estate Management")
-    {
-        QString base_url = "./data/ui/images/menus/";
-        map[UiDefines::TextNormal] = base_url + "edbutton_ESMNGtxt_normal.png";
-        map[UiDefines::TextHover] = base_url + "edbutton_ESMNGtxt_hover.png";
-        map[UiDefines::TextPressed] = base_url + "edbutton_ESMNGtxt_click.png";
-        map[UiDefines::IconNormal] = base_url + "edbutton_ESMNG_normal.png";
-        map[UiDefines::IconHover] = base_url + "edbutton_ESMNG_hover.png";
-        map[UiDefines::IconPressed] = base_url + "edbutton_ESMNG_click.png";
-        uiproperty.SetMenuNodeStyleMap(map);
-    }
-
-    UiServices::UiProxyWidget* uiproxywidget = new UiServices::UiProxyWidget(widget, uiproperty);
-    return PythonScriptModule::GetInstance()->WrapQObject(uiproxywidget);
+    UiProxyWidget* proxy = new UiProxyWidget(widget);
+    return PythonScriptModule::GetInstance()->WrapQObject(proxy);
 }
 
 PyObject* GetPropertyEditor(PyObject *self)
@@ -1703,16 +1701,23 @@ PyObject* GetPropertyEditor(PyObject *self)
 
 PyObject* GetUiSceneManager(PyObject *self)
 {
-    boost::shared_ptr<UiServices::UiModule> ui_module = PythonScript::self()->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-
-    // If this occurs, we're most probably operating in headless mode.
-    if (ui_module.get() == 0)
+    Foundation::UiServiceInterface* ui= PythonScript::self()->GetFramework()->GetService<Foundation::UiServiceInterface>();
+    if (!ui)
     {
-        PyErr_SetString(PyExc_RuntimeError, "UiModule is missing."); //XXX perhaps should not be an error, 'cause some things should just work in headless without complaining
+        // If this occurs, we're most probably operating in headless mode.
+        //XXX perhaps should not be an error, 'cause some things should just work in headless without complaining
+        PyErr_SetString(PyExc_RuntimeError, "UI service is missing.");
         return NULL;
     }
 
-    return PythonScriptModule::GetInstance()->WrapQObject(ui_module->GetInworldSceneController());
+    return PythonScriptModule::GetInstance()->WrapQObject(ui);
+}
+
+PyObject* DisconnectUIViewSignals(PyObject *self)
+{
+    QGraphicsView *view = PythonScript::self()->GetFramework()->GetUIView();
+    view->disconnect();
+    Py_RETURN_NONE;
 }
 
 PyObject* GetUIView(PyObject *self)
@@ -1728,7 +1733,6 @@ PyObject* GetRexLogic(PyObject *self)
     PyErr_SetString(PyExc_RuntimeError, "RexLogic is missing.");
     return NULL;
 }
-
 
 PyObject* GetServerConnection(PyObject *self)
 {
@@ -2038,6 +2042,12 @@ static PyMethodDef EmbMethods[] = {
     {"logDebug", (PyCFunction)PyLogDebug, METH_VARARGS,
     "Prints a debug text using the LogDebug-method."},
 
+    {"logWarning", (PyCFunction)PyLogWarning, METH_VARARGS,
+    "Prints a text using the LogWarning-method."},
+
+    {"logError", (PyCFunction)PyLogError, METH_VARARGS,
+    "Prints a text using the LogError-method."},
+
     {"getCameraRight", (PyCFunction)GetCameraRight, METH_VARARGS, 
     "Get the right-vector for the camera."},
     
@@ -2069,6 +2079,9 @@ static PyMethodDef EmbMethods[] = {
 
     {"getUiView", (PyCFunction)GetUIView, METH_NOARGS, 
     "Gets the Naali-Qt UI main view"},
+    
+    {"disconnectUiViewSignals", (PyCFunction)DisconnectUIViewSignals, METH_NOARGS,
+    "Disconnects all signals from uiview (temporary HACK)"},
 
     {"sendRexPrimData", (PyCFunction)SendRexPrimData, METH_VARARGS,
     "updates prim data to the server - now for applying a mesh to an object"},
@@ -2097,16 +2110,15 @@ static PyMethodDef EmbMethods[] = {
     {"getServerConnection", (PyCFunction)GetServerConnection, METH_NOARGS,
     "Gets the server connection."},    
 
-
     {"getPropertyEditor", (PyCFunction)GetPropertyEditor, METH_VARARGS, 
     "get property editor"},
 
     {"getTrashFolderId", (PyCFunction)GetTrashFolderId, METH_VARARGS, 
     "gets the trash folder id"},
 
-    {"createUiWidgetProperty", (PyCFunction)CreateUiWidgetProperty, METH_VARARGS, 
-    "creates a new UiWidgetProperty"},
-    
+//    {"createUiWidgetProperty", (PyCFunction)CreateUiWidgetProperty, METH_VARARGS, 
+//    "creates a new UiWidgetProperty"},
+
     {"createUiProxyWidget", (PyCFunction)CreateUiProxyWidget, METH_VARARGS, 
     "creates a new UiProxyWidget"},
 
@@ -2116,6 +2128,9 @@ static PyMethodDef EmbMethods[] = {
     {"applyUICanvasToSubmeshesWithTexture", (PyCFunction)ApplyUICanvasToSubmeshesWithTexture, METH_VARARGS, 
     "Applies a ui canvas to all the entity submeshes where the given texture is used. Parameters: uicanvas (internal mode required), textureuuid"},
 
+    {"checkSceneForTexture", (PyCFunction)CheckSceneForTexture, METH_VARARGS, 
+    "Return true if texture exists in scene, otherwise false: Parameters: textureuuid"},
+
     {"applyUICanvasToSubmeshes", (PyCFunction)ApplyUICanvasToSubmeshes, METH_VARARGS, 
     "Applies a ui canvas to the given submeshes of the entity. Parameters: entity id, list of submeshes (material indices), uicanvas (internal mode required)"},
     
@@ -2124,15 +2139,6 @@ static PyMethodDef EmbMethods[] = {
     
     {"getApplicationDataDirectory", (PyCFunction)GetApplicationDataDirectory, METH_NOARGS,
     "Get application data directory."},
-
-    {"isMimeTypeSupportedForVideoWidget", (PyCFunction)IsMimeTypeSupportedForVideoWidget, METH_VARARGS, 
-    "Return true if given mimetype is supported by Phon library.  Parameters: media_url"},
-
-    {"createVideoWidget", (PyCFunction)CreateVideoWidget, METH_VARARGS, 
-    "Create Phonon::VideoWidget object with MediaObject according given media url.  Parameters: media_url"},
-
-    {"deleteVideoWidget", (PyCFunction)DeleteVideoWidget, METH_VARARGS, 
-    "Delete Phonon::VideoWidget object. Parameters: widget"},
 
     {NULL, NULL, 0, NULL}
 };
@@ -2144,11 +2150,10 @@ namespace PythonScript
     void PythonScriptModule::Initialize()
     {
         if (!engine_)
-        {
             engine_ = PythonScript::PythonEnginePtr(new PythonScript::PythonEngine(framework_));
-        }
+
         engine_->Initialize();
-              
+
         framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_PythonScripting, engine_);
 
         assert(!pythonScriptModuleInstance_);
@@ -2176,10 +2181,12 @@ namespace PythonScript
             mainModule.addObject("_naali", this);
             
             PythonQt::self()->registerClass(&Scene::Entity::staticMetaObject);
+            PythonQt::self()->registerClass(&OgreRenderer::EC_OgreCamera::staticMetaObject);
+            PythonQt::self()->registerClass(&RexLogic::EC_AttachedSound::staticMetaObject);
             PythonQt::self()->registerClass(&AttributeChange::staticMetaObject);
-            PythonQt::self()->registerClass(&InputContext::staticMetaObject);
             PythonQt::self()->registerClass(&KeyEvent::staticMetaObject);
             PythonQt::self()->registerClass(&MouseEvent::staticMetaObject);
+            PythonQt::self()->registerClass(&InputContext::staticMetaObject);
 
             pythonqt_inited = true;
             
@@ -2209,8 +2216,6 @@ namespace PythonScript
         //std::string error;
         //modulemanager = engine_->LoadScript("modulemanager", error); //the pymodule loader & event manager
         //modulemanager = modulemanager->GetObject("ModuleManager"); //instanciates
-        mouse_left_button_down_ = false;
-        mouse_right_button_down_ = false;
 
         LogInfo(Name() + " initialized succesfully.");
     }

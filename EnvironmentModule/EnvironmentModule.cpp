@@ -26,10 +26,9 @@
 #include "ModuleManager.h"
 #include "EventManager.h"
 #include "RexNetworkUtils.h"
-#include "UiModule.h"
-#include "UiDefines.h"
-#include "Inworld/InworldSceneController.h"
-#include "Inworld/View/UiWidgetProperties.h"
+
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 
 #include "MemoryLeakCheck.h"
 
@@ -45,7 +44,8 @@ namespace Environment
         resource_event_category_(0),
         scene_event_category_(0),
         framework_event_category_(0),
-        input_event_category_(0)
+        input_event_category_(0),
+        firstTime_(true)
     {
     }
 
@@ -61,6 +61,20 @@ namespace Environment
 
     void EnvironmentModule::Initialize()
     {
+    }
+
+    void EnvironmentModule::PostInitialize()
+    {
+        event_manager_ = framework_->GetEventManager();
+        
+        // Depends on rexlogic etc. handling messages first to create the scene, so lower priority
+        event_manager_->RegisterEventSubscriber(this, 99);
+
+        resource_event_category_ = event_manager_->QueryEventCategory("Resource");
+        scene_event_category_ = event_manager_->QueryEventCategory("Scene");
+        framework_event_category_ = event_manager_->QueryEventCategory("Framework");
+        input_event_category_ = event_manager_->QueryEventCategory("Input");
+
         OgreRenderer::Renderer *renderer = framework_->GetService<OgreRenderer::Renderer>();
         if (renderer)
         {
@@ -69,46 +83,16 @@ namespace Environment
             postprocess_dialog_->SetHandler(&renderer->GetCompositionHandler());
 
             // Add to scene.
-            UiServices::UiModule *ui_module = GetFramework()->GetModule<UiServices::UiModule>();
-            if (!ui_module)
+            Foundation::UiServiceInterface *ui = GetFramework()->GetService<Foundation::UiServiceInterface>();
+            if (!ui)
                 return;
 
-            UiServices::UiWidgetProperties ui_properties(QApplication::translate("PostProcessWidget","Post-processing"), UiServices::ModuleWidget);
-
-            // Menu graphics
-            UiDefines::MenuNodeStyleMap image_path_map;
-            QString base_url = "./data/ui/images/menus/"; 
-            image_path_map[UiDefines::TextNormal] = base_url + "edbutton_POSTPRtxt_normal.png";
-            image_path_map[UiDefines::TextHover] = base_url + "edbutton_POSTPRtxt_hover.png";
-            image_path_map[UiDefines::TextPressed] = base_url + "edbutton_POSTPRtxt_click.png";
-            image_path_map[UiDefines::IconNormal] = base_url + "edbutton_POSTPR_normal.png";
-            image_path_map[UiDefines::IconHover] = base_url + "edbutton_POSTPR_hover.png";
-            image_path_map[UiDefines::IconPressed] = base_url + "edbutton_POSTPR_click.png";
-
-            ui_properties.SetMenuNodeStyleMap(image_path_map);
-            ui_properties.SetMenuGroup(UiDefines::WorldToolsGroup);
-
-            ui_module->GetInworldSceneController()->AddWidgetToScene(postprocess_dialog_, ui_properties);
+            ui->AddWidgetToScene(postprocess_dialog_);
+            ui->AddWidgetToMenu(postprocess_dialog_, QObject::tr("Post-processing"), QObject::tr("World Tools"),
+                "./data/ui/images/menus/edbutton_POSTPR_normal.png");
         }
-    }
 
-    void EnvironmentModule::PostInitialize()
-    {
-        event_manager_ = framework_->GetEventManager();
-        
-        // Depends on rexlogic etc. handling messages first to create the scene, so lower priority
-        event_manager_->RegisterEventSubscriber(framework_->GetModuleManager()->GetModule(this), 99);
-
-        resource_event_category_ = event_manager_->QueryEventCategory("Resource");
-        scene_event_category_ = event_manager_->QueryEventCategory("Scene");
-        framework_event_category_ = event_manager_->QueryEventCategory("Framework");
-        input_event_category_ = event_manager_->QueryEventCategory("Input");
-    }
-
-    void EnvironmentModule::SubscribeToNetworkEvents()
-    {
-        network_in_event_category_ = event_manager_->QueryEventCategory("NetworkIn");
-        network_state_event_category_ = event_manager_->QueryEventCategory("NetworkState");
+         environment_editor_ = new EnvironmentEditor(this);
     }
 
     void EnvironmentModule::Uninitialize()
@@ -128,9 +112,20 @@ namespace Environment
     void EnvironmentModule::Update(f64 frametime)
     {
         RESETPROFILER;
-        // HACK Initialize editor_widget_ in correct time. 
-        if (environment_editor_ == 0 && terrain_.get() != 0 && water_.get() != 0)
-            environment_editor_ = new EnvironmentEditor(this);
+     
+        // Idea of next lines:  Because of initialisation chain, enviroment editor stays in wrong state after logout/login-process. 
+        // Solution for that problem is that we initialise it again at that moment when user clicks environment editor, 
+        // because currently editor is plain QWidget we have not access to show() - slot. So we here poll widget, and when polling tells us that widget is seen, 
+        // we will initialise it again. 
+
+        if ( environment_editor_ != 0 && firstTime_ == true )
+        {
+            if ( environment_editor_->Showed())
+            {
+                environment_editor_->InitializeTabs();
+                firstTime_ = false;
+            }
+        }
 
         if ((currentWorldStream_) && currentWorldStream_->IsConnected())
         {
@@ -159,9 +154,10 @@ namespace Environment
             {
                 if (GetFramework()->GetDefaultWorldScene().get())
                 {
+                    CreateEnvironment();
                     CreateTerrain();
                     CreateWater();
-                    CreateEnvironment();
+                    //CreateEnvironment();
                     CreateSky();
                 }
             }
@@ -174,6 +170,8 @@ namespace Environment
                 ReleaseWater();
                 ReleaseEnvironment();
                 ReleaseSky();
+                firstTime_ = true;
+               
             }
         }
         else if(category_id == input_event_category_)
@@ -220,7 +218,8 @@ namespace Environment
             case Foundation::NETWORKING_REGISTERED:
             {
                 // Begin to listen network events.
-                SubscribeToNetworkEvents();
+                network_in_event_category_ = event_manager_->QueryEventCategory("NetworkIn");
+                network_state_event_category_ = event_manager_->QueryEventCategory("NetworkState");
                 return false;
             }
             case Foundation::WORLD_STREAM_READY:
@@ -521,18 +520,37 @@ namespace Environment
         entity->AddComponent(GetFramework()->GetComponentManager()->CreateComponent("EC_Terrain"));
 
         terrain_->FindCurrentlyActiveTerrain();
+        
+        if ( environment_editor_ != 0 )
+        {
+            environment_editor_->InitTerrainTabWindow();
+            environment_editor_->InitTerrainTextureTabWindow();
+        }
+        
     }
 
     void EnvironmentModule::CreateWater()
     {
         water_ = WaterPtr(new Water(this));
         water_->CreateWaterGeometry();
+        if ( environment_editor_ != 0 )
+             environment_editor_->InitWaterTabWindow();
     }
 
     void EnvironmentModule::CreateEnvironment()
     {
         environment_ = EnvironmentPtr(new Environment(this));
         environment_->CreateEnvironment();
+        
+        /*
+        if ( environment_editor_ != 0)
+        {
+            environment_editor_->InitAmbientTabWindow();
+            environment_editor_->InitFogTabWindow();
+        }
+        */
+        
+        
     }
 
     void EnvironmentModule::CreateSky()
@@ -545,6 +563,9 @@ namespace Environment
 
         if (!GetEnvironmentHandler()->IsCaelum())
             sky_->CreateDefaultSky();
+
+        if ( environment_editor_ != 0 )
+             environment_editor_->InitSkyTabWindow();
     }
 
     void EnvironmentModule::ReleaseTerrain()

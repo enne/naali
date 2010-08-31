@@ -10,6 +10,8 @@
 namespace Foundation
 {
     class Framework;
+    class AttributeInterface;
+    class ComponentInterface;
 
     //! Scenegraph, entity and component model that together form a generic, extendable, lightweight scene model.
     /*! See \ref SceneModelPage "Scenes, entities and components" for details about the viewer's scene model.
@@ -28,23 +30,23 @@ namespace Foundation
         typedef std::map< std::string, ComponentList > ComponentTypeMap;
         typedef ComponentList::iterator iterator;
         typedef ComponentList::const_iterator const_iterator;
-        typedef std::map<std::string, ComponentFactoryInterfacePtr> ComponentFactoryMap;
+        typedef std::map<QString, ComponentFactoryInterfacePtr> ComponentFactoryMap;
 
         //! default constructor
-        ComponentManager(Framework *framework) : framework_(framework) {}
+        ComponentManager(Framework *framework);// : framework_(framework) {}
 
         //! destructor
         ~ComponentManager() { }
 
         //! register factory for the component
-        void RegisterFactory(const std::string &component, const ComponentFactoryInterfacePtr &factory)
+        void RegisterFactory(const QString &component, const ComponentFactoryInterfacePtr &factory)
         {
             assert(factories_.find(component) == factories_.end());
             factories_[component] = factory;
         }
 
         //! Unregister the component. Removes the factory.
-        void UnregisterFactory(const std::string &component)
+        void UnregisterFactory(const QString &component)
         {
             ComponentFactoryMap::iterator iter = factories_.find(component);
             assert(iter != factories_.end());
@@ -56,7 +58,7 @@ namespace Foundation
             \param type_name name of the component type
             \return true if component can be created, false otherwise
         */
-        bool CanCreate(const std::string &type_name);
+        bool CanCreate(const QString &type_name);
 
         //! Create a new component
         /*!
@@ -64,7 +66,7 @@ namespace Foundation
 
             \param type_name type of the component to create
         */
-        ComponentPtr CreateComponent(const std::string &type_name);
+        ComponentPtr CreateComponent(const QString &type_name);
 
         //! Create a new component
         /*!
@@ -73,10 +75,14 @@ namespace Foundation
             \param type_name type of the component to create
             \param name name of the component to create
         */
-        ComponentPtr CreateComponent(const std::string &type_name, const std::string &name);
+        ComponentPtr CreateComponent(const QString &type_name, const QString &name);
 
         //! Create clone of the specified component
         ComponentPtr CloneComponent(const ComponentInterfacePtr &component);
+
+        //! Create new attribute for spesific component.
+        AttributeInterface *CreateAttribute(ComponentInterface *owner, const std::string &typeName, const std::string &name);
+        StringVector GetAttributeTypes() const;
 
         //! Get all component factories
         const ComponentFactoryMap GetComponentFactoryMap() const { return factories_; }
@@ -84,6 +90,7 @@ namespace Foundation
     private:
         //! map of component factories
         ComponentFactoryMap factories_;
+        StringVector attributeTypes_;
 
         //! Framework
         Framework *framework_;
