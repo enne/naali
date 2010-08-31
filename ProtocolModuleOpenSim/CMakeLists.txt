@@ -5,7 +5,7 @@ init_target (ProtocolModuleOpenSim OUTPUT modules/core)
 file (GLOB CPP_FILES *.cpp)
 file (GLOB H_FILES *.h)
 file (GLOB XML_FILES *.xml)
-file (GLOB MOC_FILES )
+file (GLOB MOC_FILES OpenSimWorldSession.h RealXtendWorldSession.h OpenSimLoginThread.h)
 set (SOURCE_FILES ${CPP_FILES} ${H_FILES})
 
 # Qt4 Wrap
@@ -15,7 +15,7 @@ QT4_ADD_RESOURCES(RESOURCE_SRCS ${RESOURCE_FILES})
 
 set (FILES_TO_TRANSLATE ${FILES_TO_TRANSLATE} ${H_FILES} ${CPP_FILES} PARENT_SCOPE)
 
-add_definitions (-DOSPROTO_MODULE_EXPORTS -DUSE_QT)
+add_definitions (-DOSPROTO_MODULE_EXPORTS)
 
 use_package (BOOST)
 use_package (POCO)

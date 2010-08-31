@@ -8,7 +8,7 @@
 
 #include "UiModuleApi.h"
 #include "UiModuleFwd.h"
-#include "UiDefines.h"
+#include "UiTypes.h"
 
 #include <QObject>
 #include <QMap>
@@ -18,11 +18,6 @@
 class KeyEvent;
 class InputContext;
 
-namespace OgreRenderer
-{
-    class QOgreUIView;
-}
-
 namespace ProtocolUtilities
 {
     class WorldStream;
@@ -31,13 +26,16 @@ namespace ProtocolUtilities
 namespace UiServices
 {
     class UiSettingsService;
+    class UiSceneService;
     typedef boost::shared_ptr<UiSettingsService> UiSettingsPtr;
+    typedef boost::shared_ptr<UiSceneService> UiSceneServicePtr;
 
     //! UiModule provides user interface services
-    /// For details about Inworld Widget Services read UiWidgetServices.h
-    /// For details about Notification Services read UiNotificationServices.h
-    /// Include above headers into your .cpp and UiServicesFwd.h to your .h files for easy access
-
+    /*! For details about Inworld Widget Services read UiWidgetServices.h
+     *  For details about Notification Services read UiNotificationServices.h
+     *  Include above headers into your .cpp and UiServicesFwd.h to your .h files for easy access
+     *  For the UI services provided for other, see @see UiSceneService
+     */
     class UI_MODULE_API UiModule : public QObject, public Foundation::ModuleInterface
     {
         Q_OBJECT
@@ -66,22 +64,23 @@ namespace UiServices
 
         CoreUi::UiStateMachine *GetUiStateMachine() const { return ui_state_machine_; }
 
-        QObject *GetEtherLoginNotifier() const;
+        Ether::Logic::EtherLoginNotifier *GetEtherLoginNotifier() const;
 
         QPair<QString, QString> GetScreenshotPaths();
 
-        /*************** Logging ***************/
-
+        //! Logging
         MODULE_LOGGING_FUNCTIONS;
-        //! Returns name of this module. Needed for logging.
+
+        //! Returns name of this module.
         static const std::string &NameStatic() { return type_name_static_; }
 
     private slots:
-        void OnKeyPressed(KeyEvent &key);
+        void OnKeyPressed(KeyEvent *key);
 
     private:
         //! Notify all ui module components of connected/disconnected state
-        void PublishConnectionState(UiDefines::ConnectionState connection_state);
+        //! \param message Optional message, e.g. error message.
+        void PublishConnectionState(ConnectionState connection_state, const QString &message = "");
 
         //! Get all the category id:s of categories in eventQueryCategories
         void SubscribeToEventCategories();
@@ -97,9 +96,6 @@ namespace UiServices
 
         //! Pointer to the QOgre UiView
         QGraphicsView *ui_view_;
-
-        //! UiConsoleManager pointer
-        CoreUi::UiConsoleManager* ui_console_manager_;
 
         //! UiStateMachine pointer
         CoreUi::UiStateMachine *ui_state_machine_;
@@ -122,6 +118,10 @@ namespace UiServices
         //! Ui settings service 
         UiSettingsPtr ui_settings_service_;
 
+        //! Ui service.
+        UiSceneServicePtr ui_scene_service_;
+
+        //! Input context for Ether
         boost::shared_ptr<InputContext> input;
     };
 }

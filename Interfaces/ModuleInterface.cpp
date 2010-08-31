@@ -5,7 +5,8 @@
  *  @brief  Interface for Naali modules.
  *          See @ref ModuleArchitecture for details.
  */
-
+ 
+#include "StableHeaders.h"
 #include "Framework.h"
 #include "ModuleInterface.h"
 #include "ServiceManager.h"
@@ -83,7 +84,7 @@ void ModuleInterface::InitializeInternal()
     }
 
     // Register to event system with default priority
-    framework_->GetEventManager()->RegisterEventSubscriber(framework_->GetModuleManager()->GetModule(this), DEFAULT_EVENT_PRIORITY);
+    framework_->GetEventManager()->RegisterEventSubscriber(this, DEFAULT_EVENT_PRIORITY);
 
     Initialize();
 }

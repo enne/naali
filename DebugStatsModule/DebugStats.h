@@ -67,8 +67,11 @@ namespace DebugStats
 
     private slots:
         void AddProfilerWidgetToUi();
-        void StartProfiling(bool profile);
-    
+
+        /// Starts profiling if the profiler (proxy) widget is visible.
+        /// @param bool visible Visibility.
+        void StartProfiling(bool visible);
+
     private:
         Q_DISABLE_COPY(DebugStatsModule);
 

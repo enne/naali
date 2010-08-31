@@ -42,32 +42,32 @@ public:
 
 signals:
     /// Emitted for each key code, for each event type.
-    void OnKeyEvent(KeyEvent &key);
+    void OnKeyEvent(KeyEvent *key);
     /// Emitted for each mouse event (move, scroll, button press/release).
-    void OnMouseEvent(MouseEvent &mouse);
+    void OnMouseEvent(MouseEvent *mouse);
 
     /// This signal is emitted when any key is pressed in this context.
-    void KeyPressed(KeyEvent &key);
+    void KeyPressed(KeyEvent *key);
     /// This signal is emitted for each application frame when this key is pressed down in this context.
-    void KeyDown(KeyEvent &key);
+    void KeyDown(KeyEvent *key);
     /// This signal is emitted when any key is released in this context.
-    void KeyReleased(KeyEvent &key);
+    void KeyReleased(KeyEvent *key);
 
     /// Emitted when the mouse cursor is moved, independent of whether any buttons are down.
-    void MouseMove(MouseEvent &mouse);
+    void MouseMove(MouseEvent *mouse);
     /// Mouse wheel was scrolled.
-    void MouseScroll(MouseEvent &mouse);
+    void MouseScroll(MouseEvent *mouse);
 
     // The following signals are emitted on the appropriate events. It is guaranteed that each press event
     // will follow a corresponding release event (although if it gets lost from Qt, it might get delayed
     // until we actually notice it).
-    void MouseLeftPressed(MouseEvent &mouse);
-    void MouseMiddlePressed(MouseEvent &mouse);
-    void MouseRightPressed(MouseEvent &mouse);
+    void MouseLeftPressed(MouseEvent *mouse);
+    void MouseMiddlePressed(MouseEvent *mouse);
+    void MouseRightPressed(MouseEvent *mouse);
 
-    void MouseLeftReleased(MouseEvent &mouse);
-    void MouseMiddleReleased(MouseEvent &mouse);
-    void MouseRightReleased(MouseEvent &mouse);
+    void MouseLeftReleased(MouseEvent *mouse);
+    void MouseMiddleReleased(MouseEvent *mouse);
+    void MouseRightReleased(MouseEvent *mouse);
 
 public slots:
     /// Creates a new signal object that will be triggered when the given
@@ -146,6 +146,10 @@ public slots:
     /// if that event is going to go to Qt and the higher priority context does not
     /// capture mouse/key events over Qt, but the lover priority context does.
     int Priority() const { return priority; }
+    
+    /// Convenience function to allow for simple
+    /// disconnecting of all signals from Python
+    void disconnectAll() { this->disconnect(); }
 
 private:
     typedef std::map<QKeySequence, KeyEventSignal*> KeyEventSignalMap;

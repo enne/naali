@@ -14,23 +14,23 @@
 #include "SceneManager.h"
 #include "ConsoleCommandServiceInterface.h"
 #include "ModuleManager.h"
-#include "UiModule.h"
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/InworldSceneController.h"
+#include "EC_DynamicComponent.h"
+#include "UiServiceInterface.h"
 
 #include "MemoryLeakCheck.h"
 
 namespace ECEditor
 {
-    std::string ECEditorModule::name_static_ = "ECEditorModule";
+    std::string ECEditorModule::name_static_ = "ECEditor";
     
     ECEditorModule::ECEditorModule() :
         ModuleInterface(name_static_),
-        editor_window_(0),
         scene_event_category_(0),
         framework_event_category_(0),
         input_event_category_(0),
-        network_state_event_category_(0)
+        network_state_event_category_(0),
+        editor_window_(0),
+        xmlEditor_(0)
     {
     }
     
@@ -54,6 +54,17 @@ namespace ECEditor
             "Shows the EC editor.",
             Console::Bind(this, &ECEditorModule::ShowWindow)));
 
+        RegisterConsoleCommand(Console::CreateCommand("EditDynComp",
+            "Edit dynamic component's attributes."
+            "Params:"
+            " 0 = entity id."
+            " 1 = operation (add or rem)"
+            " 2 = component type.(ec. EC_DynamicComponent)"
+            " 3 = attribute name."
+            " 4 = attribute type. !Only rem dont use in rem operation."
+            " 5 = attribute value. !Only rem dont use in rem operation.",
+            Console::Bind(this, &ECEditorModule::EditDynamicComponent)));
+
         scene_event_category_ = event_manager_->QueryEventCategory("Scene");
         framework_event_category_ = event_manager_->QueryEventCategory("Framework");
         input_event_category_ = event_manager_->QueryEventCategory("Input");
@@ -65,6 +76,7 @@ namespace ECEditor
     {
         event_manager_.reset();
         SAFE_DELETE_LATER(editor_window_);
+        SAFE_DELETE_LATER(xmlEditor_);
     }
 
     void ECEditorModule::Update(f64 frametime)
@@ -85,8 +97,9 @@ namespace ECEditor
             {
                 //! \todo support multiple entity selection
                 Scene::Events::EntityClickedData *entity_clicked_data = dynamic_cast<Scene::Events::EntityClickedData *>(data);
-                if (editor_window_)
+                if (editor_window_ && entity_clicked_data)
                     editor_window_->AddEntity(entity_clicked_data->entity->GetId());
+                break;
             }
             case Scene::Events::EVENT_ENTITY_SELECT:
                 //if (editor_window_)
@@ -96,6 +109,13 @@ namespace ECEditor
                 //if (editor_window_)
                 //    editor_window_->RemoveEntity(entity_clicked_data->entity->GetId());
                 break;
+            case Scene::Events::EVENT_ENTITY_DELETED:
+            {
+                Scene::Events::EntityClickedData *entity_clicked_data = dynamic_cast<Scene::Events::EntityClickedData *>(data);
+                if(editor_window_ && entity_clicked_data)
+                    editor_window_->RemoveEntity(entity_clicked_data->entity->GetId());
+                break;
+            }
             default:
                 break;
             }
@@ -103,7 +123,7 @@ namespace ECEditor
 
         if (category_id == network_state_event_category_ && event_id == ProtocolUtilities::Events::EVENT_SERVER_DISCONNECTED)
             if (editor_window_)
-                editor_window_->ClearEntities();
+                editor_window_->ClearEntities(); 
 
         return false;
     }
@@ -113,69 +133,134 @@ namespace ECEditor
         if (editor_window_)
             return;
 
-        UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module)
+        Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
             return;
 
         editor_window_ = new ECEditorWindow(GetFramework());
-        UiServices::UiWidgetProperties widget_properties("Entity Components", UiServices::ModuleWidget);
-        
-        UiDefines::MenuNodeStyleMap map;
-        QString base_url = "./data/ui/images/menus/";
-        map[UiDefines::IconNormal] = base_url + "edbutton_OBJED_normal.png";
-        map[UiDefines::IconHover] = base_url + "edbutton_OBJED_hover.png";
-        map[UiDefines::IconPressed] = base_url + "edbutton_OBJED_click.png";
-        widget_properties.SetMenuNodeStyleMap(map);
 
-        ui_module->GetInworldSceneController()->AddWidgetToScene(editor_window_, widget_properties);
+        ui->AddWidgetToScene(editor_window_);
+        ui->AddWidgetToMenu(editor_window_, tr("Entity-component Editor"), "", "./data/ui/images/menus/edbutton_OBJED_normal.png");
 
         connect(editor_window_, SIGNAL(EditEntityXml(Scene::EntityPtr)), this, SLOT(CreateXmlEditor(Scene::EntityPtr)));
         connect(editor_window_, SIGNAL(EditComponentXml(Foundation::ComponentPtr)), this, SLOT(CreateXmlEditor(Foundation::ComponentPtr)));
+        connect(editor_window_, SIGNAL(EditEntityXml(const QList<Scene::EntityPtr> &)), this, SLOT(CreateXmlEditor(const QList<Scene::EntityPtr> &)));
+        connect(editor_window_, SIGNAL(EditComponentXml(const QList<Foundation::ComponentPtr> &)), this, SLOT(CreateXmlEditor(const QList<Foundation::ComponentPtr> &)));
     }
 
     Console::CommandResult ECEditorModule::ShowWindow(const StringVector &params)
     {
-        UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module)
+        Foundation::UiServicePtr ui = framework_->GetService<Foundation::UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+        if (!ui)
             return Console::ResultFailure("Failed to acquire UiModule pointer!");
 
         if (editor_window_)
         {
-            ui_module->GetInworldSceneController()->BringProxyToFront(editor_window_);
+            ui->BringWidgetToFront(editor_window_);
             return Console::ResultSuccess();
         }
         else
             return Console::ResultFailure("EC Editor window was not initialised, something went wrong on startup!");
     }
 
+    /* Params
+     * 0 = entity id.
+     * 1 = operation (add/rem)
+     * 2 = component type.
+     * 3 = attribute name
+     * 4 = attribute type
+     * 5 = attribute value
+     */
+    Console::CommandResult ECEditorModule::EditDynamicComponent(const StringVector &params)
+    {
+        Scene::SceneManager *sceneMgr = framework_->GetDefaultWorldScene().get();
+        if(!sceneMgr)
+            return Console::ResultFailure("Failed to find main scene.");
+
+        if(params.size() == 6)
+        {
+            entity_id_t id = ParseString<entity_id_t>(params[0]);
+            Scene::Entity *ent = sceneMgr->GetEntity(id).get();
+            if(!ent)
+                return Console::ResultFailure("Cannot find entity by name of " + params[0]);
+
+            if(params[1] == "add")
+            {
+                Foundation::ComponentInterfacePtr comp = ent->GetComponent(QString::fromStdString(params[2]));
+                EC_DynamicComponent *dynComp = dynamic_cast<EC_DynamicComponent *>(comp.get());
+                if(!dynComp)
+                    return Console::ResultFailure("Wrong component type name" + params[2]);
+                Foundation::AttributeInterface *attribute = dynComp->CreateAttribute(QString::fromStdString(params[4]), params[3].c_str());
+                if(!attribute)
+                    return Console::ResultFailure("invalid attribute type" + params[4]);
+                attribute->FromString(params[5], AttributeChange::Local);
+                dynComp->ComponentChanged("Local");//AttributeChange::Local); 
+            }
+        }
+        if(params.size() == 4)
+        {
+            entity_id_t id = ParseString<entity_id_t>(params[0]);
+            Scene::Entity *ent = sceneMgr->GetEntity(id).get();
+            if(!ent)
+                return Console::ResultFailure("Cannot find entity by name of" + params[0]);
+
+            else if(params[1] == "rem")
+            {
+                Foundation::ComponentInterfacePtr comp = ent->GetComponent(QString::fromStdString(params[2]));
+                EC_DynamicComponent *dynComp = dynamic_cast<EC_DynamicComponent *>(comp.get());
+                if(!dynComp)
+                    return Console::ResultFailure("Wrong component type name" + params[2]);
+                dynComp->RemoveAttribute(QString::fromStdString(params[3]));
+                dynComp->ComponentChanged("Local");
+            }
+        }
+        return Console::ResultSuccess();
+    }
+
     void ECEditorModule::CreateXmlEditor(Scene::EntityPtr entity)
     {
-        UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!entity || !ui_module)
+        QList<Scene::EntityPtr> entities;
+        entities << entity;
+        CreateXmlEditor(entities);
+    }
+
+    void ECEditorModule::CreateXmlEditor(const QList<Scene::EntityPtr> &entities)
+    {
+        Foundation::UiServicePtr ui = framework_->GetService<Foundation::UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+        if (entities.empty() || !ui)
             return;
 
-        EcXmlEditorWidget *editor = new EcXmlEditorWidget(framework_);
-        UiServices::UiProxyWidget *proxy = ui_module->GetInworldSceneController()->AddWidgetToScene(editor,
-            UiServices::UiWidgetProperties(editor->windowTitle(), UiServices::SceneWidget));
-        connect(proxy, SIGNAL(Closed()), editor, SLOT(deleteLater()));
+        if (!xmlEditor_)
+        {
+            xmlEditor_ = new EcXmlEditorWidget(framework_);
+            ui->AddWidgetToScene(xmlEditor_);
+        }
 
-        editor->SetEntity(entity);
-        ui_module->GetInworldSceneController()->BringProxyToFront(editor);
+        xmlEditor_->SetEntity(entities);
+        ui->BringWidgetToFront(xmlEditor_);
     }
 
     void ECEditorModule::CreateXmlEditor(Foundation::ComponentPtr component)
     {
-        UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!component || !ui_module)
+        QList<Foundation::ComponentPtr> components;
+        components << component;
+        CreateXmlEditor(components);
+    }
+
+    void ECEditorModule::CreateXmlEditor(const QList<Foundation::ComponentPtr> &components)
+    {
+        Foundation::UiServicePtr ui = framework_->GetService<Foundation::UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+        if (components.empty() || !ui)
             return;
 
-        EcXmlEditorWidget *editor = new EcXmlEditorWidget(framework_);
-        UiServices::UiProxyWidget *proxy = ui_module->GetInworldSceneController()->AddWidgetToScene(editor,
-            UiServices::UiWidgetProperties(editor->windowTitle(), UiServices::SceneWidget));
-        connect(proxy, SIGNAL(Closed()), editor, SLOT(deleteLater()));
+        if (!xmlEditor_)
+        {
+            xmlEditor_ = new EcXmlEditorWidget(framework_);
+            ui->AddWidgetToScene(xmlEditor_);
+        }
 
-        editor->SetComponent(component);
-        ui_module->GetInworldSceneController()->BringProxyToFront(editor);
+        xmlEditor_->SetComponent(components);
+        ui->BringWidgetToFront(xmlEditor_);
     }
 }
 
@@ -189,5 +274,5 @@ using namespace ECEditor;
 
 POCO_BEGIN_MANIFEST(Foundation::ModuleInterface)
     POCO_EXPORT_CLASS(ECEditorModule)
-POCO_END_MANIFEST 
+POCO_END_MANIFEST
 

@@ -11,6 +11,7 @@
 namespace OgreRenderer
 {
     EC_OgreCustomObject::EC_OgreCustomObject(Foundation::ModuleInterface* module) :
+        Foundation::ComponentInterface(module->GetFramework()),
         renderer_(checked_static_cast<OgreRenderingModule*>(module)->GetRenderer()),
         entity_(0),
         attached_(false),
@@ -32,7 +33,7 @@ namespace OgreRenderer
     {
         if (!dynamic_cast<EC_OgrePlaceable*>(placeable.get()))
         {
-            OgreRenderingModule::LogError("Attempted to set placeable which is not " + EC_OgrePlaceable::TypeNameStatic());
+            OgreRenderingModule::LogError("Attempted to set placeable which is not " + EC_OgrePlaceable::TypeNameStatic().toStdString());
             return;
         }
         

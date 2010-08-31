@@ -35,6 +35,7 @@ class MouseEvent;
 namespace OgreRenderer
 {
     class Renderer;
+    class EC_OgreCamera;
 }
 
 namespace Scene
@@ -52,6 +53,10 @@ namespace ProtocolUtilities
     class InventorySkeleton;
     class WorldStream;
     typedef boost::shared_ptr<WorldStream> WorldStreamPtr;
+}
+namespace MediaPlayer
+{
+    class ServiceInterface;
 }
 
 typedef boost::shared_ptr<ProtocolUtilities::InventorySkeleton> InventoryPtr;
@@ -71,6 +76,9 @@ namespace PythonScript
         Scene::SceneManager* GetScene(const QString &name) const;
         void RunJavascriptString(const QString &codestr, const QVariantMap &context = QVariantMap());
         InputContext* GetInputContext() const { return input.get(); }
+        MediaPlayer::ServiceInterface* GetMediaPlayerService() const;
+        OgreRenderer::EC_OgreCamera* GetCamera() const;
+        Scene::Entity* GetCameraEntity() const;
 
     public:
         PythonScriptModule();
@@ -124,10 +132,6 @@ namespace PythonScript
         /// World stream pointer.
         ProtocolUtilities::WorldStreamPtr worldstream;
 
-    private slots:
-        void HandleKeyEvent(KeyEvent &key);
-        void HandleMouseEvent(MouseEvent &mouse);
-
     private:
         //void SendObjectAddPacket(float start_x, start_y, start_z, float end_x, end_y, end_z);
 
@@ -163,9 +167,6 @@ namespace PythonScript
         //   so reverting to use the Py C API directly, not using the ScriptObject now
         //   for the modulemanager 
         
-        bool mouse_left_button_down_;
-        bool mouse_right_button_down_;
-
         // EventManager to member variable to be accessed from SubscribeNetworkEvents()
         Foundation::EventManagerPtr em_;
 

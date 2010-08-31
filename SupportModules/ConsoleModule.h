@@ -1,17 +1,12 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
-#ifndef incl_ConsoleModule_h
-#define incl_ConsoleModule_h
+#ifndef incl_SupportModules_ConsoleModule_h
+#define incl_SupportModules_ConsoleModule_h
 
 #include "ModuleInterface.h"
 #include "ModuleLoggingFunctions.h"
 #include "ConsoleServiceInterface.h"
 #include "ConsoleModuleApi.h"
-
-namespace Foundation
-{
-    class Framework;
-}
 
 /*! \defgroup DebugConsole_group Debug Console Client Interface
     \copydoc Console
@@ -22,6 +17,8 @@ namespace Foundation
 */
 namespace Console
 {
+    class UiConsoleManager;
+
     //! Debug console module
     /*! See \ref DebugConsole "Using the debug console".
     */
@@ -35,14 +32,8 @@ namespace Console
         virtual void Initialize();
         virtual void PostInitialize();
         virtual void Uninitialize();
-
         virtual void Update(f64 frametime);
-
-        virtual bool HandleEvent(event_category_id_t category_id, event_id_t event_id, 
-            Foundation::EventDataInterface* data);
-
-        //! returns framework
-        Foundation::Framework *GetFramework() const { return framework_; }
+        virtual bool HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface* data);
 
         //! Returns default console
         ConsolePtr GetConsole() const { return manager_; }
@@ -51,6 +42,7 @@ namespace Console
 
         //! returns name of this module. Needed for logging.
         static const std::string &NameStatic() { return type_name_static_; }
+
     private:
         //! Type name of the module.
         static std::string type_name_static_;
@@ -63,6 +55,9 @@ namespace Console
 
         //! Input event category id.
         event_category_id_t inputEventCategory_;
+
+        //! Console UI manager
+        UiConsoleManager *ui_console_manager_;
     };
 }
 

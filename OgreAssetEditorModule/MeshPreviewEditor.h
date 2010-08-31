@@ -3,19 +3,24 @@
 #ifndef incl_OgreAssetEditorModule_MeshPreviewEditor_h
 #define incl_OgreAssetEditorModule_MeshPreviewEditor_h
 
-#include <RexTypes.h>
+#include "RexTypes.h"
+#include "InputServiceInterface.h"
+#include "QtInputMouseEvent.h"
+#include "OgreMeshResource.h"
+
 #include <QWidget>
 #include <QLabel>
 #include <QImage>
-#include <UiModule.h>
-#include <QOgreWorldView.h>
-#include "QOgreUIView.h"
+
+#include <OgreLight.h>
 
 #include <boost/shared_ptr.hpp>
 
 QT_BEGIN_NAMESPACE
 class QPushButton;
 QT_END_NAMESPACE
+
+class UiProxyWidget;
 
 namespace Foundation
 {
@@ -32,6 +37,11 @@ namespace Resource
     }
 }
 
+namespace OgreRenderer
+{
+    class Renderer;
+    typedef boost::shared_ptr<OgreRenderer::Renderer> RendererPtr;
+}
 
 namespace Naali
 {
@@ -43,7 +53,7 @@ namespace Naali
         MeshPreviewLabel(QWidget *parent = 0, Qt::WindowFlags flags = 0);
         virtual ~MeshPreviewLabel();
     signals:
-        void sendMouseEvent(QMouseEvent *event, bool both);
+        void sendMouseEvent(QMouseEvent *event);
         void sendWheelEvent(QWheelEvent* ev);
     protected:
          void mouseMoveEvent(QMouseEvent *event);
@@ -51,12 +61,9 @@ namespace Naali
          void mouseReleaseEvent(QMouseEvent* ev);
          void wheelEvent(QWheelEvent* ev);
 
-    private:
-         bool leftPressed_;
-         bool rightPressed_;
     };
 
-    //! AudioPreviewEditor is used to play different audioclips from the inventory and show audio info.
+    //! MeshPrevieEditor is used to view meshes
     class MeshPreviewEditor: public QWidget
     {
         Q_OBJECT
@@ -70,8 +77,6 @@ namespace Naali
                            QWidget *parent = 0);
         virtual ~MeshPreviewEditor();
 
-        //void HandleAssetReady(Foundation::AssetPtr asset);
-
         void HandleResouceReady(Resource::Events::ResourceReady *res);
         void RequestMeshAsset(const QString &asset_id);
         QImage ConvertToQImage(const u8 *raw_image_data, int width, int height, int channels);
@@ -80,9 +85,10 @@ namespace Naali
         /// Close the window.
         void Closed();
         void Update();
-        void MouseEvent(QMouseEvent* event, bool both);
+        void MouseEvent(QMouseEvent* event);
         void MouseWheelEvent(QWheelEvent* ev);
-
+      
+    
     signals:
         /// This signal is emitted when the editor is closed.
         void Closed(const QString &inventory_id, asset_type_t asset_type);
@@ -90,7 +96,8 @@ namespace Naali
     private:
        
         void InitializeEditorWidget();
-       
+        void CreateRenderTexture();
+        void AdjustScene();
 
         Foundation::Framework *framework_;
         asset_type_t assetType_;
@@ -100,12 +107,26 @@ namespace Naali
         QPushButton *okButton_;
         QString assetId_;
         request_tag_t request_tag_;
-        UiServices::UiProxyWidget *proxy_; 
+        UiProxyWidget *proxy_; 
         QPointF lastPos_;
         int camAlphaAngle_;
         QString mesh_id_;
         // Mid button roll.
         double mouseDelta_;
+        InputContextPtr meshInputContext_;
+        MeshPreviewLabel* label_;
+
+        // For mesh viewing
+        OgreRenderer::RendererPtr renderer_;
+        Ogre::SceneManager*  manager_;
+        Ogre::Camera* camera_;
+        Ogre::Entity* entity_;
+        Ogre::SceneNode* scene_;
+        Ogre::SceneNode* root_scene_;
+        Ogre::Light* newLight_;
+        Ogre::RenderTexture* render_texture_;
+        int width_;
+        int height_;
       
     };
 }

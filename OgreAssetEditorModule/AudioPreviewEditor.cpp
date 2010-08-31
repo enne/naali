@@ -5,10 +5,8 @@
 #include "AudioSignalLabel.h"
 #include "OgreAssetEditorModule.h"
 
-#include <UiModule.h>
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/View/UiWidgetProperties.h"
-#include "Inworld/InworldSceneController.h"
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 #include "ModuleManager.h"
 #include "SoundServiceInterface.h"
 #include "AssetInterface.h"
@@ -113,12 +111,11 @@ namespace Naali
 
     void AudioPreviewEditor::Closed()
     {
-        boost::shared_ptr<UiServices::UiModule> ui_module =
-            framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module.get())
+        Foundation::UiServiceInterface* ui= framework_->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
             return;
 
-        ui_module->GetInworldSceneController()->RemoveProxyWidgetFromScene(this);
+        ui->RemoveWidgetFromScene(this);
 
         emit Closed(inventoryId_, assetType_);
     }
@@ -204,10 +201,9 @@ namespace Naali
 
     void AudioPreviewEditor::InitializeEditorWidget()
     {
-        // Get QtModule and create canvas
-        boost::shared_ptr<UiServices::UiModule> ui_module = 
-            framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module.get())
+        // Get ui service and create canvas
+        Foundation::UiServiceInterface *ui= framework_->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
             return;
 
         // Create widget from ui file
@@ -235,9 +231,10 @@ namespace Naali
         QObject::connect(playButton_, SIGNAL(clicked()), this, SLOT(PlaySound()));
 
         // Add widget to UI via ui services module
-        UiServices::UiProxyWidget *proxy = ui_module->GetInworldSceneController()->AddWidgetToScene(this, UiServices::UiWidgetProperties(tr("Audio: ") + objectName(), UiServices::SceneWidget));
-        QObject::connect(proxy, SIGNAL(Closed()), this, SLOT(Closed()));
+        setWindowTitle(tr("Audio: ") + objectName());
+        UiProxyWidget *proxy = ui->AddWidgetToScene(this);
+        connect(proxy, SIGNAL(Closed()), this, SLOT(Closed()));
         proxy->show();
-        ui_module->GetInworldSceneController()->BringProxyToFront(proxy);
+        ui->BringWidgetToFront(proxy);
     }
 }

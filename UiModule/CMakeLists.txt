@@ -41,7 +41,7 @@ AddSourceFolder (Inworld)
 AddSourceFolder (Inworld/View)
 AddSourceFolder (Inworld/Menus)
 AddSourceFolder (Inworld/ControlPanel)
-AddSourceFolder (Inworld/Console)
+#AddSourceFolder (Inworld/Console)
 AddSourceFolder (Inworld/Notifications)
 
 # Qt4 Moc files to "CMake Moc" subgroup
@@ -64,11 +64,11 @@ use_package (QT4)
 use_package (POCO)
 use_package (CURL)
 use_package (XMLRPC)
-use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules)# WorldInputModule)
+use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules)
 
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS} ${RESOURCE_SRCS})
 
-link_modules (Core Foundation Interfaces SceneManager RexCommon SupportModules ProtocolUtilities)
+link_modules (Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules)
 link_package (BOOST)
 link_package (QT4)
 link_package (POCO)
@@ -84,14 +84,14 @@ endforeach (XML_FILE)
 if (DYNAMIC_LOGIN_SCENE)
    add_definitions (-DDYNAMIC_LOGIN_SCENE)
 endif (DYNAMIC_LOGIN_SCENE)
-   
+
 # MSVC -specific settings for preprocessor and PCH use
 if (MSVC)
     # Label StableHeaders.cpp to create the PCH file and mark all other .cpp files to use that PCH file.
     # Add a #define DEBUG_CPP_NAME "this compilation unit name" to each compilation unit to aid in memory leak checking.
     foreach(src_file ${CPP_FILES})
             if (${src_file} MATCHES "StableHeaders.cpp$")
-                set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "/YcStableHeaders.h")        
+                set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "/YcStableHeaders.h")
             else()
                 get_filename_component(basename ${src_file} NAME)
                 set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "/YuStableHeaders.h -DDEBUG_CPP_NAME=\"\\\"${basename}\"\\\"")

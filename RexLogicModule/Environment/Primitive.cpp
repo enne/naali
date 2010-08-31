@@ -107,13 +107,13 @@ Scene::EntityPtr Primitive::CreateNewPrimEntity(entity_id_t entityid)
     if (!scene)
         return Scene::EntityPtr();
 
-    StringVector defaultcomponents;
-    defaultcomponents.push_back(EC_OpenSimPrim::TypeNameStatic());
-    defaultcomponents.push_back(EC_NetworkPosition::TypeNameStatic());
-    defaultcomponents.push_back(OgreRenderer::EC_OgrePlaceable::TypeNameStatic());
+    QStringList defaultcomponents;
+    defaultcomponents.append(EC_OpenSimPrim::TypeNameStatic());
+    defaultcomponents.append(EC_NetworkPosition::TypeNameStatic());
+    defaultcomponents.append(OgreRenderer::EC_OgrePlaceable::TypeNameStatic());
 
     // Note: we assume prim entity is created because of a message from network
-    Scene::EntityPtr entity = scene->CreateEntity(entityid,defaultcomponents,AttributeChange::Network); 
+    Scene::EntityPtr entity = scene->CreateEntity(entityid, defaultcomponents, AttributeChange::Network); 
 
     return entity;
 }
@@ -912,7 +912,7 @@ void Primitive::HandleDrawType(entity_id_t entityid)
         HandleMeshMaterials(entityid);
         
         // Check/set animation
-        HandleMeshAnimation(entityid);        
+        HandleMeshAnimation(entityid);
     }
     else if (prim.DrawType == RexTypes::DRAWTYPE_PRIM)
     {
@@ -1097,6 +1097,7 @@ void Primitive::HandleMeshMaterials(entity_id_t entityid)
 
         switch(i->second.Type)
         {
+            case RexTypes::RexAT_TextureJPEG:
             case RexTypes::RexAT_Texture:
             {
                 Foundation::ResourcePtr res = renderer->GetResource(mat_name, OgreRenderer::OgreTextureResource::GetTypeStatic());
@@ -1446,7 +1447,7 @@ void Primitive::HandleTextureReady(entity_id_t entityid, Foundation::ResourcePtr
         while (i != prim->Materials.end())
         {
             uint idx = i->first;
-            if ((i->second.Type == RexTypes::RexAT_Texture) && (i->second.asset_id.compare(res->GetId()) == 0))
+            if ((i->second.Type == RexTypes::RexAT_Texture || i->second.Type == RexTypes::RexAT_TextureJPEG) && (i->second.asset_id.compare(res->GetId()) == 0))
             {
                 // Use a legacy material with the same name as the texture
                 OgreRenderer::GetOrCreateLegacyMaterial(res->GetId(), OgreRenderer::LEGACYMAT_NORMAL);
@@ -2081,6 +2082,7 @@ void Primitive::SerializeECsToNetwork()
 void Primitive::DeserializeECsFromFreeData(Scene::EntityPtr entity, QDomDocument& doc)
 {
     StringVector type_names;
+    StringVector names;
     QDomElement entity_elem = doc.firstChildElement("entity");
     if (!entity_elem.isNull())
     {
@@ -2088,8 +2090,10 @@ void Primitive::DeserializeECsFromFreeData(Scene::EntityPtr entity, QDomDocument
         while (!comp_elem.isNull())
         {
             std::string type_name = comp_elem.attribute("type").toStdString();
+            std::string name = comp_elem.attribute("name").toStdString();
             type_names.push_back(type_name);
-            Foundation::ComponentPtr new_comp = entity->GetOrCreateComponent(type_name);
+            names.push_back(name);
+            Foundation::ComponentPtr new_comp = entity->GetOrCreateComponent(QString::fromStdString(type_name), QString::fromStdString(name)); //\todo just convert to use qstring all over here, not convert back & forth XXX
             if (new_comp)
             {
                 new_comp->DeserializeFrom(comp_elem, AttributeChange::Network);
@@ -2111,7 +2115,7 @@ void Primitive::DeserializeECsFromFreeData(Scene::EntityPtr entity, QDomDocument
             bool found = false;
             for (uint j = 0; j < type_names.size(); ++j)
             {
-                if (type_names[j] == all_components[i]->TypeName())
+                if (type_names[j] == all_components[i]->TypeName().toStdString() && names[j] == all_components[i]->Name().toStdString())
                 {
                     found = true;
                     break;

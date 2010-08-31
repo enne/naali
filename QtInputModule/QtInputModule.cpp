@@ -7,15 +7,16 @@
 #include "QtInputModule.h"
 #include "KeyBindingsConfigWindow.h"
 #include "ConsoleCommandServiceInterface.h"
-#include "UiModule.h"
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/InworldSceneController.h"
+
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 
 #include <QGraphicsItem>
 #include <QGraphicsView>
 #include <QKeyEvent>
 #include <QApplication>
 #include <QPushButton>
+#include <QGraphicsProxyWidget>
 
 #include <boost/make_shared.hpp>
 
@@ -49,7 +50,7 @@ void QtInputModule::Update(f64 frametime)
     RESETPROFILER;
 }
 
-static std::string moduleName = "QtInputModule";
+static std::string moduleName = "QtInput";
 const std::string &QtInputModule::NameStatic()
 {
     return moduleName;
@@ -57,14 +58,19 @@ const std::string &QtInputModule::NameStatic()
 
 void QtInputModule::ShowBindingsWindow()
 {
-    UiServices::UiModule *ui_module = framework_->GetModule<UiServices::UiModule>();
-    if (!ui_module)
+    Foundation::UiServicePtr ui = framework_->GetService<Foundation::UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+    if (!ui)
         return;
 
+    if (configWindow)
+    {
+        ui->BringWidgetToFront(configWindow);
+        return;
+    }
+
     configWindow = new KeyBindingsConfigWindow(framework_);
-    UiServices::UiProxyWidget *proxy = ui_module->GetInworldSceneController()->AddWidgetToScene(configWindow,
-        UiServices::UiWidgetProperties("Actions", UiServices::SceneWidget));
-    ui_module->GetInworldSceneController()->ShowProxyForWidget(configWindow);
+
+    UiProxyWidget *proxy = ui->AddWidgetToScene(configWindow);
 
     QPushButton *btn = configWindow->findChild<QPushButton*>("pushButtonCancel");
     QObject::connect(btn, SIGNAL(pressed()), this, SLOT(BindingsWindowClosed()));
@@ -73,7 +79,6 @@ void QtInputModule::ShowBindingsWindow()
 
     proxy->resize(350, 230);
     proxy->show();
-    QObject::connect(proxy, SIGNAL(Closed()), configWindow, SLOT(deleteLater()));
 }
 
 void QtInputModule::BindingsWindowClosed()

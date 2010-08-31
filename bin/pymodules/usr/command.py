@@ -60,14 +60,14 @@ if 0: #get entity
     #move(e)
 
 if 0: #test avatartracking, works :)
-    av_entid = 2628869553
+    av_entid = r.getUserAvatarId()
     print "<:::",
     try:
         a = r.getEntity(av_entid)
     except:
         print "could find the avatar with the given id", av_entid
     else:
-        print "Avatar pos:", a.pos,
+        print "Avatar pos:", a.placeable.Position
         print ":::>"
         """
         perhaps some local script could track movement?
@@ -90,14 +90,14 @@ if 0: #test avatartracking, works :)
 if 0: #push an event, input and/or chat
     #from eventsource import viewer
     #from modulemanager import m 
-    import circuits_manager
-    mm = circuits_manager.ComponentRunner.instance
+    import core.circuits_manager
+    mm = core.circuits_manager.ComponentRunner.instance
     print mm
     
     #mm.INPUT_EVENT(r.MoveForwardPressed)
     
     #a chat message again now too
-    mm.RexNetMsgChatFromSimulator("Bob", "- that's me, Bob.")
+    #mm.RexNetMsgChatFromSimulator("Bob", "- that's me, Bob.")
     
     #previous pyglet stuff, was an ncoming chat msg event
     #m.dispatch_event('on_chat', "input", "testing")
@@ -378,11 +378,17 @@ if 0: #pythonqt introspec
     #print type(UiWidgetProperties), dir(UiWidgetProperties)
     #print UiWidgetProperties.WidgetType #the enum should be moved to be inside the class XXX
 
+if 0: # EC_OgreCamera
+    import naali
+    cam = naali.getCamera()
+    print dir(cam), cam.className, cam
+
 if 0:
     import naali
     def keypressed(e):
         print e
     #print dir(naali.inputcontext)
+    #naali.inputcontext.disconnect()
     naali.inputcontext.connect('OnKeyEvent(KeyEvent&)', keypressed)
 
 if 0: #QVector3D
@@ -937,9 +943,13 @@ if 0: #javascript service
     import naali
     from naali import runjs
     runjs('print("Hello from JS! " + x)', {'x': naali.renderer})
-    runjs('var a = {"a": true, "b": 2};')
-    runjs('print(a.a + ", " + a.b)')
-    runjs('print(JSON.stringify(a))')
+    runjs('print("Another hello from JS! " + x)', {'x': naali.inputcontext})
+    runjs('print("Some camera! " + x)', {'x': naali.getCamera()})
+    runjs('print("Some camera, using naali :O ! " + x.getCamera())', {'x': naali})
+    runjs('print("Camera Entity " + x)', {'x': naali.getCameraEntity()})
+    #runjs('var a = {"a": true, "b": 2};')
+    #runjs('print(a.a + ", " + a.b)')
+    #runjs('print(JSON.stringify(a))')
     #runjs('print("1 + 1 == " + 1 + 1)')
     #runjs('print("1 - 1 == " + 1 - 1)')
     print ", done."
@@ -1278,6 +1288,24 @@ if 0:
     if mesh is not None:
         print "swoot"
 
+if 0:
+    avid = r.getUserAvatarId()
+    e = r.getEntity(avid)
+    try:
+        e.sound
+    except AttributeError:
+        print e.createComponent("EC_AttachedSound")
+        print "created a new Sound component"
+
+    s = e.sound
+    print type(s), s
+
+    e.removeSound(s)
+    try:
+        e.sound
+    except AttributeError:
+        print "sound removed successfully"
+
 if 0: #create a new component, hilight
     avid = r.getUserAvatarId()
     e = r.getEntity(avid)
@@ -1359,6 +1387,18 @@ if 0: #test adding a dynamiccomponent
         "locked": false, 
         "opened": true
         }""")
+
+if 0: #the new DynamicComponent with individual attrs etc
+    doorid = 1948506985
+    e = r.getEntity(doorid)
+    dc = e.getDynamicComponent("door")
+    a = dc.GetAttribute("opened")
+    print a, type(a)
+    dc.SetAttribute("opened", True)
+    dc.OnChanged()
+
+    jssrc = dc.GetAttribute("js_src")
+    print jssrc
 
 if 0: #animation control
     avid = r.getUserAvatarId()

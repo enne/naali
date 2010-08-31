@@ -72,6 +72,8 @@ namespace
 
 namespace CoreUi
 {
+    bool CommunicationWidget::in_world_speak_mode_on_ = false; 
+
     CommunicationWidget::CommunicationWidget(Foundation::Framework* framework) :
         framework_(framework),
         QGraphicsProxyWidget(),
@@ -80,7 +82,6 @@ namespace CoreUi
         viewmode_(Normal),
         resizing_horizontal_(false),
         resizing_vertical_(false),
-        in_world_speak_mode_on_(false),
         voice_state_widget_(0),
         voice_users_info_widget_(0),
         voice_users_widget_(0),
@@ -97,7 +98,9 @@ namespace CoreUi
     {
         setupUi(internal_widget_);
         setWidget(internal_widget_);
-        imButton->setEnabled(false);
+
+        // Hide IM contenat are (and button) by default. Shown when UpdateImWidget is called.
+        imContentWidget->hide();
 
         // Stacked layout
         stacked_layout_ = new QStackedLayout();
@@ -132,12 +135,12 @@ namespace CoreUi
         // Initialize In-World Voice
         if (framework_ &&  framework_->GetServiceManager())
         {
-            boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetService<Communications::ServiceInterface>(Foundation::Service::ST_Communications).lock();
-            if (comm.get())
+            Communications::ServiceInterface *comm = framework_->GetService<Communications::ServiceInterface>();
+            if (comm)
             {
-                connect(comm.get(), SIGNAL(InWorldVoiceAvailable()), SLOT(InitializeInWorldVoice()) );
-                connect(comm.get(), SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldChat()) );
-                connect(comm.get(), SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
+                connect(comm, SIGNAL(InWorldVoiceAvailable()), SLOT(InitializeInWorldVoice()) );
+                connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldChat()) );
+                connect(comm, SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
             }
         }
     }
@@ -198,7 +201,15 @@ namespace CoreUi
         if (im_proxy_)
         {
             if (!im_proxy_->isVisible())
+            {
                 im_proxy_->show();
+                // \todo Find a proper solution to the problem
+                // IM widget doesn't get input without main frame resisizing for unknow reason.
+                // HACK begin
+                im_proxy_->moveBy(1,1);
+                im_proxy_->moveBy(-1,-1);
+                // HACK end
+            }
             else
                 im_proxy_->AnimatedHide();
         }
@@ -351,11 +362,10 @@ namespace CoreUi
         QGraphicsProxyWidget::mouseReleaseEvent(mouse_release_event);
     }
 
-    void CommunicationWidget::UpdateImWidget(UiServices::UiProxyWidget *im_proxy)
+    void CommunicationWidget::UpdateImWidget(UiProxyWidget *im_proxy)
     {
         im_proxy_ = im_proxy;
-        imButton->setEnabled(true);
-
+        imContentWidget->show();
     }
 
     void CommunicationWidget::SetFocusToChat()
@@ -367,8 +377,8 @@ namespace CoreUi
     {
         if (framework_ &&  framework_->GetServiceManager())
         {
-            boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetService<Communications::ServiceInterface>(Foundation::Service::ST_Communications).lock();
-            if (comm.get())
+            Communications::ServiceInterface *comm = framework_->GetService<Communications::ServiceInterface>();
+            if (comm)
             {
                 if (in_world_chat_session_)
                 {
@@ -380,8 +390,9 @@ namespace CoreUi
                 in_world_chat_session_ = comm->InWorldChatSession();
                 if (!in_world_chat_session_)
                     return;
-                
-                connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)), SLOT(UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface&)) );
+
+                connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)),
+                    SLOT(UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface&)) );
             }
         }
     }
@@ -390,8 +401,8 @@ namespace CoreUi
     {
         if (framework_ &&  framework_->GetServiceManager())
         {
-            boost::shared_ptr<Communications::ServiceInterface> comm = framework_->GetServiceManager()->GetService<Communications::ServiceInterface>(Foundation::Service::ST_Communications).lock();
-            if (comm.get())
+            Communications::ServiceInterface *comm = framework_->GetService<Communications::ServiceInterface>();
+            if (comm)
             {
                 in_world_voice_session_ = comm->InWorldVoiceSession();
                 connect(in_world_voice_session_, SIGNAL(StartSendingAudio()), SLOT(UpdateInWorldVoiceIndicator()) );
@@ -427,6 +438,11 @@ namespace CoreUi
 
         if (in_world_voice_session_)
         {
+            if (in_world_speak_mode_on_)
+                in_world_voice_session_->EnableAudioSending();
+            else
+                in_world_voice_session_->DisableAudioSending();
+
             SAFE_DELETE(voice_users_widget_);
             voice_users_widget_ = new CommUI::VoiceUsersWidget(0);
             voice_users_widget_->SetSession(in_world_voice_session_);

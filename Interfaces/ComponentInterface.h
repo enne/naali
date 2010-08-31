@@ -43,10 +43,11 @@ namespace Foundation
         friend class AttributeInterface;
 
         Q_OBJECT
+        Q_PROPERTY(QString Name READ Name)
 
     public:
-        //! Default constuctor.
-        ComponentInterface();
+        //! Constuctor.
+        ComponentInterface(Framework* framework);
 
         //! Copy-constructor.
         ComponentInterface(const ComponentInterface& rhs);
@@ -55,16 +56,16 @@ namespace Foundation
         virtual ~ComponentInterface();
 
         //! Returns type name of the component.
-        virtual const std::string &TypeName() const = 0;
-
-        //! Returns the framework pointer.
-        Framework* GetFramework() const;
-
+        virtual const QString &TypeName() const = 0;
+        
         //! Returns name of the component.
-        const std::string& Name() const { return name_; }
+        const QString Name() const { return name_; }
+
+        //! Returns framework
+        Framework *GetFramework() const { return framework_; }
 
         //! Sets name of the component.
-        void SetName(const std::string& name) { name_ = name; }
+        void SetName(const QString& name);
 
         //! Sets parent entity for this component.
         void SetParentEntity(Scene::Entity* entity);
@@ -132,6 +133,12 @@ namespace Foundation
          */
         void OnAttributeChanged(AttributeInterface* attribute, AttributeChange::Type change);
 
+        //! Signal just before the components name is about to change.
+        /*! Note! If you are asking components name when the singal is emitted component will return old name.
+         *  /param newName new component name.
+         */
+        void OnComponentNameChanged(const std::string &newName);
+
         //! Emitted when the parent entity is set.
         void ParentEntitySet();
 
@@ -164,7 +171,7 @@ namespace Foundation
         Scene::Entity* parent_entity_;
 
         //! Name for further identification of EC. By default empty
-        std::string name_;
+        QString name_;
 
         //! Attribute list for introspection/reflection
         AttributeVector attributes_;
@@ -172,6 +179,9 @@ namespace Foundation
         //! Change status for the component itself
         AttributeChange::Type change_;
 
+        //! Framework pointer. Needed so that component is able to perform important uninitialization etc. even when not in an entity
+        Framework* framework_;
+        
     private:
         //! Called by AttributeInterface on initialization of each attribute
         void AddAttribute(AttributeInterface* attr) { attributes_.push_back(attr); }

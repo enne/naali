@@ -5,14 +5,14 @@
 
 #include "Service.h"
 #include <QWidget>
-#include <phonon/BackendCapabilities>
+#include <Phonon/BackendCapabilities>
 #include <QApplication>
 #include "PhononPlayerModule.h"
 #include "VideoPlayer.h"
 
 #include "MemoryLeakCheck.h"
 
-namespace PlayerService
+namespace PhononPlayer
 {
     Service::Service()
     {
@@ -22,17 +22,17 @@ namespace PlayerService
     {
         foreach(VideoPlayer* player, video_players_)
         {
-            SAFE_DELETE(player);
+            player->deleteLater();
         }
         video_players_.clear();
     }
 
-    bool Service::IsMimeTypeSupported(const QString mime_type)
+    bool Service::IsMimeTypeSupported(const QString &mime_type)
     {
-        return Phonon::BackendCapabilities::isMimeTypeAvailable(QString(mime_type));
+        return Phonon::BackendCapabilities::isMimeTypeAvailable(mime_type);
     }
 
-    QWidget* Service::GetPlayer(const QString &url)
+    QWidget* Service::GetPlayerWidget(const QString &url)
     {
         if (video_players_.contains(url))
             return dynamic_cast<QWidget*>(video_players_[url]);
@@ -45,14 +45,14 @@ namespace PlayerService
         return video_players_[url];
     }
 
-    void Service::DeletePlayer(const QString &url)
+    void Service::DeletePlayerWidget(const QString &url)
     {
         if (!video_players_.contains(url))
             return;
-        
+ 
         VideoPlayer* player = video_players_[url];
         video_players_.remove(url);
-        SAFE_DELETE(player);
-     }
+        player->deleteLater();
+    }
 
-} // PlayerService
+} // PhononPlayer

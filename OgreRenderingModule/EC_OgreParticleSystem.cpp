@@ -12,6 +12,7 @@
 namespace OgreRenderer
 {
     EC_OgreParticleSystem::EC_OgreParticleSystem(Foundation::ModuleInterface* module) :
+        Foundation::ComponentInterface(module->GetFramework()),
         renderer_(checked_static_cast<OgreRenderingModule*>(module)->GetRenderer()),
         adjustment_node_(0),
         attached_(false),
@@ -43,7 +44,7 @@ namespace OgreRenderer
     {
         if (!dynamic_cast<EC_OgrePlaceable*>(placeable.get()))
         {
-            OgreRenderingModule::LogError("Attempted to set placeable which is not " + EC_OgrePlaceable::TypeNameStatic());
+            OgreRenderingModule::LogError("Attempted to set placeable which is not " + EC_OgrePlaceable::TypeNameStatic().toStdString());
             return;
         }
         

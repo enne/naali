@@ -22,7 +22,7 @@ use_package (QT4)
 use_package (CURL)
 use_package (XMLRPC)
 
-use_modules (Core Foundation Interfaces SceneManager UiModule RexCommon OgreRenderingModule EnvironmentModule
+use_modules (Core Foundation Interfaces SceneManager RexCommon OgreRenderingModule EnvironmentModule
     ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga SupportModules
     EntityComponents/EC_OpenSimPresence EntityComponents/EC_OpenSimPrim)
 
@@ -35,7 +35,7 @@ link_package (QT4)
 link_package (CURL)
 link_package (XMLRPC)
 
-link_modules (Core Foundation Interfaces SceneManager UiModule RexCommon OgreRenderingModule EnvironmentModule
+link_modules (Core Foundation Interfaces SceneManager RexCommon OgreRenderingModule EnvironmentModule
     ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga SupportModules
     EC_OpenSimPresence EC_OpenSimPrim)
 
@@ -56,6 +56,10 @@ if (MSVC)
                 set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "/YuStableHeaders.h -DDEBUG_CPP_NAME=\"\\\"${basename}\"\\\"")
             endif()
     endforeach(src_file ${CPP_FILES})
+endif (MSVC)
+
+if (MSVC)
+	target_link_libraries (${TARGET_NAME} pdh.lib)
 endif (MSVC)
 
 final_target ()

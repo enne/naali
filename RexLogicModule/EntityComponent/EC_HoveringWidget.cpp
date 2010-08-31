@@ -19,10 +19,9 @@
 #include "EC_OgrePlaceable.h"
 #include "Entity.h"
 #include "OgreMaterialUtils.h"
-#include "Inworld/InworldSceneController.h"
-#include "Inworld/View/UiProxyWidget.h"
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 #include "ModuleManager.h"
-#include "UiModule.h"
 
 #include <Ogre.h>
 #include <OgreBillboardSet.h>
@@ -38,6 +37,7 @@
 namespace RexLogic
 {
     EC_HoveringWidget::EC_HoveringWidget(Foundation::ModuleInterface* module) :
+        Foundation::ComponentInterface(module->GetFramework()),
         namebillboardSet_(0),
         buttonsbillboardSet_(0),
         namebillboard_(0),
@@ -74,11 +74,11 @@ namespace RexLogic
         connect(visibility_animation_timeline_, SIGNAL(frameChanged(int)), SLOT(UpdateAnimationStep(int)));
         connect(visibility_animation_timeline_, SIGNAL(finished()), SLOT(AnimationFinished()));
 
-        boost::shared_ptr<UiServices::UiModule> ui_module = module->GetFramework()->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module.get())
+        Foundation::UiServiceInterface *ui = module->GetFramework()->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
             return;
 
-        proxy_ = ui_module->GetInworldSceneController()->GetInworldScene()->addWidget(detachedwidget_);
+        proxy_ = ui->GetScene("Inworld")->addWidget(detachedwidget_);
         proxy_->hide();
 
         QPushButton *b = new QPushButton("Attach");

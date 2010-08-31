@@ -1,15 +1,15 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include <QObject>
-
+#include "InputServiceInterface.h"
 namespace Foundation
 {
     class Framework;
 }
-
+class KeyEvent;
 namespace OgreRenderer
 {
-    //! Sound settings editing window. Owned by OpenALAudioModule.
+    //! Widget for rendering settings
     class RendererSettings : public QObject
     {
         Q_OBJECT
@@ -20,9 +20,18 @@ namespace OgreRenderer
 
     public slots:
         void ViewDistanceChanged(double value);
+        void ShadowQualityChanged(int quality);
+        void TextureQualityChanged(int quality);
+        
+        //! toggles fullscreen mode
+        void SetFullScreenMode(bool value);
+
+        void KeyPressed(KeyEvent* e);
+
 
     private:
         void InitWindow();
+        InputContextPtr input_context_;
 
         Foundation::Framework* framework_;
 

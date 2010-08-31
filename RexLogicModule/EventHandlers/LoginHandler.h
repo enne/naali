@@ -1,113 +1,76 @@
-// For conditions of distribution and use, see copyright notice in license.txt
+/**
+ *  For conditions of distribution and use, see copyright notice in license.txt
+ *
+ *  @file   LoginHandler.h
+ *  @brief  Performs login processes supported by Naali: OpenSim, RealXtend and Taiga weblogin.
+ */
 
 #ifndef incl_RexLogic_LoginHandler_h
 #define incl_RexLogic_LoginHandler_h
 
-#include <boost/weak_ptr.hpp>
-
-#include <QObject>
-#include <QUrl>
-#include <QMap>
-
-namespace Foundation
-{
-    class Framework;
-}
-
-namespace TaigaProtocol
-{
-    class ProtocolModuleTaiga;
-    class TaigaWorldSession;
-}
-
-namespace OpenSimProtocol
-{
-    class ProtocolModuleOpenSim;
-    class OpenSimWorldSession;
-    class RealXtendWorldSession;
-}
+#include "LoginCredentials.h"
+#include "LoginServiceInterface.h"
 
 namespace ProtocolUtilities
 {
-    class LoginCredentialsInterface;
+    class WorldSessionInterface;
 }
-
-QT_BEGIN_NAMESPACE
-class QWebFrame;
-QT_END_NAMESPACE
 
 namespace RexLogic
 {
     class RexLogicModule;
 
-    class AbstractLoginHandler : public QObject
+    /// Performs login processes supported by Naali: OpenSim, RealXtend and Taiga weblogin.
+    class LoginHandler : public Foundation::LoginServiceInterface
     {
         Q_OBJECT
 
     public:
-        AbstractLoginHandler(Foundation::Framework *framework, RexLogicModule *rex_logic_module);
-        virtual void InstantiateWorldSession() = 0;
-        virtual void SetLoginNotifier(QObject *notifier) = 0;
-        virtual QUrl ValidateServerUrl(QString urlString);
+        /** Constuctor.
+         *  @param owner Owner module.
+         */
+        explicit LoginHandler(RexLogicModule *owner);
 
-        ProtocolUtilities::LoginCredentialsInterface *credentials_;
-        QUrl server_entry_point_url_;
-
-        /// Pointer to Framework
-        Foundation::Framework *framework_;
-
-        /// Pointer to RexLogicModule
-        RexLogicModule *rex_logic_module_;
+        /// Destructor.
+        virtual ~LoginHandler();
 
     public slots:
+        /// LoginServiceInterface override.
+        void ProcessLoginData(const QMap<QString, QString> &data);
+
+        /// LoginServiceInterface override.
+        void ProcessLoginData(QWebFrame *frame);
+
+        /// LoginServiceInterface override.
+        void ProcessLoginData(const QString &url);
+
+        /// LoginServiceInterface override.
+        void StartWorldSession();
+
+        /// LoginServiceInterface override.
         void Logout();
+
+        /// LoginServiceInterface override.
         void Quit();
 
-    signals:
-        void LoginStarted();
-    };
-
-    class OpenSimLoginHandler : public AbstractLoginHandler
-    {
-        Q_OBJECT
-
-    public:
-        OpenSimLoginHandler(Foundation::Framework *framework, RexLogicModule *rex_logic_module);
-        virtual ~OpenSimLoginHandler();
-        void InstantiateWorldSession();
-        void SetLoginNotifier(QObject *notifier);
-
-    public slots:
-        void ProcessOpenSimLogin(QMap<QString, QString> map);
-        void ProcessRealXtendLogin(QMap<QString, QString> map);
-
     private:
-        //! Pointer to the opensim network interface.
-        boost::weak_ptr<OpenSimProtocol::ProtocolModuleOpenSim> protocol_module_opensim_;
-        OpenSimProtocol::OpenSimWorldSession *opensim_world_session_;
-        OpenSimProtocol::RealXtendWorldSession *realxtend_world_session_;
-    };
+        /// World session.
+        ProtocolUtilities::WorldSessionInterface *world_session_;
 
-    class TaigaLoginHandler : public AbstractLoginHandler
-    {
-        Q_OBJECT
+        /// Owner module.
+        RexLogicModule *owner_;
 
-    public:
-        TaigaLoginHandler(Foundation::Framework *framework, RexLogicModule *rex_logic_module);
-        virtual ~TaigaLoginHandler();
-        void InstantiateWorldSession();
-        void SetLoginNotifier(QObject *notifier);
+        /// Login credentials.
+        LoginCredentials credentials_;
 
-    public slots:
-        void ProcessCommandParameterLogin(QString &entry_point_url);
-        void ProcessWebLogin(QWebFrame *web_frame);
-        void ProcessWebLogin(QString url);
+        /// Server URL.
+        QUrl server_entry_point_url_;
 
-    private:
-        //! Pointer to the taiga network interface.
-        boost::weak_ptr<TaigaProtocol::ProtocolModuleTaiga> protocol_module_taiga_;
-        TaigaProtocol::TaigaWorldSession *taiga_world_session_;
+    private slots:
+        void HandleLoginFailed(const QString &message);
+
+        void HandleLoginSuccessful();
     };
 }
 
-#endif //incl_RexLogic_LoginHandler_h
+#endif

@@ -9,6 +9,7 @@
 namespace OgreRenderer
 {
     EC_OgrePlaceable::EC_OgrePlaceable(Foundation::ModuleInterface* module) :
+        Foundation::ComponentInterface(module->GetFramework()),
         renderer_(checked_static_cast<OgreRenderingModule*>(module)->GetRenderer()),
         scene_node_(0),
         link_scene_node_(0),
@@ -56,7 +57,7 @@ namespace OgreRenderer
     {
         if ((placeable.get() != 0) && (!dynamic_cast<EC_OgrePlaceable*>(placeable.get())))
         {
-            OgreRenderingModule::LogError("Attempted to set parent placeable which is not " + TypeNameStatic());
+            OgreRenderingModule::LogError("Attempted to set parent placeable which is not " + TypeNameStatic().toStdString());
             return;
         }
         DetachNode();

@@ -1,94 +1,46 @@
-import json
-
 from PythonQt import QtGui
 from PythonQt.QtGui import QVector3D as Vec
 from PythonQt.QtGui import QGroupBox, QVBoxLayout, QPushButton
 
 import rexviewer as r
 
-from componenthandler import DynamiccomponentHandler
+#componenthandlers don't necessarily need to be naali modules,
+#but this one needs to listen to update events to do mouse hover tricks
+import circuits
 
-OPENPOS = Vec(127, 128, 30)
-CLOSEPOS = Vec(127, 127, 30)
+#should be in the EC data
+OPENPOS = Vec(101.862, 82.6978, 24.9221)
+CLOSEPOS = Vec(99.65, 82.6978, 24.9221)
 
-#opened = AttributeBoolean()
-#locked = AttributeBoolean()
+"""for changing the cursor on hover"""
+import PythonQt
+qapp = PythonQt.Qt.QApplication.instance()
+import PythonQt.QtGui as gui
+cursor = gui.QCursor()
 
-"""had the door as a class with json serialization first
-- works, but unnecessarily complex, 'cause it's now just two bools
-class DoorState:
-    def __init__(self, opened=False, locked=True):
-        self.opened = opened
-        self.locked = locked
+def setcursor(ctype):
+    cursor.setShape(ctype)
+    current = qapp.overrideCursor()
+    if current != None:
+        if current.shape() != ctype:
+            qapp.setOverrideCursor(cursor)
+    else:
+        qapp.setOverrideCursor(cursor)
 
-    def __str__(self):
-        return "%s - %s" % (self.opened, self.locked)
+COMPNAME = "door" #the DC name identifier string that this handler looks for
 
-class DoorEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, DoorState):
-            return {'opened': obj.opened, 'locked': obj.locked}
-        return json.JSONEncoder.default(self, obj)
-def as_door(dct):
-    return DoorState(dct['opened'], dct['locked'])
-"""
-
-"""the synched attribute data - this is initial state if none comes from server
-not here anymore to not mess the currently shared data with other comps"""
-#doorinit = {'opened': False,
-#            'locked': True}
-
-class DoorHandler(DynamiccomponentHandler):
+class DoorHandler(circuits.BaseComponent):
     GUINAME = "Door Handler"
-    inworld_inited = False #a cheap hackish substitute for some initing system
+    ADDMENU = True
 
-    def onChanged(self):
-        ent = r.getEntity(self.comp.GetParentEntityId())
+    def __init__(self, entity, comp, changetype):
+        self.comp = comp
+        circuits.BaseComponent.__init__(self)
 
-        if not self.inworld_inited:
-            #if hasattr(self.comp, 'touchable')
-            try:
-                t = ent.touchable
-            except AttributeError:
-                print "no touchable in door? it doesn't persist yet? adding..", ent.id
-                print ent.createComponent("EC_Touchable")
-                t = ent.touchable
-            else:
-                print "touchable pre-existed in door."
-            t.connect('Clicked()', self.open)
-            t.connect('MouseHover()', self.hover)
-            self.inworld_inited = True
+        comp.connect("OnChanged()", self.onChanged)
+        self.inworld_inited = False #a cheap hackish substitute for some initing system
+        self.initgui()
 
-        if self.proxywidget is None and self.widget is not None:
-            print "Door DynamicComponent handler registering to GUI"
-            self.registergui()
-
-        data = self.comp.GetAttribute()
-        print "GetAttr got:", data
-        try:
-            self.door = json.loads(data) #, object_hook = as_door)
-        except ValueError:
-            print "not valid door data in attr json - using default DoorState"            
-            self.door = doorinit #DoorState()
-
-        newpos = OPENPOS if self.door['opened'] else CLOSEPOS
-        ent.placeable.Position = newpos        
-        print self.door, ent.placeable.Position
-
-        self.openbut.text = "Close" if self.door['opened'] else "Open"
-        self.lockbut.text = "Unlock" if self.door['locked'] else "Lock"
-        if self.door['locked'] and not self.door['opened']:
-            self.openbut.enabled = False
-        else:
-            self.openbut.enabled = True
-        
-        """NOTE:
-        this code doesn't now sync the normal ob pos to server
-        at all. the object is moved in all clients only.
-        when logging back to a server, wasn't seeing the right positions,
-        probably because server send pos update after the comp sync."""
-        self.forcepos = ent.placeable.Position
-        
     def initgui(self):
         #qt widget ui
         group = QGroupBox()
@@ -105,43 +57,114 @@ class DoorHandler(DynamiccomponentHandler):
         self.widget = group
         self.forcepos = None
 
-    def open(self):
-        print "open"
-        #was when abusing float as a bool:
-        #oldval = self.door.opened #comp.GetAttribute()
-        #newval = 0 if oldval else 1
-        #self.comp.SetAttribute(newval)
+        #naali proxywidget boilerplate
+        uism = r.getUiSceneManager()
+        self.proxywidget = r.createUiProxyWidget(self.widget)
+        self.proxywidget.setWindowTitle(self.GUINAME)
+        if not uism.AddWidgetToScene(self.proxywidget):
+            print "Adding the ProxyWidget to the bar failed."
+        uism.AddWidgetToMenu(self.proxywidget, self.GUINAME, "Developer Tools")
 
-        if self.door['opened'] or not self.door['locked']:
-            self.door['opened'] = not self.door['opened']
-            self.sync()
+    def onChanged(self):
+        try:
+            ent = r.getEntity(self.comp.GetParentEntityId())
+        except ValueError: #the entity has been removed or something
+            return
+
+        print "door data changed"
+
+        if not self.inworld_inited:
+            #if hasattr(self.comp, 'touchable')
+            try:
+                t = ent.touchable
+            except AttributeError:
+                print "no touchable in door? it doesn't persist yet? adding..", ent.id
+                t = ent.touchable
+            else:
+                print "touchable pre-existed in door."
+            t.connect('Clicked()', self.open)
+            t.connect('MouseHoverIn()', self.hover_in)
+            t.connect('MouseHoverOut()', self.hover_out)
+            self.inworld_inited = True
+
+        opened = self.opened
+        locked = self.locked
+
+        newpos = OPENPOS if opened else CLOSEPOS
+        ent.placeable.Position = newpos        
+        #print opened, type(opened), ent.placeable.Position
+
+        self.openbut.text = "Close" if opened else "Open"
+        self.lockbut.text = "Unlock" if locked else "Lock"
+        if locked and not opened:
+            self.openbut.enabled = False
+        else:
+            self.openbut.enabled = True
+        
+        """NOTE:
+        this code doesn't now sync the normal ob pos to server
+        at all. the object is moved in all clients only.
+        when logging back to a server, wasn't seeing the right positions,
+        probably because server send pos update after the comp sync."""
+        self.forcepos = ent.placeable.Position
+        
+    def get_opened(self):
+        if self.comp is not None:
+            return self.comp.GetAttribute("opened")
+        else:
+            return None
+    def set_opened(self, newval):
+        self.comp.SetAttribute("opened", newval)
+        self.comp.OnChanged()
+    opened = property(get_opened, set_opened)
+
+    def get_locked(self):
+        if self.comp is not None:
+            return self.comp.GetAttribute("locked")
+        else:
+            return None
+    def set_locked(self, newval):
+        self.comp.SetAttribute("locked", newval)
+        self.comp.OnChanged()
+    locked = property(get_locked, set_locked)
+
+    def open(self):
+        #print "open"
+        if self.opened or not self.locked:
+            self.opened = not self.opened
+            print self.opened
         else:
             print "Can't open a locked door!"
 
     def lock(self):
         #\todo if has key
-        self.door['locked'] = not self.door['locked']
-        self.sync()
+        self.locked = not self.locked
 
-    def hover(self):
-        import PythonQt
-        qapp = PythonQt.Qt.QApplication.instance()
-        import PythonQt.QtGui as gui
-        cursor = gui.QCursor()
-        #print cursor, cursor.shape()
+    def hover_in(self):
+        #XXX add locked check too
+        ctype = 1 if self.opened else 2
+        setcursor(ctype)
 
-        ctype = 1 if self.door['opened'] else 2
+    def hover_out(self):
+        curr_cursor = qapp.overrideCursor()
+        while curr_cursor != None:
+            qapp.restoreOverrideCursor()
+            curr_cursor = qapp.overrideCursor()
 
-        cursor.setShape(ctype)    
-        qapp.setOverrideCursor(cursor)
-
-    def sync(self):
-        if self.comp is not None:
-            newdata = json.dumps(self.door) #, cls=DoorEncoder)
-            print "setting Door data to:", newdata
-            self.comp.SetAttribute(newdata)
-
+    @circuits.handler("update")
     def update(self, t):
-        if self.forcepos is not None:
+        try:
             ent = r.getEntity(self.comp.GetParentEntityId())
-            ent.placeable.Position = self.forcepos
+        except ValueError: #the entity has been removed or something
+            return # nothing useful to do anyway
+
+        if self.forcepos is not None:
+                ent.placeable.Position = self.forcepos
+
+    @circuits.handler("on_logout")
+    def removegui(self, evid):
+        self.proxywidget.hide()
+        uism = r.getUiSceneManager()
+        uism.RemoveWidgetFromMenu(self.proxywidget)
+        uism.RemoveWidgetFromScene(self.proxywidget)
+        

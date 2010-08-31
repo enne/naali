@@ -10,22 +10,12 @@
 class QDomDocument;
 class QDomElement;
 
-#include <QTimer>
-
-namespace Ogre
-{
-    class Light;
-}
-
-namespace UiServices
-{
-    class UiProxyWidget;
-}
-
 namespace Foundation
 {
     class Framework;
 }
+
+class UiProxyWidget;
 
 class QLineEdit;
 class QWidget;
@@ -89,9 +79,6 @@ private:
     //! Create the 2D UI widget, but do not show it yet
     void CreateWidget();
 
-    //! Framework pointer.
-    Foundation::Framework *framework_;
-
     //! 2D UI widget
     QWidget* widget_;
     
@@ -102,8 +89,8 @@ private:
     QWidget* placeholder_widget_;
 
     //! Content proxy for ui scene
-    UiServices::UiProxyWidget *proxy_;
-    
+    UiProxyWidget *proxy_;
+
     //! Source line editor
     QLineEdit* source_edit_;
     

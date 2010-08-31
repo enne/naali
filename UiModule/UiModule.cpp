@@ -5,7 +5,7 @@
 
 #include "UiModule.h"
 #include "UiSettingsService.h"
-#include "UiProxyStyle.h"
+//#include "UiProxyStyle.h"
 #include "UiDarkBlueStyle.h"
 #include "UiStateMachine.h"
 #include "ServiceGetter.h"
@@ -16,14 +16,13 @@
 #include "Inworld/InworldSceneController.h"
 #include "Inworld/ControlPanelManager.h"
 #include "Inworld/NotificationManager.h"
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/View/UiWidgetProperties.h"
-#include "Inworld/Console/UiConsoleManager.h"
+#include "UiProxyWidget.h"
 #include "Inworld/Notifications/MessageNotification.h"
 #include "Inworld/Notifications/InputNotification.h"
 #include "Inworld/Notifications/QuestionNotification.h"
 #include "Inworld/Notifications/ProgressNotification.h"
 #include "Common/UiAction.h"
+#include "UiSceneService.h"
 
 #include "EventManager.h"
 #include "ServiceManager.h"
@@ -32,8 +31,8 @@
 #include "WorldStream.h"
 #include "NetworkEvents.h"
 #include "SceneEvents.h"
-#include "ConsoleEvents.h"
 #include "InputEvents.h"
+#include "UiServiceInterface.h"
 
 #include <QApplication>
 #include <QFontDatabase>
@@ -45,15 +44,13 @@ namespace UiServices
 {
     std::string UiModule::type_name_static_ = "UI";
 
-    UiModule::UiModule() 
-        : Foundation::ModuleInterface(type_name_static_),
-          event_query_categories_(QStringList()),
-          ui_state_machine_(0),
-          service_getter_(0),
-          inworld_scene_controller_(0),
-          inworld_notification_manager_(0),
-          ui_console_manager_(0),
-          ether_logic_(0)
+    UiModule::UiModule() :
+        Foundation::ModuleInterface(type_name_static_),
+        ui_state_machine_(0),
+        service_getter_(0),
+        inworld_scene_controller_(0),
+        inworld_notification_manager_(0),
+        ether_logic_(0)
     {
     }
 
@@ -63,22 +60,20 @@ namespace UiServices
         SAFE_DELETE(service_getter_);
         SAFE_DELETE(inworld_scene_controller_);
         SAFE_DELETE(inworld_notification_manager_);
-        SAFE_DELETE(ui_console_manager_);
         SAFE_DELETE(ether_logic_);
     }
 
-    /*************** ModuleInterfaceImpl ***************/
-
     void UiModule::Load()
     {
-        // Application take ownership of the new UiDarkBlueStyle
-        
         //QApplication::setStyle(new UiProxyStyle());
+        // QApplication take ownership of the new UiDarkBlueStyle
+        ///\todo UiDarkBlueStyle seems to be causing many memory leaks.
+        /// Maybe it's not deleted properly by th QApplication?
         QApplication::setStyle(new UiDarkBlueStyle());
         QFontDatabase::addApplicationFont("./media/fonts/FACB.TTF");
         QFontDatabase::addApplicationFont("./media/fonts/FACBK.TTF");
 
-        event_query_categories_ << "Framework" << "Scene"  << "Console" << "Input";
+        event_query_categories_ << "Framework" << "Scene" << "Input";
     }
 
     void UiModule::Unload()
@@ -99,15 +94,12 @@ namespace UiServices
             LogDebug("State Machine STARTED");
 
             inworld_scene_controller_ = new InworldSceneController(GetFramework(), ui_view_);
-            inworld_scene_controller_->GetControlPanelManager()->SetHandler(UiDefines::Ether, ether_action);
-            inworld_scene_controller_->GetControlPanelManager()->SetHandler(UiDefines::Build, build_action);
+            inworld_scene_controller_->GetControlPanelManager()->SetHandler(Ether, ether_action);
+            inworld_scene_controller_->GetControlPanelManager()->SetHandler(Build, build_action);
             LogDebug("Scene Manager service READY");
 
             inworld_notification_manager_ = new NotificationManager(inworld_scene_controller_);
             LogDebug("Notification Manager service READY");
-
-            ui_console_manager_ = new CoreUi::UiConsoleManager(GetFramework(), ui_view_);
-            LogDebug("Console UI READY");
 
             service_getter_ = new CoreUi::ServiceGetter(GetFramework());
             inworld_scene_controller_->GetControlPanelManager()->SetServiceGetter(service_getter_);
@@ -117,6 +109,10 @@ namespace UiServices
             ui_settings_service_ = UiSettingsPtr(new UiSettingsService(inworld_scene_controller_->GetControlPanelManager()));
             GetFramework()->GetServiceManager()->RegisterService(Foundation::Service::ST_UiSettings, ui_settings_service_);
             LogDebug("UI Settings Service registered and READY");
+
+            // Register UI service.
+            ui_scene_service_ = UiSceneServicePtr(new UiSceneService(this));
+            framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_Gui, ui_scene_service_);
         }
         else
             LogWarning("Could not acquire QGraphicsView shared pointer from framework, UiServices are disabled");
@@ -125,20 +121,23 @@ namespace UiServices
     void UiModule::PostInitialize()
     {
         SubscribeToEventCategories();
-        ui_console_manager_->SendInitializationReadyEvent();
         ether_logic_ = new Ether::Logic::EtherLogic(GetFramework(), ui_view_);
         ui_state_machine_->RegisterScene("Ether", ether_logic_->GetScene());
         ether_logic_->Start();
         ui_state_machine_->SwitchToEtherScene();
+        connect(ui_state_machine_, SIGNAL(SceneChanged(const QString&, const QString&)), 
+                ether_logic_->GetQObjSceneController(), SLOT(UiServiceSceneChanged(const QString&, const QString&)));
         LogDebug("Ether Logic STARTED");
 
         input = framework_->Input().RegisterInputContext("EtherInput", 90);
         input->SetTakeKeyboardEventsOverQt(true);
-        connect(input.get(), SIGNAL(KeyPressed(KeyEvent &)), this, SLOT(OnKeyPressed(KeyEvent &)));
+        connect(input.get(), SIGNAL(KeyPressed(KeyEvent *)), this, SLOT(OnKeyPressed(KeyEvent *)));
     }
 
     void UiModule::Uninitialize()
     {
+        framework_->GetServiceManager()->UnregisterService(ui_scene_service_);
+        ui_scene_service_.reset();
     }
 
     void UiModule::Update(f64 frametime)
@@ -174,48 +173,25 @@ namespace UiServices
         }
         else if (category == "NetworkState")
         {
+            using namespace ProtocolUtilities;
             switch (event_id)
             {
-                case ProtocolUtilities::Events::EVENT_CONNECTION_FAILED:
+                case Events::EVENT_CONNECTION_FAILED:
                 {
-                    PublishConnectionState(UiDefines::Failed);
+                    ConnectionFailedEvent *event = static_cast<ConnectionFailedEvent *>(data);
+                    PublishConnectionState(Failed, event->message);
                     break;
                 }
-                case ProtocolUtilities::Events::EVENT_SERVER_DISCONNECTED:
-                {
-                    PublishConnectionState(UiDefines::Disconnected);
+                case Events::EVENT_SERVER_DISCONNECTED:
+                    PublishConnectionState(Disconnected);
                     break;
-                }
-                case ProtocolUtilities::Events::EVENT_USER_KICKED_OUT:
-                {
-                    PublishConnectionState(UiDefines::Disconnected);
+                case Events::EVENT_USER_KICKED_OUT:
+                    PublishConnectionState(Disconnected);
                     break;
-                }
-                case ProtocolUtilities::Events::EVENT_SERVER_CONNECTED:
-                {
+                case Events::EVENT_SERVER_CONNECTED:
                     // Udp connection has been established, we are still loading object so lets not change UI layer yet
                     // to connected state. See Scene categorys EVENT_CONTROLLABLE_ENTITY case for real UI switch.
                     break;
-                }
-                default:
-                    break;
-            }
-        }
-        else if (category == "Console")
-        {
-            switch (event_id)
-            {
-                case Console::Events::EVENT_CONSOLE_TOGGLE:
-                {
-                    ui_console_manager_->ToggleConsole();
-                    break;
-                }
-                case Console::Events::EVENT_CONSOLE_PRINT_LINE:
-                {
-                    Console::ConsoleEventData *console_data = dynamic_cast<Console::ConsoleEventData*>(data);
-                    ui_console_manager_->QueuePrintRequest(QString(console_data->message.c_str()));
-                    break;
-                }
                 default:
                     break;
             }
@@ -225,10 +201,8 @@ namespace UiServices
             switch (event_id)
             {
                 case Scene::Events::EVENT_CONTROLLABLE_ENTITY:
-                {
-                    PublishConnectionState(UiDefines::Connected);
+                    PublishConnectionState(Connected);
                     break;
-                }
                 default:
                     break;
             }
@@ -237,10 +211,10 @@ namespace UiServices
         return false;
     }
 
-    void UiModule::OnKeyPressed(KeyEvent &key)
+    void UiModule::OnKeyPressed(KeyEvent *key)
     {
         // We only act on key presses that are not repeats.
-        if (key.eventType != KeyEvent::KeyPressed || key.keyPressCount > 1)
+        if (key->eventType != KeyEvent::KeyPressed || key->keyPressCount > 1)
             return;
 
         InputServiceInterface &inputService = framework_->Input();
@@ -248,18 +222,18 @@ namespace UiServices
         const QKeySequence toggleEther =   inputService.KeyBinding("Ether.ToggleEther", Qt::Key_Escape);
         const QKeySequence toggleWorldChat =  inputService.KeyBinding("Ether.ToggleWorldChat", Qt::Key_F2);
 
-        if (key.keyCode == toggleEther)
+        if (key->keyCode == toggleEther)
             ui_state_machine_->ToggleEther();
 
-        if (key.keyCode == toggleWorldChat)
+        if (key->keyCode == toggleWorldChat)
             inworld_scene_controller_->SetFocusToChat();
     }
 
-    void UiModule::PublishConnectionState(UiDefines::ConnectionState connection_state)
+    void UiModule::PublishConnectionState(UiServices::ConnectionState connection_state, const QString &message)
     {
         switch (connection_state)
         {
-            case UiDefines::Connected:
+            case Connected:
             {
                 ui_state_machine_->SetConnectionState(connection_state);
                 ether_logic_->SetConnectionState(connection_state);
@@ -275,16 +249,16 @@ namespace UiServices
                 }
                 break;
             }
-            case UiDefines::Disconnected:
+            case Disconnected:
             {
                 inworld_notification_manager_->SetConnectionState(connection_state);
                 ether_logic_->SetConnectionState(connection_state);
                 ui_state_machine_->SetConnectionState(connection_state);
                 break;
             }
-            case UiDefines::Failed:
+            case Failed:
             {
-                ether_logic_->SetConnectionState(connection_state);
+                ether_logic_->SetConnectionState(connection_state, message);
                 break;
             }
             default:
@@ -299,8 +273,8 @@ namespace UiServices
             service_category_identifiers_[category] = framework_->GetEventManager()->QueryEventCategory(category.toStdString());
     }
 
-    QObject *UiModule::GetEtherLoginNotifier() const
-    { 
+    Ether::Logic::EtherLoginNotifier *UiModule::GetEtherLoginNotifier() const
+    {
         return ether_logic_->GetLoginNotifier();
     }
 
@@ -308,7 +282,6 @@ namespace UiServices
     {
         return ether_logic_->GetLastLoginScreenshotData(framework_->GetConfigManager()->GetPath());
     }
-
 }
 
 /************** Poco Module Loading System **************/

@@ -1,58 +1,49 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include "StableHeaders.h"
-#include "Framework.h"
 #include "DebugOperatorNew.h"
+
 #include "MeshPreviewEditor.h"
 #include "OgreAssetEditorModule.h"
-#include "OgreRenderingModule.h"
-#include "OgreMeshResource.h"
-#include <OgreLight.h>
 
-#include <UiModule.h>
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/View/UiWidgetProperties.h"
-#include "Inworld/InworldSceneController.h"
+#include "Renderer.h"
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 #include "ModuleManager.h"
 #include "AssetInterface.h"
 #include "ResourceInterface.h"
 #include "CoreMath.h"
-
+#include "OgreRenderingModule.h"
 
 #include <QUiLoader>
 #include <QFile>
 #include <QLayout>
 #include <QPushButton>
+#include <QDebug>
 
 #include "MemoryLeakCheck.h"
 
 namespace Naali
 {
     MeshPreviewLabel::MeshPreviewLabel(QWidget *parent, Qt::WindowFlags flags):
-        QLabel(parent, flags), leftPressed_(false), rightPressed_(false)
+        QLabel(parent, flags)
     {
          setMouseTracking(true);
     }
 
     MeshPreviewLabel::~MeshPreviewLabel()
-    {
-
-    }
+    {}
 
     void MeshPreviewLabel::mousePressEvent(QMouseEvent* ev)
     {
-        if ( ev->button() == Qt::LeftButton ) 
-            leftPressed_ = true;
-        if ( ev->button() == Qt::RightButton )
-            rightPressed_  = true;
+        if ( ev->buttons() == Qt::RightButton )
+            sendMouseEvent(ev);
     }
 
     void MeshPreviewLabel::mouseReleaseEvent(QMouseEvent* ev)
     {
-        if ( ev->button() == Qt::LeftButton ) 
-            leftPressed_ = false;
-        if ( ev->button() == Qt::RightButton )
-            rightPressed_  = false;
+     //   if ( ev->buttons() == Qt::RightButton )
+            sendMouseEvent(ev);
     }
 
     void MeshPreviewLabel::wheelEvent(QWheelEvent* ev)
@@ -62,20 +53,10 @@ namespace Naali
 
     void MeshPreviewLabel::mouseMoveEvent(QMouseEvent *event)
     {
-        if ( leftPressed_ && ( rightPressed_ || event->buttons() == Qt::RightButton) )
-        {
-            QMouseEvent ev(QEvent::MouseMove,event->pos(),Qt::NoButton, Qt::LeftButton | Qt::RightButton, Qt::NoModifier);
-            sendMouseEvent(&ev, true);      
-            return;
-        }
-        
-        if ( rightPressed_ || event->buttons() == Qt::RightButton )
-        {
-            QMouseEvent ev(QEvent::MouseMove,event->pos(),Qt::RightButton, Qt::RightButton, Qt::NoModifier );
-            sendMouseEvent(&ev, false);      
-            return;
-        }
 
+        if ( event->buttons() == Qt::RightButton )
+            sendMouseEvent(event);
+      
        
     }
 
@@ -96,9 +77,20 @@ namespace Naali
         lastPos_(QPointF()),
         camAlphaAngle_(0),
         mesh_id_(""),
-        mouseDelta_(0)
+        mouseDelta_(0),
+        label_(0),
+        manager_(0),
+        camera_(0),
+        entity_(0),
+        scene_(0),
+        root_scene_(0),
+        newLight_(0),
+        render_texture_(0),
+        width_(400),
+        height_(400)
       
     {
+       
         setObjectName(name);
         InitializeEditorWidget();
         RequestMeshAsset(assetId_);
@@ -106,7 +98,24 @@ namespace Naali
     }
 
     MeshPreviewEditor::~MeshPreviewEditor()
-    {}
+    {
+        // Does not own
+        label_ = 0;
+
+        if ( renderer_ != 0)
+        {
+            OgreRenderer::OgreRootPtr root = renderer_->GetRoot();
+            render_texture_->removeAllViewports();
+
+            Ogre::TextureManager::getSingleton().remove(mesh_id_.toStdString().c_str());
+            root_scene_->removeAllChildren();
+            manager_->destroySceneNode(scene_);
+            manager_->destroyCamera(camera_);
+            manager_->destroyLight(newLight_);
+            
+            root->destroySceneManager(manager_);
+        }
+    }
 
    
     void MeshPreviewEditor::HandleResouceReady(Resource::Events::ResourceReady *res)
@@ -123,49 +132,123 @@ namespace Naali
     {
          boost::shared_ptr<OgreRenderer::OgreRenderingModule> rendering_module = 
             framework_->GetModuleManager()->GetModule<OgreRenderer::OgreRenderingModule>().lock();
-        
         OgreRenderer::RendererPtr renderer = rendering_module->GetRenderer();
-        
-            if (renderer != 0)
-            {
-                request_tag_ = renderer->RequestResource(asset_id.toStdString(), OgreRenderer::OgreMeshResource::GetTypeStatic());
-            }
-        
+        if (renderer != 0)
+            request_tag_ = renderer->RequestResource(asset_id.toStdString(), OgreRenderer::OgreMeshResource::GetTypeStatic());
     }
 
     void MeshPreviewEditor::Update()
     {
-            if ( mesh_id_ == "" )
-                return;
+        if ( mesh_id_ == "" )
+            return;
 
-            boost::shared_ptr<OgreRenderer::OgreRenderingModule> rendering_module = 
+        if ( render_texture_ == 0 )
+        {
+            CreateRenderTexture();
+            
+        }
+        // Hide ui
+        renderer_->HideCurrentWorldView();
+
+        AdjustScene();
+
+        render_texture_->update();
+           
+        Ogre::Box bounds(0, 0, width_, height_);
+        Ogre::uchar* pixelData = new Ogre::uchar[width_ * height_ * 4];
+        Ogre::PixelBox pixels(bounds, Ogre::PF_A8R8G8B8, pixelData);
+        
+        render_texture_->copyContentsToMemory(pixels, Ogre::RenderTarget::FB_AUTO);
+
+        // Create image of texture, and show it into label.
+
+        u8* p = static_cast<u8 *>(pixels.data);
+        int width = pixels.getWidth();
+        int height = pixels.getHeight();
+        
+        QImage img = ConvertToQImage(p, width, height, 4);
+
+        if(!img.isNull() && label_ != 0)
+            label_->setPixmap(QPixmap::fromImage(img));
+        
+
+        Foundation::UiServiceInterface* ui= framework_->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
+            return;
+
+        proxy_->show();
+        ui->BringWidgetToFront(proxy_);
+
+        delete[] pixelData;
+        
+        // Show ui
+        renderer_->ShowCurrentWorldView();  
+    }
+
+    void MeshPreviewEditor::AdjustScene()
+    {
+        if ( scene_ == 0)
+            return;
+        
+        scene_->rotate(Ogre::Vector3(0,1,0),Ogre::Radian(camAlphaAngle_ * PI/180.0));         
+
+        Ogre::AxisAlignedBox box = entity_->getBoundingBox();
+        Ogre::Vector3 boxCenterPos = box.getHalfSize();
+            
+        Ogre::Vector3 volume= box.getSize();
+             
+        // Get biggest side :
+            
+        double biggest = boxCenterPos.x;
+        if ( biggest < boxCenterPos.y )
+            biggest = boxCenterPos.y;
+        if ( biggest < boxCenterPos.z )
+            biggest = boxCenterPos.z;
+
+        // Create camera position vector
+        
+        double r = sqrt(2.0) * 2*biggest * tan(camera_->getFOVy().valueRadians() * camera_->getAspectRatio());
+    
+        // Adjust r by using mouse roll
+
+        int numSteps = ( mouseDelta_ / 8 ) / 15 ;
+        r = r + numSteps;
+
+        double x = 0;
+        double y = boxCenterPos.y;
+        double z = r;
+
+        Ogre::Vector3 pos(x,y,z);
+
+        camera_->setPosition(pos);
+        camera_->lookAt(boxCenterPos);
+
+    }
+
+   
+    void MeshPreviewEditor::CreateRenderTexture()
+    {
+          boost::shared_ptr<OgreRenderer::OgreRenderingModule> rendering_module = 
                 framework_->GetModuleManager()->GetModule<OgreRenderer::OgreRenderingModule>().lock();
 
             if (!rendering_module)
                 return;
 
-             OgreRenderer::RendererPtr renderer = rendering_module->GetRenderer();
-        
-             // Hide ui
-             renderer->HideCurrentWorldView();
-             
+             renderer_ = rendering_module->GetRenderer();
+           
              // Create scenenode and attach camera to it
         
-             int iWidth = 400;
-             int iHeight = 400;
+             OgreRenderer::OgreRootPtr root = renderer_->GetRoot();
+             manager_ = root->createSceneManager(Ogre::ST_GENERIC,mesh_id_.toStdString().c_str());
+           
+             camera_ = manager_->createCamera(mesh_id_.toStdString().c_str());
              
-             OgreRenderer::OgreRootPtr root = renderer->GetRoot();
-             Ogre::SceneManager* manager = root->createSceneManager(Ogre::ST_GENERIC,"MeshShotManager");
+             entity_ = manager_->createEntity("entity", mesh_id_.toStdString());
+             entity_->setMaterialName("BaseWhite");
              
-             Ogre::Camera* camera = manager->createCamera("MeshShotCamera");
-             
-             Ogre::Entity* entity = manager->createEntity("entity", mesh_id_.toStdString());
-             entity->setMaterialName("BaseWhite");
-             
-             Ogre::AxisAlignedBox box = entity->getBoundingBox();
+             Ogre::AxisAlignedBox box = entity_->getBoundingBox();
              Ogre::Vector3 boxCenterPos = box.getHalfSize();
             
-             
              Ogre::Vector3 volume= box.getSize();
              
              // Get biggest side :
@@ -177,21 +260,20 @@ namespace Naali
                  biggest = boxCenterPos.z;
 
 
-             Ogre::SceneNode* scene = manager->createSceneNode("MeshShotNode");
-             scene->attachObject(entity);
-            
-             scene->showBoundingBox(true);
-             scene->rotate(Ogre::Vector3(0,1,0),Ogre::Radian(camAlphaAngle_ * PI/180.0));            
+             scene_ = manager_->createSceneNode(mesh_id_.toStdString().c_str());      
+             scene_->attachObject(entity_);
+             scene_->showBoundingBox(true);
+             scene_->rotate(Ogre::Vector3(0,1,0),Ogre::Radian(camAlphaAngle_ * PI/180.0));            
        
-
-             Ogre::SceneNode* root_scene = manager->getRootSceneNode();
-             root_scene->addChild(scene);
+             root_scene_ = manager_->getRootSceneNode();
+             root_scene_->addChild(scene_);
            
-             camera->setNearClipDistance(0.1f);
-             camera->setFarClipDistance(2000.f);
+             camera_->setNearClipDistance(0.1f);
+             camera_->setFarClipDistance(2000.f);
              
-             // Camera position vector
-             double r = sqrt(2.0) * 2*biggest * tan(camera->getFOVy().valueRadians() * camera->getAspectRatio());
+             // Create camera position vector
+             
+             double r = sqrt(2.0) * 2*biggest * tan(camera_->getFOVy().valueRadians() * camera_->getAspectRatio());
             
              // Adjust r by using mouse roll
 
@@ -204,91 +286,48 @@ namespace Naali
              double z = r;
 
              Ogre::Vector3 pos(x,y,z);
-             camera->setPosition(pos);
-             camera->lookAt(boxCenterPos);
+             camera_->setPosition(pos);
+             camera_->lookAt(boxCenterPos);
           
-             Ogre::Light* newLight = manager->createLight("light");
-       
-             newLight->setDirection(Ogre::Vector3(-x,-y,-z));
-             newLight->setType(Ogre::Light::LT_DIRECTIONAL);
-             newLight->setDiffuseColour(Ogre::ColourValue::White);
-             manager->setAmbientLight(Ogre::ColourValue::Black);
+             newLight_ = manager_->createLight("light");
+            
+          
+
+             newLight_->setDirection(Ogre::Vector3(-x,-y,-z));
+             newLight_->setType(Ogre::Light::LT_DIRECTIONAL);
+             newLight_->setDiffuseColour(Ogre::ColourValue::White);
+             manager_->setAmbientLight(Ogre::ColourValue::Black);
             
              // Render camera view to texture 
           
             Ogre::TexturePtr tex = Ogre::TextureManager::getSingleton().createManual(
-                "MeshShotTexture", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-                Ogre::TEX_TYPE_2D, iWidth, iHeight, 0, Ogre::PF_A8R8G8B8, Ogre::TU_RENDERTARGET);
+                mesh_id_.toStdString().c_str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+                Ogre::TEX_TYPE_2D, width_, height_, 0, Ogre::PF_A8R8G8B8, Ogre::TU_RENDERTARGET);
 
-            Ogre::RenderTexture* render_texture = tex->getBuffer()->getRenderTarget();
-            Ogre::Viewport* vieport = render_texture->addViewport(camera);
+            render_texture_ = tex->getBuffer()->getRenderTarget();
+            render_texture_->setAutoUpdated(false);
+            
+            Ogre::Viewport* vieport = render_texture_->addViewport(camera_);
          
-            render_texture->update();
-           
-            Ogre::Box bounds(0, 0, iWidth, iHeight);
-            Ogre::uchar* pixelData = new Ogre::uchar[iWidth * iHeight * 4];
-            Ogre::PixelBox pixels(bounds, Ogre::PF_A8R8G8B8, pixelData);
-            
-            render_texture->copyContentsToMemory(pixels, Ogre::RenderTarget::FB_AUTO);
-
-            // Create image of texture, and show it into label.
-
-            u8* p = static_cast<u8 *>(pixels.data);
-            int width = pixels.getWidth();
-            int height = pixels.getHeight();
-            
-            QImage img = ConvertToQImage(p, width, height, 4);
-
-            if(!img.isNull())
-            {
-                QLabel* imageLabel = mainWidget_->findChild<QLabel *>("meshImageLabel");
-                imageLabel->setPixmap(QPixmap::fromImage(img));
-            }
-              
-            boost::shared_ptr<UiServices::UiModule> ui_module = 
-            framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-            
-            if (!ui_module.get())
-                return;
-
-            proxy_->show();
-            ui_module->GetInworldSceneController()->BringProxyToFront(proxy_);
-
-            Ogre::TextureManager::getSingleton().remove("MeshShotTexture");
-            root_scene->removeAllChildren();
-            manager->destroySceneNode(scene);
-            manager->destroyCamera(camera);
-            manager->destroyLight(newLight);
-            root->destroySceneManager(manager);
-
-            delete[] pixelData;
-
-            renderer->ShowCurrentWorldView();        
+          
 
     }
 
     void MeshPreviewEditor::Closed()
     {
-        boost::shared_ptr<UiServices::UiModule> ui_module =
-            framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module.get())
-            return;
-
-        ui_module->GetInworldSceneController()->RemoveProxyWidgetFromScene(this);
+        Foundation::UiServiceInterface* ui= framework_->GetService<Foundation::UiServiceInterface>();
+        ui->RemoveWidgetFromScene(this);
 
         emit Closed(inventoryId_, assetType_);
     }
 
     void MeshPreviewEditor::InitializeEditorWidget()
     {
-        // Get QtModule and create canvas
-        boost::shared_ptr<UiServices::UiModule> ui_module = 
-            framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-        if (!ui_module.get())
+        Foundation::UiServiceInterface* ui= framework_->GetService<Foundation::UiServiceInterface>();
+        if (!ui)
             return;
 
         // Create widget from ui file
-        
         QUiLoader loader;
         QFile file("./data/ui/mesh_preview.ui");
         if (!file.exists())
@@ -304,26 +343,27 @@ namespace Naali
         
         QVBoxLayout* vLayout = mainWidget_->findChild<QVBoxLayout* >("imageLayout");
         
-        MeshPreviewLabel* label = new MeshPreviewLabel(mainWidget_);
-        label->setObjectName("meshImageLabel");
+        label_ = new MeshPreviewLabel(mainWidget_);
+        label_->setObjectName("meshImageLabel");
         
-        label->setMinimumSize(300,300);
+        label_->setMinimumSize(300,300);
     
+
         // Kind of hack, in this way we assure that we will get mouseMove-event with left and right button pressed.
-        QObject::connect(label, SIGNAL(sendMouseEvent(QMouseEvent*,bool)), this, SLOT(MouseEvent(QMouseEvent*,bool)));
-        QObject::connect(label, SIGNAL(sendWheelEvent(QWheelEvent*)), this, SLOT(MouseWheelEvent(QWheelEvent*)));
-        vLayout->addWidget(label);
+        QObject::connect(label_, SIGNAL(sendMouseEvent(QMouseEvent*)), this, SLOT(MouseEvent(QMouseEvent*)));
+        QObject::connect(label_, SIGNAL(sendWheelEvent(QWheelEvent*)), this, SLOT(MouseWheelEvent(QWheelEvent*)));
+        vLayout->addWidget(label_);
 
         QVBoxLayout *layout = new QVBoxLayout;
         setLayout(layout);
         layout->addWidget(mainWidget_);
         layout->setContentsMargins(0, 0, 0, 0);
-  
 
         // Add widget to UI via ui services module
-        proxy_ = ui_module->GetInworldSceneController()->AddWidgetToScene(this, UiServices::UiWidgetProperties(tr("Mesh: ") + objectName(), UiServices::SceneWidget));
+        setWindowTitle((tr("Mesh: ")) + objectName());
+
+        proxy_ = ui->AddWidgetToScene(this);
         QObject::connect(proxy_, SIGNAL(Closed()), this, SLOT(Closed()));
-       
     }
 
     void MeshPreviewEditor::MouseWheelEvent(QWheelEvent* ev)
@@ -334,46 +374,64 @@ namespace Naali
         
     }
 
-
-    void MeshPreviewEditor::MouseEvent(QMouseEvent* event, bool both)
+    void MeshPreviewEditor::MouseEvent(QMouseEvent* event)
     {
-      
         QPointF pos = event->posF();
+
+        if ( event->type() == QEvent::MouseButtonRelease )
+        {
+            lastPos_ = QPointF(-1.0,-1.0);
+            return;
+        }
+
+        // After release new mouse move with RMB pressed down comes then we will first time set position same.
+
+        if ( lastPos_ == QPointF(-1.0, -1.0) || event->type() == QEvent::MouseButtonPress)
+        {
+            lastPos_ = pos;
+            return;
+        }
 
         if ( event->buttons() == Qt::RightButton )
         {
             
             if ( pos.x() > lastPos_.x() )
             {
+                int width = label_->size().width();
+                double pix = (2*360.0) / width;
                 
-                camAlphaAngle_ = camAlphaAngle_ + 5;
+                camAlphaAngle_ = camAlphaAngle_ + pix * abs(pos.x() - lastPos_.x());
                 
                 if ( camAlphaAngle_ < 0 )
-                    camAlphaAngle_ = - abs(camAlphaAngle_) % 360; 
+                    camAlphaAngle_ = - ( abs(camAlphaAngle_) % 360 ); 
                 else
                     camAlphaAngle_ = camAlphaAngle_ % 360;
-                
+             
                 
                 Update();
             }
             else if ( pos.x() < lastPos_.x())
             {
-            
-                camAlphaAngle_ = camAlphaAngle_ - 5; 
+             
+                int width = label_->size().width();
+                double pix = (2* 360.0 ) / width;
+             
+                camAlphaAngle_ = camAlphaAngle_ - pix * abs(lastPos_.x() - pos.x() );
+                
+                
                 if ( camAlphaAngle_ < 0 )
-                    camAlphaAngle_ = - abs(camAlphaAngle_) % 360; 
+                    camAlphaAngle_ = - (abs(camAlphaAngle_) % 360); 
                 else
                     camAlphaAngle_ = camAlphaAngle_ % 360;
-                
+               
                 Update();
             }
         
         }
-        
 
        lastPos_ = pos;    
     }
-
+    
     QImage MeshPreviewEditor::ConvertToQImage(const u8 *raw_image_data, int width, int height, int channels)
     {
         uint img_width_step = width * channels; 

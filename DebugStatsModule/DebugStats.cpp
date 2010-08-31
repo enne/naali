@@ -24,14 +24,11 @@
 #include "RealXtend/RexProtocolMsgIDs.h"
 #include "NetworkMessages/NetInMessage.h"
 #include "NetworkMessages/NetMessageManager.h"
-#include "UiModule.h"
-#include "UiDefines.h"
-#include "Inworld/View/UiProxyWidget.h"
-#include "Inworld/InworldSceneController.h"
 #include "Renderer.h"
 #include "ResourceHandler.h"
 #include "OgreTextureResource.h"
-
+#include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 #include "EC_OpenSimPresence.h"
 
 #include <utility>
@@ -110,48 +107,38 @@ void DebugStatsModule::AddProfilerWidgetToUi()
     if (profilerWindow_)
         return;
 
-    UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-    if (!ui_module.get())
+    Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+    if (!ui)
         return;
 
     profilerWindow_ = new TimeProfilerWindow(framework_);
+    profilerWindow_->move(100, 100);
 
-    UiServices::UiWidgetProperties profiler_properties("Profiler", UiServices::ModuleWidget);
-
-    UiDefines::MenuNodeStyleMap image_path_map;
-    QString base_url = "./data/ui/images/menus/"; 
-    image_path_map[UiDefines::IconNormal] = base_url + "edbutton_MATWIZ_normal.png";
-    image_path_map[UiDefines::IconHover] = base_url + "edbutton_MATWIZ_hover.png";
-    image_path_map[UiDefines::IconPressed] = base_url + "edbutton_MATWIZ_click.png";
-    profiler_properties.SetMenuNodeStyleMap(image_path_map);
-
-    UiServices::UiProxyWidget *proxy = ui_module->GetInworldSceneController()->AddWidgetToScene(profilerWindow_, profiler_properties);
-    proxy->resize(650, 530);
-
+    profilerWindow_->resize(650, 530);
+    UiProxyWidget *proxy = ui->AddWidgetToScene(profilerWindow_);
     connect(proxy, SIGNAL(Visible(bool)), SLOT(StartProfiling(bool)));
+
+    ui->AddWidgetToMenu(profilerWindow_, tr("Profiler"), tr("Developer Tools"), "./data/ui/images/menus/edbutton_MATWIZ_hover.png");
 }
 
-void DebugStatsModule::StartProfiling(bool profile)
+void DebugStatsModule::StartProfiling(bool visible)
 {
-    if (!profilerWindow_)
-        return;
-
-    profilerWindow_->SetVisibility(profile);
+    profilerWindow_->SetVisibility(visible);
     // -1 means start updating currently selected tab
-    if (profile)
+    if (visible)
         profilerWindow_->OnProfilerWindowTabChanged(-1); 
 }
 
 Console::CommandResult DebugStatsModule::ShowProfilingWindow(const StringVector &params)
 {
-    UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-    if (!ui_module.get())
-        return Console::ResultFailure("Failed to acquire UiModule pointer!");
+    Foundation::UiServicePtr ui = framework_->GetService<Foundation::UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+    if (!ui)
+        return Console::ResultFailure("Failed to acquire UI service!");
 
     // If the window is already created, bring it to front.
     if (profilerWindow_)
     {
-        ui_module->GetInworldSceneController()->BringProxyToFront(profilerWindow_);
+        ui->BringWidgetToFront(profilerWindow_);
         return Console::ResultSuccess();
     }
     else
@@ -160,26 +147,23 @@ Console::CommandResult DebugStatsModule::ShowProfilingWindow(const StringVector 
 
 Console::CommandResult DebugStatsModule::ShowParticipantWindow(const StringVector &params)
 {
-    UiModulePtr ui_module = framework_->GetModuleManager()->GetModule<UiServices::UiModule>().lock();
-    if (!ui_module.get())
-        return Console::ResultFailure("Failed to acquire UiModule pointer!");
+    Foundation::UiServicePtr ui = framework_->GetService<Foundation::UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+    if (!ui)
+        return Console::ResultFailure("Failed to acquire UI service!");
 
     if (participantWindow_)
     {
-        ui_module->GetInworldSceneController()->BringProxyToFront(participantWindow_);
+        ui->BringWidgetToFront(participantWindow_);
         return Console::ResultSuccess();
     }
 
     participantWindow_ = new ParticipantWindow(framework_);
+    participantWindow_->move(100, 100);
+    participantWindow_->setWindowFlags(Qt::Dialog);
 
-    UiServices::UiProxyWidget *proxy = ui_module->GetInworldSceneController()->AddWidgetToScene(participantWindow_,
-        UiServices::UiWidgetProperties(QApplication::translate("ParticipantWindow", "Participants"), UiServices::SceneWidget));
-    QObject::connect(proxy, SIGNAL(Closed()), participantWindow_, SLOT(deleteLater()));
-
-    proxy->show();
-
-//    if (current_world_stream_)
-//        participantWindow_->SetWorldStreamPtr(current_world_stream_);
+    QGraphicsProxyWidget *proxy = ui->AddWidgetToScene(participantWindow_);
+    ui->BringWidgetToFront(participantWindow_);
+//    proxy->show();
 
     return Console::ResultSuccess();
 }

@@ -7,6 +7,7 @@
 #include "SceneManager.h"
 #include "CoreStringUtils.h"
 #include "ComponentManager.h"
+#include "EC_Name.h"
 
 namespace Scene
 {
@@ -25,10 +26,11 @@ namespace Scene
 
     Entity::~Entity()
     {
-        components_.clear();
         // If components still alive, they become free-floating
-        //for (size_t i=0 ; i<components_.size() ; ++i)
-        //    components_[i]->SetParentEntity(0);
+        for (size_t i=0 ; i<components_.size() ; ++i)
+            components_[i]->SetParentEntity(0);
+        
+        components_.clear();
     }
 
     void Entity::AddComponent(const Foundation::ComponentInterfacePtr &component, AttributeChange::Type change)
@@ -51,20 +53,20 @@ namespace Scene
             ComponentVector::iterator iter = std::find(components_.begin(), components_.end(), component);
             if (iter != components_.end())
             {
-                //(*iter)->SetParentEntity(0);
                 if (scene_)
                     scene_->EmitComponentRemoved(this, (*iter).get(), change);
 
+                (*iter)->SetParentEntity(0);
                 components_.erase(iter);
             }
             else
             {
-                Foundation::RootLogWarning("Failed to remove component: " + component->TypeName() + " from entity: " + ToString(GetId()));
+                Foundation::RootLogWarning("Failed to remove component: " + component->TypeName().toStdString() + " from entity: " + ToString(GetId()));
             }
         }
     }
 
-    Foundation::ComponentInterfacePtr Entity::GetOrCreateComponent(const std::string &type_name, AttributeChange::Type change)
+    Foundation::ComponentInterfacePtr Entity::GetOrCreateComponent(const QString &type_name, AttributeChange::Type change)
     {
         for (size_t i=0 ; i<components_.size() ; ++i)
             if (components_[i]->TypeName() == type_name)
@@ -81,8 +83,26 @@ namespace Scene
         // Could not be created
         return Foundation::ComponentInterfacePtr();
     }
+
+    Foundation::ComponentInterfacePtr Entity::GetOrCreateComponent(const QString &type_name, const QString &name, AttributeChange::Type change)
+    {
+        for (size_t i=0 ; i<components_.size() ; ++i)
+            if (components_[i]->TypeName() == type_name && components_[i]->Name() == name)
+                return components_[i];
+
+        // If component was not found, try to create
+        Foundation::ComponentInterfacePtr new_comp = framework_->GetComponentManager()->CreateComponent(type_name, name);
+        if (new_comp)
+        {
+            AddComponent(new_comp, change);
+            return new_comp;
+        }
+
+        // Could not be created
+        return Foundation::ComponentInterfacePtr();
+    }
     
-    Foundation::ComponentInterfacePtr Entity::GetComponent(const std::string &type_name) const
+    Foundation::ComponentInterfacePtr Entity::GetComponent(const QString &type_name) const
     {
         for (size_t i=0 ; i<components_.size() ; ++i)
             if (components_[i]->TypeName() == type_name)
@@ -91,7 +111,16 @@ namespace Scene
         return Foundation::ComponentInterfacePtr();
     }
 
-    Foundation::ComponentInterfacePtr Entity::GetComponent(const std::string &type_name, const std::string& name) const
+    Foundation::ComponentInterfacePtr Entity::GetComponent(const Foundation::ComponentInterface *component) const
+    {
+        for (size_t i = 0; i < components_.size(); i++)
+            if(component->TypeName() == components_[i]->TypeName() &&
+               component->Name() == components_[i]->Name())
+               return components_[i];
+        return Foundation::ComponentInterfacePtr();
+    }
+
+    Foundation::ComponentInterfacePtr Entity::GetComponent(const QString &type_name, const QString& name) const
     {
         for (size_t i=0 ; i<components_.size() ; ++i)
             if ((components_[i]->TypeName() == type_name) && (components_[i]->Name() == name))
@@ -100,7 +129,7 @@ namespace Scene
         return Foundation::ComponentInterfacePtr();
     }
 
-    bool Entity::HasComponent(const std::string &type_name) const
+    bool Entity::HasComponent(const QString &type_name) const
     {
         for(size_t i=0 ; i<components_.size() ; ++i)
             if (components_[i]->TypeName() == type_name)
@@ -108,11 +137,37 @@ namespace Scene
         return false;
     }
 
-    bool Entity::HasComponent(const std::string &type_name, const std::string& name) const
+    EntityPtr Entity::GetSharedPtr() const
+    {
+        EntityPtr ptr;
+        if(scene_)
+            ptr = scene_->GetEntity(GetId());
+        return ptr;
+    };
+
+    bool Entity::HasComponent(const QString &type_name, const QString& name) const
     {
         for(size_t i=0 ; i<components_.size() ; ++i)
             if ((components_[i]->TypeName() == type_name) && (components_[i]->Name() == name))
                 return true;
         return false;
+    }
+
+    std::string Entity::GetName() const
+    {
+        boost::shared_ptr<EC_Name> name = GetComponent<EC_Name>();
+        if (name)
+            return name->name.Get();
+        else
+            return "";
+    }
+
+    std::string Entity::GetDescription() const
+    {
+        boost::shared_ptr<EC_Name> name = GetComponent<EC_Name>();
+        if (name)
+            return name->description.Get();
+        else
+            return "";
     }
 }

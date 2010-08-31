@@ -3,14 +3,11 @@
 #ifndef incl_Communication_MasterWidget_h
 #define incl_Communication_MasterWidget_h
 
-//#include "Foundation.h"
-#include "UiDefines.h"
-
-//#include "EventHandler.h"
-
+#include "ImUiDefines.h"
 #include "TelepathyIMModuleFwd.h"
 
 #include <QWidget>
+#include <QStackedLayout>
 #include <QSize>
 
 namespace UiHelpers
@@ -42,7 +39,7 @@ namespace CommunicationUI
     {
     
     Q_OBJECT
-    Q_PROPERTY(UiDefines::UiStates::ConnectionState ui_state_ READ uiState WRITE setUiState)
+    Q_PROPERTY(ImUiDefines::UiStates::ConnectionState ui_state_ READ uiState WRITE setUiState)
 
     public:
         explicit MasterWidget(Foundation::Framework *framework);
@@ -50,11 +47,11 @@ namespace CommunicationUI
 
     public slots:
         //! Getters and setters
-        void setUiState(UiDefines::UiStates::ConnectionState state) { ui_state_ = state; }
-        UiDefines::UiStates::ConnectionState uiState() { return ui_state_; }
+        void setUiState(ImUiDefines::UiStates::ConnectionState state) { ui_state_ = state; }
+        ImUiDefines::UiStates::ConnectionState uiState() { return ui_state_; }
         EventHandler *GetEventHandler() { return event_handler_; }
 
-        void ChangeContext(UiDefines::UiStates::ConnectionState new_state = UiDefines::UiStates::NoStateChange);
+        void ChangeContext(ImUiDefines::UiStates::ConnectionState new_state = ImUiDefines::UiStates::NoStateChange);
         void PresetSelected(int index);
 
     protected:
@@ -62,7 +59,6 @@ namespace CommunicationUI
 
     private:
         void InitializeSelf();
-        QSize CleanSelf();
         bool connecting_;
 
         Ui::LoginWidget *login_ui_;
@@ -73,7 +69,7 @@ namespace CommunicationUI
         QWidget *loading_widget_;
         QWidget *session_manager_widget_;
 
-        UiDefines::UiStates::ConnectionState ui_state_;
+        ImUiDefines::UiStates::ConnectionState ui_state_;
 
         UiHelpers::LoginHelper *login_helper_;
         UiHelpers::ConfigHelper *config_helper_;
@@ -83,6 +79,8 @@ namespace CommunicationUI
 
         QSize current_size_;
         QStringList to_be_removed_;
+
+        QStackedLayout *stacked_layout_;
     };
 }
 
