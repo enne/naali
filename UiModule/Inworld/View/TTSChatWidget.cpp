@@ -50,7 +50,6 @@ namespace Communications //Needed
 		//If own voice enabled, save values from combobox
 		if(ui.ownEnableCheckBox->isChecked())
 		{
-
 			tts_service_->setActiveOwnVoice(true);
 			//If index is 0, Selected language is ES
 			if(!ui.ownLangComboBox->currentIndex())

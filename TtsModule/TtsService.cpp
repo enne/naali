@@ -7,8 +7,11 @@ namespace TTS
 {
 	TTSService::TTSService(Foundation::Framework* framework) : 
         framework_(framework),
-			voice_(Voices.ES1)
+			voice_(Voices.ES1),
+			activeOthersVoice_(0),
+			activeOwnVoice_(0)
     {
+
     }
 		
     TTSService::~TTSService()

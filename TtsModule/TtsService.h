@@ -44,6 +44,7 @@ namespace TTS
         Foundation::Framework* framework_;
 
 		// Flag of voices (active or not)
+		//Por defecto desactivado
 		bool activeOwnVoice_,activeOthersVoice_;
 		Voice voice_;
 

@@ -243,7 +243,6 @@ namespace CoreUi
 		   else
 			   TTS_chat_widget->hide();
 		}
-		
    }
 	//
     void CommunicationWidget::ToggleImWidget()
