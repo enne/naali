@@ -131,7 +131,7 @@ endif ()
 add_subdirectory (InventoryModule)
 add_subdirectory (OgreAssetEditorModule)
 add_subdirectory (CommunicationsModule)
-add_subdirectory (TtsModule)
+
 
 # Entity components. Note: at the current system if you disable one of these you must
 # comment out the declaration at the responsible module's Load() function.

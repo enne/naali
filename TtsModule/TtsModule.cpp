@@ -1,14 +1,14 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
- *  @file   TtsModule.cpp
+ *  @file   TTSModule.cpp
  *  @brief  Simple OpenSim TTS module. receives the chat message and plays it 
  *			using the Festival TTS wuth the configuration established in the current session.
  */
 
 #include "StableHeaders.h"
 
-#include "TtsModule.h"
+#include "TTSModule.h"
 
 #include "ConsoleCommandServiceInterface.h"
 #include "WorldStream.h"
@@ -34,9 +34,9 @@
 namespace TTS
 {
 
-	const std::string TtsModule::moduleName_ = std::string("TtsModule");
+	const std::string TTSModule::moduleName_ = std::string("TTSModule");
 
-	TtsModule::TtsModule() :
+	TTSModule::TTSModule() :
 		ModuleInterface(moduleName_),
 		networkStateEventCategory_(0),
 		networkInEventCategory_(0),
@@ -45,63 +45,49 @@ namespace TTS
 
 	}
 
-	TtsModule::~TtsModule()
+	TTSModule::~TTSModule()
 	{
 	}
 
-	void TtsModule::Load()
+	void TTSModule::Load()
 	{
 		//Si hay algún componente, cargar aquí.
 	}
 
-	void TtsModule::UnLoad()
+	void TTSModule::UnLoad()
 	{
 	}
 
-	void TtsModule::Initialize()
+	void TTSModule::Initialize()
 	{
 		//Registra el servicio
-		tts_service_ = TtsServicePtr(new TtsService(framework_));
-		framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_Tts, tts_service_);
-
-		//emit ServiceTtsAvailable();
+		tts_service_ = TTSServicePtr(new TTSService(framework_));
+		framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_TTS, tts_service_);
 
 		// Recoge los eventos del framework
+		//?
 		frameworkEventCategory_ = framework_->GetEventManager()->QueryEventCategory("Framework");
 
 	}
-	void TtsModule::PostInitialize()
+	void TTSModule::PostInitialize()
 	{
 	}
 
 
-	void TtsModule::Uninitialize()
+	void TTSModule::Uninitialize()
 	{
-		tts_service_->UnregisterTtsChatProvider();
 
 		framework_->GetServiceManager()->UnregisterService(tts_service_);
 		tts_service_.reset();
 	}
 
-	void TtsModule::Update(f64 frametime)
+	void TTSModule::Update(f64 frametime)
 	{
-		//if (chat_tts_provider_)
-		//	chat_tts_provider_->Update(frametime);
+
 	}
 
-	bool TtsModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface *data)
+	bool TTSModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface *data)
 	{
-		if (category_id == frameworkEventCategory_)
-		{
-			if(event_id == Foundation::WORLD_STREAM_READY)
-			{
-				// Get settings.
-				chat_tts_provider_ = new TTSChat::TtsChatProvider(framework_);
-				if (chat_tts_provider_)
-					chat_tts_provider_->RegisterToTtsService();
-				return false;
-			}
-		}
 		return false;
 	}
 
@@ -118,5 +104,5 @@ void SetProfiler(Foundation::Profiler *profiler)
 using namespace TTS;
 
 POCO_BEGIN_MANIFEST(Foundation::ModuleInterface)
-    POCO_EXPORT_CLASS(TtsModule)
+    POCO_EXPORT_CLASS(TTSModule)
 POCO_END_MANIFEST

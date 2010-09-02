@@ -1,59 +1,85 @@
 #include "StableHeaders.h"
 
-#include "TtsService.h"
-#include "TtsChatProvider.h"
+#include "TTSService.h"
+
 
 namespace TTS
 {
-	TtsService::TtsService(Foundation::Framework* framework) : 
+	TTSService::TTSService(Foundation::Framework* framework) : 
         framework_(framework),
-		tts_chat_provider_(0)
+			voice_(Voices.ES1)
     {
+    }
+		
+    TTSService::~TTSService()
+    {
+
     }
     
-    TtsService::~TtsService()
-    {
-		UnregisterTtsChatProvider();
-    }
-        
-	TTSChat::TtsSessionInterface* TtsService::SessionTtschat()
-    {
-		if(!tts_chat_provider_)
-			return 0;
-		else
-			return tts_chat_provider_->Session();
-    }
+
+	void TTSService::SpeakTextMessage(QString message)
+	{
+		std::string msg;
+		std::stringstream commandoss;
+		std::string commandos;
+		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+
+		//H5 Aquí coge la voz del.
 	
-	bool TtsService::RegisterTtsChatProvider(TTSChat::TtsProviderInterface* tts_provider)
-    {
-		if (!tts_provider)
-        {
-            return false;
-        }
-
-		tts_chat_provider_=tts_provider;
-		connect(tts_chat_provider_, SIGNAL(SessionUnavailable()), SLOT(TtsChatSessionUnavailable()) );
-		//emit TtsProviderAvailable(); //envía la señal y la recoge communicationwidget
-		return true;
-    }
-    
-	bool TtsService::UnregisterTtsChatProvider()
-    {
-		if (!tts_chat_provider_)
+		QRegExp rxlen("^<voice>(.*)</voice>(.*)$");
+		int pos = rxlen.indexIn(message);
+		QString voice;
+		
+		if (pos > -1) 
 		{
-			return false;
+			voice = rxlen.cap(1); 
+			msg = rxlen.cap(2).toStdString();
 		}
-		tts_chat_provider_->CloseSession();
-		disconnect(tts_chat_provider_);
-		return true;
-    }    
-        
-    void TtsService::Update(f64 frametime)
+		commandoss << voice.toStdString();
+		commandoss << " -A -T \"";
+
+		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
+		commandoss << msg;
+		commandoss << "\"";
+		commandos = commandoss.str();
+
+		system(commandos.c_str());	
+	}
+
+	
+	
+	const Voice TTSService::getVoice()
+	{
+		return voice_;
+	}
+
+	void TTSService::setVoice(Voice voice)
+	{
+		voice_=voice;
+	}
+
+	void TTSService::setActiveOwnVoice(bool active)
+	{
+		activeOwnVoice_=active;
+	}
+
+	bool TTSService::isActiveOwnVoice()
+	{
+		return activeOwnVoice_;
+	}
+	void TTSService::setActiveOthersVoice(bool active)
+	{
+		activeOthersVoice_=active;
+	}
+
+	bool TTSService::isActiveOthersVoice()
+	{
+		return activeOthersVoice_;
+	}
+
+    void TTSService::Update(f64 frametime)
     {
     }
 
-	void TtsService::TtsChatSessionUnavailable()
-    {
-        emit TtsUnavailable();
-    }
+
 }

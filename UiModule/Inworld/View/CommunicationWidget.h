@@ -97,17 +97,17 @@ namespace CoreUi
         void ShowVoiceControls();
         void HideVoiceControls();
         void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message);
+		
 		//H2
 		void ToggleTTSChatWidget();
 		//Muestran u ocultan el boton TTS
 		void ShowTTSChatControls();
         void HideTTSChatControls();
-		//
-		//void InitializeTts();
-		void InitializeInWorldTts();
-		void UninitializeInWorldTts();
+		void ConnectChatToTTS();
+		void InitializeInWorldTTS();
 		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
 		//
+
 
     private:
         Foundation::Framework* framework_;
@@ -138,11 +138,7 @@ namespace CoreUi
 		//H2
 		//TTSChat Widget
 		Communications::TTSChat::TTSChatWidget* TTS_chat_widget;
-
-		int first,last;
-		QString text_;
-		//TTS
-		TTS::TTSChat::TtsSessionInterface* in_world_tts_chat_session_;
+		TTS::TTSServiceInterface* tts_service_;
 
 
     signals:

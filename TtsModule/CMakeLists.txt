@@ -38,7 +38,7 @@ configure_mumbleclient ()
 configure_celt ()
 
 # Define target name and output directory
-init_target (TtsModule OUTPUT modules/core)
+init_target (TTSModule OUTPUT modules/core)
 
 # Define source files
 file (GLOB CPP_FILES *.cpp)

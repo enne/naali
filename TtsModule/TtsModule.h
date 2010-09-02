@@ -1,22 +1,22 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
- *  @file   TtsModule.h
+ *  @file   TTSModule.h
  *  @brief  Simple OpenSim TTS module. receives the chat message and plays it 
  *			using the Festival TTS wuth the configuration established in the current session.
  */
 
-#ifndef incl_TtsModule_h
-#define incl_TtsModule_h
+#ifndef incl_TTSModule_h
+#define incl_TTSModule_h
 
-#include "TtsModuleApi.h"
+#include "TTSModuleApi.h"
 #include "ModuleInterface.h"
 #include "ModuleLoggingFunctions.h"
 #include "Core.h"
 
-#include "TtsServiceInterface.h"
-#include "TtsService.h"
-#include "TtsChatProvider.h"
+#include "TTSServiceInterface.h"
+#include "TTSService.h"
+
 
 #include <QObject>
 
@@ -37,16 +37,16 @@ namespace ProtocolUtilities
 namespace TTS
 {
 
-    class TTS_MODULE_API TtsModule :  public QObject, public Foundation::ModuleInterface
+    class TTS_MODULE_API TTSModule :  public QObject, public Foundation::ModuleInterface
     {
         Q_OBJECT
 
     public:
         // Default constructor.
-        TtsModule();
+        TTSModule();
 
         // Destructor 
-        virtual ~TtsModule();
+        virtual ~TTSModule();
         // Load function,if it has any component, are loaded here. It is not use now
         void Load();
 		// Unload function. It is not use now
@@ -67,20 +67,14 @@ namespace TTS
 		//! Logging
         MODULE_LOGGING_FUNCTIONS
 
-	signals:
-
-		// Signal of Service available
-		//void ServiceTtsAvailable();
-
+	
     private:
-        Q_DISABLE_COPY(TtsModule);
+        Q_DISABLE_COPY(TTSModule);
 
         /// Name of this module.
         static const std::string moduleName_;
 		/// Servicio del tts
-		TtsServicePtr tts_service_;
-		/// Provider del Tts
-		TTSChat::TtsProviderInterface* chat_tts_provider_;
+		TTSServicePtr tts_service_;
 
 
         /// NetworkState event category.
@@ -92,4 +86,4 @@ namespace TTS
     };
 }  // end of namespace: TTS
 
-#endif // incl_TtsModule_h
+#endif // incl_TTSModule_h

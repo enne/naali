@@ -53,7 +53,7 @@ namespace Foundation
             ST_WorldBuilding,
             ST_Login,
             ST_Unknown,
-			ST_Tts
+			ST_TTS
         };
     }
 }

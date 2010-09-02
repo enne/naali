@@ -13,7 +13,7 @@
 
 #include <QtGui/QMainWindow>
 #include "ui_TTSChatWidget.h"
-#include "TtsServiceInterface.h"
+#include "TTSServiceInterface.h"
 
 
 namespace Communications //added
@@ -34,7 +34,7 @@ namespace Communications //added
 		public slots:
 				//Initializes enable values (ownTTSVoiceStatus,othersTTSVoiceStatus) and voices (ownTTSVoice,othersTTSVoice)
 				//Configures and connects SIGNALS with SLOTS
-				void ConfigureInterface(TTS::TTSChat::TtsSessionInterface* session); 
+				void ConfigureInterface(TTS::TTSServiceInterface* tts_service); 
 		
 		private:
 
@@ -43,7 +43,8 @@ namespace Communications //added
 			//Variables to drag and move TTSChatWidget QWindow
 			QPoint mouse_last_pos_;
 			bool mouse_dragging_;
-			TTS::TTSChat::TtsSessionInterface* session_;
+			TTS::TTSServiceInterface* tts_service_;
+	
 
 		protected:
 			//Methods to move the window

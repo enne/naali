@@ -17,10 +17,9 @@ namespace Communications //Needed
 
 	}
 
-	void TTSChat::TTSChatWidget::ConfigureInterface(TTS::TTSChat::TtsSessionInterface* session)
+	void TTSChat::TTSChatWidget::ConfigureInterface(TTS::TTSServiceInterface* tts_service)
 	{
-
-		session_=session;
+		tts_service_=tts_service;
 		//Configuration, if the chechbox is not enabled, combobox are disabled
 		//by default, all disabled.
 	   ui.ownLangComboBox->setEnabled(false);
@@ -51,57 +50,43 @@ namespace Communications //Needed
 		//If own voice enabled, save values from combobox
 		if(ui.ownEnableCheckBox->isChecked())
 		{
-			session_->SetActiveOwnVoice(true);
+
+			tts_service_->setActiveOwnVoice(true);
 			//If index is 0, Selected language is ES
 			if(!ui.ownLangComboBox->currentIndex())
 			{
 				//If index is 0, selected gender is Male
 				if(!ui.ownGendComboBox->currentIndex())
-					session_->SetOwnVoice(TTS::TTSChat::Voices.ES1);
+					tts_service_->setVoice(TTS::Voices.ES1);
 				//Else Female
 				else
-					session_->SetOwnVoice(TTS::TTSChat::Voices.ES2);
+					tts_service_->setVoice(TTS::Voices.ES2);
 			}
 			//else EN
 			else
 			{	
 				//Male
 				if(!ui.ownGendComboBox->currentIndex())
-					session_->SetOwnVoice(TTS::TTSChat::Voices.EN1);
+					tts_service_->setVoice(TTS::Voices.EN1);
 				//Female
 				else
-					session_->SetOwnVoice(TTS::TTSChat::Voices.EN2);
+					tts_service_->setVoice(TTS::Voices.EN2);
 			}	
 		}
 		else
 		{
-			session_->SetActiveOwnVoice(false);
+			tts_service_->setActiveOwnVoice(false);
 		}
 				
 		//If others voice enabled, save values from combobox
 		//This is exactly the same but with others.
 		if(ui.othersEnableCheckBox->isChecked())
 		{
-			session_->SetActiveOthersVoice(true);
-
-			if(!ui.othersLangComboBox->currentIndex())
-			{
-				if(!ui.othersGendComboBox->currentIndex())
-					session_->SetOthersVoice(TTS::TTSChat::Voices.ES1);
-				else
-					session_->SetOthersVoice(TTS::TTSChat::Voices.ES2);
-			}
-			else
-			{
-				if(!ui.othersGendComboBox->currentIndex())
-					session_->SetOthersVoice(TTS::TTSChat::Voices.EN1);
-				else
-					session_->SetOthersVoice(TTS::TTSChat::Voices.EN2);
-			}
+			tts_service_->setActiveOthersVoice(true);
 		}
 		else
 		{
-			session_->SetActiveOthersVoice(false);
+			tts_service_->setActiveOthersVoice(false);
 		}	
 		
 	}
