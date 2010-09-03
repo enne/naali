@@ -328,7 +328,7 @@ namespace CoreUi
 		{
 
 			QString voice;
-			std::string ownVoice_ = tts_config_->getOwnVoice();
+			TTS::Voice ownVoice_ = tts_config_->getOwnVoice();
 			QString oVoice_ = ownVoice_.c_str();
 
 			QTextStream(&voice) << "<voice>" << oVoice_ << "</voice>";

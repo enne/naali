@@ -23,17 +23,16 @@ namespace Communications //Needed
 			tts_config_=tts_config;
 			//Configuration, if the chechbox is not enabled, combobox are disabled
 			//by default, all disabled.
-		   ui.ownLangComboBox->setEnabled(false);
-		   ui.ownGendComboBox->setEnabled(false);
-		   ui.othersLangComboBox->setEnabled(false);
-		   ui.othersGendComboBox->setEnabled(false);
+		   /*ui.ownLangComboBox->setEnabled(false);
+		   ui.ownGendComboBox->setEnabled(false);*/
+
 
 			//if TTSChat enabled, voice can be selected, so ComboBoxes are activated
-		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked(bool)), ui.ownLangComboBox, SLOT(setEnabled(bool)));
-		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked(bool)), ui.ownGendComboBox, SLOT(setEnabled(bool)));
+		   //QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked(bool)), ui.ownLangComboBox, SLOT(setEnabled(bool)));
+		   //QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked(bool)), ui.ownGendComboBox, SLOT(setEnabled(bool)));
 
-		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersLangComboBox, SLOT(setEnabled(bool)));
-		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersGendComboBox, SLOT(setEnabled(bool)));
+		  // QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersLangComboBox, SLOT(setEnabled(bool)));
+		   //QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersGendComboBox, SLOT(setEnabled(bool)));
 
 			//Hide Button, if pressed, hide QWidget
 		   QObject::connect(ui.saveButton, SIGNAL(clicked(bool)), SLOT(hide()));
