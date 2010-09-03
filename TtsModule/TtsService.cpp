@@ -7,9 +7,7 @@ namespace TTS
 {
 	TTSService::TTSService(Foundation::Framework* framework) : 
         framework_(framework),
-			voice_(Voices.ES1),
-			activeOthersVoice_(0),
-			activeOwnVoice_(0)
+			voice_(Voices.ES1)
     {
 
     }
@@ -20,27 +18,19 @@ namespace TTS
     }
     
 
-	void TTSService::SpeakTextMessage(QString message)
+	void TTSService::text2Speech(QString message)
 	{
-		std::string msg;
+
 		std::stringstream commandoss;
-		std::string commandos;
+		std::string commandos,msg;
 		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
 
-		//H5 Aquí coge la voz del.
-	
-		QRegExp rxlen("^<voice>(.*)</voice>(.*)$");
-		int pos = rxlen.indexIn(message);
-		QString voice;
 		
-		if (pos > -1) 
-		{
-			voice = rxlen.cap(1); 
-			msg = rxlen.cap(2).toStdString();
-		}
-		commandoss << voice.toStdString();
+		commandoss << getVoice();
+
 		commandoss << " -A -T \"";
 
+		msg=message.toStdString();
 		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
 		commandoss << msg;
 		commandoss << "\"";
@@ -49,7 +39,49 @@ namespace TTS
 		system(commandos.c_str());	
 	}
 
-	
+	void TTSService::text2WAV(QString message, QString pathAndFileName)
+	{
+
+		std::string msg;
+		msg=message.toStdString();
+
+		std::stringstream commandoss;
+		std::string commandos;
+		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+		commandoss << " -W ";
+		commandoss << pathAndFileName.toStdString();
+		commandoss << "-T \"";
+
+		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
+		commandoss << msg;
+		commandoss << "\"";
+		commandos = commandoss.str();
+
+		system(commandos.c_str());	
+
+	}
+
+	void TTSService::text2PHO(QString message, QString pathAndFileName)
+	{
+
+		std::string msg;
+		msg=message.toStdString();
+
+		std::stringstream commandoss;
+		std::string commandos;
+		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+		commandoss << " -P ";
+		commandoss << pathAndFileName.toStdString();
+		commandoss << "-T \"";
+
+		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
+		commandoss << msg;
+		commandoss << "\"";
+		commandos = commandoss.str();
+
+		system(commandos.c_str());	
+
+	}
 	
 	const Voice TTSService::getVoice()
 	{
@@ -61,24 +93,7 @@ namespace TTS
 		voice_=voice;
 	}
 
-	void TTSService::setActiveOwnVoice(bool active)
-	{
-		activeOwnVoice_=active;
-	}
 
-	bool TTSService::isActiveOwnVoice()
-	{
-		return activeOwnVoice_;
-	}
-	void TTSService::setActiveOthersVoice(bool active)
-	{
-		activeOthersVoice_=active;
-	}
-
-	bool TTSService::isActiveOthersVoice()
-	{
-		return activeOthersVoice_;
-	}
 
     void TTSService::Update(f64 frametime)
     {

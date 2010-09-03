@@ -20,6 +20,25 @@ namespace Communications //added
 {
 	namespace TTSChat //added
 	{
+		class TTSChatConfig
+		{
+		public:
+			TTSChatConfig();
+			virtual const TTS::Voice getOwnVoice();
+			virtual void setOwnVoice(TTS::Voice voice);
+			// Set the voice of the others
+			virtual void setActiveOwnVoice(bool active);
+			// return true if the own voce is active
+			virtual bool isActiveOwnVoice();
+			// Active the others voice
+			virtual void setActiveOthersVoice(bool active);
+			// return true if the others voce is active
+			virtual bool isActiveOthersVoice();	
+
+		private:
+			TTS::Voice OwnVoice_;
+			bool activeOwnVoice_,activeOthersVoice_;
+		};
 
 		class TTSChatWidget : public QWidget
 		{
@@ -34,7 +53,7 @@ namespace Communications //added
 		public slots:
 				//Initializes enable values (ownTTSVoiceStatus,othersTTSVoiceStatus) and voices (ownTTSVoice,othersTTSVoice)
 				//Configures and connects SIGNALS with SLOTS
-				void ConfigureInterface(TTS::TTSServiceInterface* tts_service); 
+				void ConfigureInterface(Communications::TTSChat::TTSChatConfig* tts_config); 
 		
 		private:
 
@@ -43,7 +62,7 @@ namespace Communications //added
 			//Variables to drag and move TTSChatWidget QWindow
 			QPoint mouse_last_pos_;
 			bool mouse_dragging_;
-			TTS::TTSServiceInterface* tts_service_;
+			Communications::TTSChat::TTSChatConfig* tts_config_;
 	
 
 		protected:

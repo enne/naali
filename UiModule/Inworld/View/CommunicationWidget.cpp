@@ -154,16 +154,9 @@ namespace CoreUi
                 connect(comm, SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
 				
 				//La sesion de chat ha sido activada, puede conectarse el slot de SpeakIncomingMessage
-				connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(ConnectChatToTTS()));
+				connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldTTS()));
             }
-			
 
-			tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
-			if (tts_service_)
-			{
-			//H6
-				InitializeInWorldTTS();
-			}
 		
 		}
 
@@ -238,10 +231,10 @@ namespace CoreUi
     {
 		if(TTS_chat_widget)
 		{
-		   if(!TTS_chat_widget->isVisible())
-			   TTS_chat_widget->show();
+		   if(!tts_proxy_->isVisible())
+			   tts_proxy_->show();
 		   else
-			   TTS_chat_widget->hide();
+			   tts_proxy_->AnimatedHide();
 		}
    }
 	//
@@ -333,8 +326,9 @@ namespace CoreUi
 
 		if (tts_service_)
 		{
+
 			QString voice;
-			std::string ownVoice_ = tts_service_->getVoice();
+			std::string ownVoice_ = tts_config_->getOwnVoice();
 			QString oVoice_ = ownVoice_.c_str();
 
 			QTextStream(&voice) << "<voice>" << oVoice_ << "</voice>";
@@ -348,16 +342,29 @@ namespace CoreUi
 
 	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message)
 	{
-
+	
 		//Envia el mensaje al TTSChatSession si el flag está activo
-		if((message.IsOwnMessage() && tts_service_->isActiveOwnVoice()) || (!message.IsOwnMessage() && tts_service_->isActiveOthersVoice()))
+		if((message.IsOwnMessage() && tts_config_->isActiveOwnVoice()) || (!message.IsOwnMessage() && tts_config_->isActiveOthersVoice()))
 		{		
 			QString hour_str = QString::number(message.TimeStamp().time().hour());
 			QString minute_str = QString::number(message.TimeStamp().time().minute());
 			QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
 
-			//Aquí se debe obtener la voz de la interfaz
-			tts_service_->SpeakTextMessage(message.Text());
+			//Aquí se obtiene la voz del mensaje y se actualiza en el servicio
+			QString msg;
+			QRegExp rxlen("^<voice>(.*)</voice>(.*)$");
+			int pos = rxlen.indexIn(message.Text());
+			QString voice;
+
+			if (pos > -1) 
+			{
+				voice = rxlen.cap(1); 
+				msg = rxlen.cap(2);
+			}
+
+			tts_service_->setVoice(voice.toStdString());
+
+			tts_service_->text2Speech(msg);
 		}
 	}
 	//
@@ -539,17 +546,15 @@ namespace CoreUi
         UpdateInWorldVoiceIndicator();
     }
 	
-	void CommunicationWidget::ConnectChatToTTS()
-	{
-		//When Chat is initialized (session initialized), connect with TTS service, if available	
-		if (tts_service_)
-		{
-			connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&)) );
-		}
-	}
 
 	void CommunicationWidget::InitializeInWorldTTS()
 	{
+					
+
+		tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
+		if (!tts_service_)
+			return;
+		connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&)) );
 		
 		//Inicialización de la ventana gráfica del TTS
 		ShowTTSChatControls();
@@ -558,16 +563,20 @@ namespace CoreUi
 			SAFE_DELETE(TTS_chat_widget);
 		
 		TTS_chat_widget = new Communications::TTSChat::TTSChatWidget(); 
-				
-		TTS_chat_widget->ConfigureInterface(tts_service_);
+		
+		tts_config_=new Communications::TTSChat::TTSChatConfig();
+		TTS_chat_widget->ConfigureInterface(tts_config_);
 		connect(ttsButton, SIGNAL( clicked() ), SLOT( ToggleTTSChatWidget() ));
 				
 		Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
 		if (ui)
 		{
-			ui->AddWidgetToScene(TTS_chat_widget);
-			TTS_chat_widget->hide();
-		}	
+			tts_proxy_ = ui->AddWidgetToScene(TTS_chat_widget);
+			tts_proxy_->AnimatedHide();
+
+		}
+		
+		
 	}
 //
     void CommunicationWidget::UpdateInWorldVoiceIndicator()
@@ -681,3 +690,4 @@ namespace CoreUi
         emit DestroyMe(this);
     }
 }
+

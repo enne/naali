@@ -38,6 +38,8 @@ namespace Communications
 	namespace TTSChat
 	{
 		class TTSChatWidget;
+		class TTSChatConfig;
+		
 	}
 	//
 }
@@ -103,7 +105,6 @@ namespace CoreUi
 		//Muestran u ocultan el boton TTS
 		void ShowTTSChatControls();
         void HideTTSChatControls();
-		void ConnectChatToTTS();
 		void InitializeInWorldTTS();
 		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
 		//
@@ -117,7 +118,7 @@ namespace CoreUi
         QStackedLayout *stacked_layout_;
         QTextBrowser *history_view_text_edit_;
         NormalChatViewWidget *normal_view_widget_;
-        UiProxyWidget *im_proxy_;
+        UiProxyWidget *im_proxy_,*tts_proxy_;
         Communications::InWorldVoice::SessionInterface* in_world_voice_session_;
         static bool in_world_speak_mode_on_;
 
@@ -139,7 +140,7 @@ namespace CoreUi
 		//TTSChat Widget
 		Communications::TTSChat::TTSChatWidget* TTS_chat_widget;
 		TTS::TTSServiceInterface* tts_service_;
-
+		Communications::TTSChat::TTSChatConfig* tts_config_;
 
     signals:
         void SendMessageToServer(const QString &message);
