@@ -36,15 +36,15 @@ namespace TTS
         
 	    virtual ~TTSServiceInterface() {}
 
-		virtual void text2Speech(QString message) = 0;
+		virtual void text2Speech(QString message, Voice voice) = 0;
 
 		//Ruta de almacenamiento?
-        virtual void text2WAV(QString message, QString pathAndFileName) = 0;
-		virtual void text2PHO(QString message, QString pathAndFileName) = 0;
+        virtual void text2WAV(QString message, QString pathAndFileName, Voice voice) = 0;
+		virtual void text2PHO(QString message, QString pathAndFileName, Voice voice) = 0;
 
 
-		virtual const Voice getVoice() = 0;
-		virtual void setVoice(Voice voice) = 0;
+		//virtual const Voice getVoice() = 0;
+		//virtual void setVoice(Voice voice) = 0;
 	};
 
    	typedef boost::shared_ptr<TTSServiceInterface> TTSServicePtr;

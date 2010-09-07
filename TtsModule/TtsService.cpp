@@ -6,8 +6,8 @@
 namespace TTS
 {
 	TTSService::TTSService(Foundation::Framework* framework) : 
-        framework_(framework),
-			voice_(Voices.ES1)
+        framework_(framework)
+			//voice_(Voices.ES1)
     {
 
     }
@@ -18,7 +18,7 @@ namespace TTS
     }
     
 
-	void TTSService::text2Speech(QString message)
+	void TTSService::text2Speech(QString message, Voice voice)
 	{
 
 		std::stringstream commandoss;
@@ -26,7 +26,7 @@ namespace TTS
 		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
 
 		
-		commandoss << getVoice();
+		commandoss << voice;
 
 		commandoss << " -A -T \"";
 
@@ -39,7 +39,7 @@ namespace TTS
 		system(commandos.c_str());	
 	}
 
-	void TTSService::text2WAV(QString message, QString pathAndFileName)
+	void TTSService::text2WAV(QString message, QString pathAndFileName, Voice voice)
 	{
 
 		std::string msg;
@@ -61,7 +61,7 @@ namespace TTS
 
 	}
 
-	void TTSService::text2PHO(QString message, QString pathAndFileName)
+	void TTSService::text2PHO(QString message, QString pathAndFileName, Voice voice)
 	{
 
 		std::string msg;
@@ -83,7 +83,7 @@ namespace TTS
 
 	}
 	
-	const Voice TTSService::getVoice()
+	/*const Voice TTSService::getVoice()
 	{
 		return voice_;
 	}
@@ -91,7 +91,7 @@ namespace TTS
 	void TTSService::setVoice(Voice voice)
 	{
 		voice_=voice;
-	}
+	}*/
 
 
 

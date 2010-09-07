@@ -354,17 +354,19 @@ namespace CoreUi
 			QString msg;
 			QRegExp rxlen("^<voice>(.*)</voice>(.*)$");
 			int pos = rxlen.indexIn(message.Text());
-			QString voice;
+			QString Qvoice;
+			TTS::Voice voice;
 
 			if (pos > -1) 
 			{
-				voice = rxlen.cap(1); 
+				Qvoice = rxlen.cap(1); 
 				msg = rxlen.cap(2);
 			}
-
-			tts_service_->setVoice(voice.toStdString());
-
-			tts_service_->text2Speech(msg);
+			
+			voice=Qvoice.toStdString();
+			//tts_service_->setVoice(voice.toStdString());
+			
+			tts_service_->text2Speech(msg, voice);
 		}
 	}
 	//

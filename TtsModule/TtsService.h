@@ -22,17 +22,17 @@ namespace TTS
         virtual ~TTSService();
         
 		// Plays the message using the Festival TTS with the current configuration if the voice is active
-		virtual void text2Speech(QString message);
+		virtual void text2Speech(QString message, TTS::Voice voice);
 
 
-		virtual void text2WAV(QString message, QString pathAndFileName);
+		virtual void text2WAV(QString message, QString pathAndFileName, TTS::Voice voice);
 
-		virtual void text2PHO(QString message,QString pathAndFileName);
+		virtual void text2PHO(QString message,QString pathAndFileName, TTS::Voice voice);
 
 		// Return the voice
-		virtual const Voice getVoice();
+		//virtual const Voice getVoice();
 		// Set the voice
-		virtual void setVoice(Voice voice);
+		//irtual void setVoice(Voice voice);
 
 
 		//??
@@ -45,8 +45,8 @@ namespace TTS
 
 		// Flag of voices (active or not)
 		//Por defecto desactivado
-		Voice voice_;
-
+		//Voice voice_;
+		
     };
 }
 #endif
