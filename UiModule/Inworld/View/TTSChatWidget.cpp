@@ -30,9 +30,13 @@ namespace Communications //Needed
 
 		   //Save
 		   QObject::connect(ui.ownGendComboBox, SIGNAL(currentIndexChanged(int)), SLOT(saveChanges()));
-		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked()),SLOT(saveChanges()));
-		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked()),SLOT(saveChanges()));
+		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(saveChanges()));
+		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(saveChanges()));
+		   
+		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(sendTTSStateChanged()));
+		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(sendTTSStateChanged()));
 			
+		    
 			//Load itemes depending on language
 		   QObject::connect(ui.ownLangComboBox, SIGNAL(currentIndexChanged(int)), SLOT(reloadItems()));
 
@@ -46,7 +50,7 @@ namespace Communications //Needed
 		void TTSChatWidget::saveChanges()
 		{
 			QString currentLanguage,currentGender;
-			currentLanguage=ui.ownLangComboBox->currentText();
+     		currentLanguage=ui.ownLangComboBox->currentText();
 			currentGender=ui.ownGendComboBox->currentText();
 
 			if (currentLanguage=="Spanish")
@@ -116,6 +120,8 @@ namespace Communications //Needed
 					fileName ="./festival/demo/DemoFI.wav";
 				}
 			}	
+			
+			
 			if(ui.ownEnableCheckBox->isChecked())
 				tts_config_->setActiveOwnVoice(true);
 			else
@@ -176,6 +182,10 @@ namespace Communications //Needed
 
 			media_object_->play();
 
+		}
+		void TTSChatWidget::sendTTSStateChanged()
+		{
+			emit TTSstateChanged();
 		}
 		//Move window
 		void TTSChatWidget::mouseMoveEvent(QMouseEvent *e)

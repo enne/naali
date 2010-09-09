@@ -105,6 +105,7 @@ namespace CoreUi
 		//Muestran u ocultan el boton TTS
 		void ShowTTSChatControls();
         void HideTTSChatControls();
+		void UpdateTTSChatControls();
 		void InitializeInWorldTTS();
 		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
 		//
@@ -141,6 +142,7 @@ namespace CoreUi
 		Communications::TTSChat::TTSChatWidget* TTS_chat_widget;
 		TTS::TTSServiceInterface* tts_service_;
 		Communications::TTSChat::TTSChatConfig* tts_config_;
+		bool ownVoiceOn,othersVoiceOn;
 
     signals:
         void SendMessageToServer(const QString &message);

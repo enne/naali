@@ -71,7 +71,8 @@ namespace Communications //added
 
 			QString fileName;
 
-	
+		 signals:
+				void TTSstateChanged();
 
 		protected:
 			//Methods to move the window
@@ -84,6 +85,7 @@ namespace Communications //added
 			// After that, stored information can be obtained with the get channels above.
 			void saveChanges();
 		    void demoButtonPressed();
+			void sendTTSStateChanged();
 
 		};
 	}//End TTSChat namespace

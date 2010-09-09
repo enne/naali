@@ -156,10 +156,7 @@ namespace CoreUi
 				//La sesion de chat ha sido activada, puede conectarse el slot de SpeakIncomingMessage
 				connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldTTS()));
             }
-
-		
 		}
-
 	}
 
     void CommunicationWidget::ShowVoiceControls()
@@ -189,12 +186,12 @@ namespace CoreUi
 		this->ttsButton->show();
 		//setStyleSheet("QPushButton#viewModeButton { background-image: url('./data/ui/images/chat/uibutton_HISTORY_normal.png'); }");
     }
-
     void CommunicationWidget::HideTTSChatControls()
     {
 		this->ttsContentWidget->hide();
 		this->ttsButton->hide();
     }
+	
 	//
 
     void CommunicationWidget::ChangeViewPressed()
@@ -564,10 +561,11 @@ namespace CoreUi
 		
 		TTS_chat_widget = new Communications::TTSChat::TTSChatWidget(); 
 		
-		tts_config_=new Communications::TTSChat::TTSChatConfig();
+		tts_config_ = new Communications::TTSChat::TTSChatConfig();
 		TTS_chat_widget->ConfigureInterface(tts_config_);
-		connect(ttsButton, SIGNAL( clicked() ), SLOT( ToggleTTSChatWidget() ));
-				
+		connect(ttsButton, SIGNAL(clicked()), SLOT(ToggleTTSChatWidget()));
+		connect(TTS_chat_widget, SIGNAL(TTSstateChanged()),SLOT(UpdateTTSChatControls()));
+
 		Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
 		if (ui)
 		{
@@ -633,6 +631,28 @@ namespace CoreUi
         in_world_voice_session_ = 0;
     }
 	
+
+	void CommunicationWidget::UpdateTTSChatControls()
+    {
+		ownVoiceOn =tts_config_->isActiveOwnVoice();
+		othersVoiceOn =tts_config_->isActiveOthersVoice();;
+		if (ownVoiceOn || othersVoiceOn)
+		{
+			this->ttsButton->setStyleSheet("QPushButton#ttsButton {border: 0px;background-color: transparent;background-image: url('./data/ui/images/chat/uibutton_TTS_semi.png');background-position: top left;background-repeat: no-repeat;} QPushButton#ttsButton::hover {border: 0px;background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');} QPushButton#ttsButton::pressed {border: 0px; background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');}");
+		}
+
+		if (ownVoiceOn && othersVoiceOn)
+		{
+			this->ttsButton->setStyleSheet("QPushButton#ttsButton {border: 0px;background-color: transparent;background-image: url('./data/ui/images/chat/uibutton_TTS_total.png');background-position: top left;background-repeat: no-repeat;} QPushButton#ttsButton::hover {border: 0px;background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');} QPushButton#ttsButton::pressed {border: 0px; background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');}");
+	
+		}
+		if (!(ownVoiceOn || othersVoiceOn))
+		{
+			this->ttsButton->setStyleSheet("QPushButton#ttsButton {border: 0px;background-color: transparent;background-image: url('./data/ui/images/chat/uibutton_TTS_normal.png');background-position: top left;background-repeat: no-repeat;} QPushButton#ttsButton::hover {border: 0px;background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');} QPushButton#ttsButton::pressed {border: 0px; background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');}");
+
+		}
+    }
+
     // NormalChatViewWidget : QWidget
 
     NormalChatViewWidget::NormalChatViewWidget(QWidget *parent) :
