@@ -23,9 +23,16 @@ namespace TTS
 		Voice ES2;
 		Voice EN1;
 		Voice EN2;
+		Voice EN3;
+		Voice EN4;
+		Voice EN5;
+		Voice EN6;
+		Voice CAT1;
+		Voice CAT2;
+		Voice FI;
 	};
 
-	static const AvailableVoice Voices = {"-ES1","-ES2","-EN1","-EN2"};
+	static const AvailableVoice Voices = {"-ES1","-ES2","-EN1","-EN2","-EN3","-EN4","-EN5","-EN6","-CAT1","-CAT2","-FI"};
 
 
 	class TTSServiceInterface : public QObject, public Foundation::ServiceInterface

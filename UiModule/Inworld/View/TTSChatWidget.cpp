@@ -1,7 +1,8 @@
 #include "StableHeaders.h"
 #include "TTSChatWidget.h"
 
-
+#include <Phonon/MediaObject>
+#include <Phonon/MediaSource>
 
 namespace Communications //Needed
 {
@@ -10,86 +11,172 @@ namespace Communications //Needed
 		TTSChatWidget::TTSChatWidget(QWidget *parent, Qt::WFlags flags)	: QWidget(parent, flags)
 		{
 			ui.setupUi(this);
-			
 		}
 
 		TTSChatWidget::~TTSChatWidget()
 		{
-
 		}
 
 		void TTSChatWidget::ConfigureInterface(Communications::TTSChat::TTSChatConfig* tts_config)
 		{
 			tts_config_=tts_config;
-			//Configuration, if the chechbox is not enabled, combobox are disabled
-			//by default, all disabled.
-		   /*ui.ownLangComboBox->setEnabled(false);
-		   ui.ownGendComboBox->setEnabled(false);*/
-
-
-			//if TTSChat enabled, voice can be selected, so ComboBoxes are activated
-		   //QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked(bool)), ui.ownLangComboBox, SLOT(setEnabled(bool)));
-		   //QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked(bool)), ui.ownGendComboBox, SLOT(setEnabled(bool)));
-
-		  // QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersLangComboBox, SLOT(setEnabled(bool)));
-		   //QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked(bool)), ui.othersGendComboBox, SLOT(setEnabled(bool)));
+			
+			//load items
+			reloadItems();
+			saveChanges();
 
 			//Hide Button, if pressed, hide QWidget
-		   QObject::connect(ui.saveButton, SIGNAL(clicked(bool)), SLOT(hide()));
+		   QObject::connect(ui.closeButton, SIGNAL(clicked(bool)), SLOT(hide()));
 
-		   //Save button.
-		   QObject::connect(ui.saveButton, SIGNAL(clicked(bool)), SLOT(SaveButtonPressed()));
+		   //Save
+		   QObject::connect(ui.ownGendComboBox, SIGNAL(currentIndexChanged(int)), SLOT(saveChanges()));
+		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(clicked()),SLOT(saveChanges()));
+		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(clicked()),SLOT(saveChanges()));
+			
+			//Load itemes depending on language
+		   QObject::connect(ui.ownLangComboBox, SIGNAL(currentIndexChanged(int)), SLOT(reloadItems()));
+
+		   //Demo button.
+		   QObject::connect(ui.demoButton, SIGNAL(clicked(bool)), SLOT(demoButtonPressed()));
 
 		 } //End widget configuration.
 
 
-
 		//Save button is pressed, so information must be stored
-		void TTSChatWidget::SaveButtonPressed()
+		void TTSChatWidget::saveChanges()
 		{
-			//If own voice enabled, save values from combobox
-			if(ui.ownEnableCheckBox->isChecked())
+			QString currentLanguage,currentGender;
+			currentLanguage=ui.ownLangComboBox->currentText();
+			currentGender=ui.ownGendComboBox->currentText();
+
+			if (currentLanguage=="Spanish")
 			{
-				tts_config_->setActiveOwnVoice(true);
-				//If index is 0, Selected language is ES
-				if(!ui.ownLangComboBox->currentIndex())
+				if (currentGender=="Male")
 				{
-					//If index is 0, selected gender is Male
-					if(!ui.ownGendComboBox->currentIndex())
-						tts_config_->setOwnVoice(TTS::Voices.ES1);
-					//Else Female
-					else
-						tts_config_->setOwnVoice(TTS::Voices.ES2);
+					tts_config_->setOwnVoice(TTS::Voices.ES1);
+					fileName ="./festival/demo/DemoES1.wav";
 				}
-				//else EN
-				else
-				{	
-					//Male
-					if(!ui.ownGendComboBox->currentIndex())
-						tts_config_->setOwnVoice(TTS::Voices.EN1);
-					//Female
-					else
-						tts_config_->setOwnVoice(TTS::Voices.EN2);
-				}	
+				if (currentGender=="Female")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.ES2);
+					fileName ="./festival/demo/DemoES2.wav";
+				}
 			}
-			else
+			if (currentLanguage=="English")
 			{
-				tts_config_->setActiveOwnVoice(false);
+				if (currentGender=="Male 1")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.EN1);
+					fileName ="./festival/demo/DemoEN1.wav";
+				}
+				if (currentGender=="Female 1")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.EN2);
+					fileName ="./festival/demo/DemoEN2.wav";
+				}
+				if (currentGender=="Male 2")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.EN3);
+					fileName ="./festival/demo/DemoEN3.wav";
+				}
+				if (currentGender=="Female 2")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.EN4);
+					fileName ="./festival/demo/DemoEN4.wav";
+				}
+				if (currentGender=="Male 3")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.EN5);
+					fileName ="./festival/demo/DemoEN5.wav";
+				}
+				if (currentGender=="Male 4")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.EN6);
+					fileName ="./festival/demo/DemoEN6.wav";
+				}
 			}
-					
+			if (currentLanguage=="Catalan")
+			{
+				if (currentGender=="Male")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.CAT1);
+					fileName ="./festival/demo/DemoCAT1.wav";
+				}
+				if (currentGender=="Female")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.CAT2);
+					fileName ="./festival/demo/DemoCAT2.wav";
+				}
+			}			
+			if (currentLanguage=="Finnish")
+			{
+				if (currentGender=="Male")
+				{
+					tts_config_->setOwnVoice(TTS::Voices.FI);
+					fileName ="./festival/demo/DemoFI.wav";
+				}
+			}	
+			if(ui.ownEnableCheckBox->isChecked())
+				tts_config_->setActiveOwnVoice(true);
+			else
+				tts_config_->setActiveOwnVoice(false);
+							
 			//If others voice enabled, save values from combobox
 			//This is exactly the same but with others.
 			if(ui.othersEnableCheckBox->isChecked())
-			{
 				tts_config_->setActiveOthersVoice(true);
-			}
 			else
-			{
 				tts_config_->setActiveOthersVoice(false);
-			}	
-			
 		}
+		void TTSChatWidget::reloadItems()
+		{
+			QString currentLanguage;
+			currentLanguage=ui.ownLangComboBox->currentText();
+			
+			//Be carefull, if item text is translated
+			//Do it with index
+			if (currentLanguage=="Spanish")
+			{
+				ui.ownGendComboBox->clear();
+				ui.ownGendComboBox->addItem("Male");
+				ui.ownGendComboBox->addItem("Female");
+			}
+			if (currentLanguage=="English")
+			{
+				ui.ownGendComboBox->clear();
+				ui.ownGendComboBox->addItem("Male 1");
+				ui.ownGendComboBox->addItem("Female 1");
+				ui.ownGendComboBox->addItem("Male 2");
+				ui.ownGendComboBox->addItem("Female 2");
+				ui.ownGendComboBox->addItem("Male 3");
+				ui.ownGendComboBox->addItem("Male 4");
+			}
+			if (currentLanguage=="Finnish")
+			{
+				ui.ownGendComboBox->clear();
+				ui.ownGendComboBox->addItem("Male");
+			}
+			if (currentLanguage=="Catalan")
+			{
+				ui.ownGendComboBox->clear();
+				ui.ownGendComboBox->addItem("Male");
+				ui.ownGendComboBox->addItem("Female");
+			}
+		}
+
+		void TTSChatWidget::demoButtonPressed()
+		{
+			media_object_ = new Phonon::MediaObject(this);
+			audio_output_ = new Phonon::AudioOutput(Phonon::MusicCategory, this);
+			
 		
+			media_object_->setCurrentSource(fileName);
+			
+			Phonon::createPath(media_object_, audio_output_);
+
+			media_object_->play();
+
+		}
 		//Move window
 		void TTSChatWidget::mouseMoveEvent(QMouseEvent *e)
 		{
@@ -111,9 +198,6 @@ namespace Communications //Needed
 			mouse_dragging_ = false;
 		}
 
-		
-		
-		
 		TTSChatConfig::TTSChatConfig():
 			OwnVoice_(TTS::Voices.ES1),
 			activeOwnVoice_(0),

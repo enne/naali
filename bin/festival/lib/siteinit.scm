@@ -51,7 +51,4 @@
 ;(set! voice_default 'voice_cmu_us_awb_arctic_hts)
 
 (provide 'siteinit)
-
-
-
-
+(require 'mbrola)

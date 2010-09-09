@@ -48,9 +48,10 @@ namespace TTS
 		std::stringstream commandoss;
 		std::string commandos;
 		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+		commandoss << voice;
 		commandoss << " -W ";
 		commandoss << pathAndFileName.toStdString();
-		commandoss << "-T \"";
+		commandoss << " -T \"";
 
 		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
 		commandoss << msg;
@@ -70,9 +71,10 @@ namespace TTS
 		std::stringstream commandoss;
 		std::string commandos;
 		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+		commandoss << voice;
 		commandoss << " -P ";
 		commandoss << pathAndFileName.toStdString();
-		commandoss << "-T \"";
+		commandoss << " -T \"";
 
 		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
 		commandoss << msg;

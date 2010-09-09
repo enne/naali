@@ -187,6 +187,7 @@ namespace CoreUi
     {
 		this->ttsContentWidget->show();
 		this->ttsButton->show();
+		//setStyleSheet("QPushButton#viewModeButton { background-image: url('./data/ui/images/chat/uibutton_HISTORY_normal.png'); }");
     }
 
     void CommunicationWidget::HideTTSChatControls()
@@ -326,14 +327,12 @@ namespace CoreUi
 
 		if (tts_service_)
 		{
-
 			QString voice;
 			TTS::Voice ownVoice_ = tts_config_->getOwnVoice();
 			QString oVoice_ = ownVoice_.c_str();
 
 			QTextStream(&voice) << "<voice>" << oVoice_ << "</voice>";
 			message =voice+message;
-			
 		}
 		
         if (in_world_chat_session_)
@@ -364,9 +363,12 @@ namespace CoreUi
 			}
 			
 			voice=Qvoice.toStdString();
-			//tts_service_->setVoice(voice.toStdString());
 			
 			tts_service_->text2Speech(msg, voice);
+			//QString fileName1("\"./festival/audio\"");
+			//QString fileName2("\"./festival/phonetic\"");
+			//tts_service_->text2WAV(msg, fileName1,voice);
+			//tts_service_->text2PHO(msg, fileName2,voice);
 		}
 	}
 	//
@@ -547,12 +549,8 @@ namespace CoreUi
         }
         UpdateInWorldVoiceIndicator();
     }
-	
-
 	void CommunicationWidget::InitializeInWorldTTS()
 	{
-					
-
 		tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
 		if (!tts_service_)
 			return;
@@ -575,12 +573,8 @@ namespace CoreUi
 		{
 			tts_proxy_ = ui->AddWidgetToScene(TTS_chat_widget);
 			tts_proxy_->AnimatedHide();
-
 		}
-		
-		
 	}
-//
     void CommunicationWidget::UpdateInWorldVoiceIndicator()
     {
         if (!in_world_voice_session_)
