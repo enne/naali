@@ -133,6 +133,8 @@ namespace Communications //Needed
 				tts_config_->setActiveOthersVoice(true);
 			else
 				tts_config_->setActiveOthersVoice(false);
+
+			emit TTSVoiceChanged(tts_config_->getOwnVoice());
 		}
 		void TTSChatWidget::reloadItems()
 		{

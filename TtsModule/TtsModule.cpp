@@ -9,6 +9,7 @@
 #include "StableHeaders.h"
 
 #include "TTSModule.h"
+#include "EC_TtsVoice.h"
 
 #include "ConsoleCommandServiceInterface.h"
 #include "WorldStream.h"
@@ -52,6 +53,7 @@ namespace TTS
 	void TTSModule::Load()
 	{
 		//Si hay algún componente, cargar aquí.
+		DECLARE_MODULE_EC(EC_TtsVoice);
 	}
 
 	void TTSModule::UnLoad()

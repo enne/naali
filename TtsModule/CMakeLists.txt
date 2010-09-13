@@ -69,7 +69,7 @@ use_package (PROTOBUF) # NEEDED BY MUMBLECLIENT (Posible cambio)
 use_package (OPENSSL) # NEEDED BY MUMBLECLIENT (Posible cambio)
 use_package (CELT)
 
-use_modules (Core Foundation Interfaces RexCommon ProtocolUtilities OgreRenderingModule SceneManager EntityComponents/EC_OpenSimPresence EntityComponents/EC_OpenSimPrim UiModule)
+use_modules (Core Foundation Interfaces RexCommon ProtocolUtilities OgreRenderingModule SceneManager EntityComponents/EC_OpenSimPresence EntityComponents/EC_OpenSimPrim EntityComponents/EC_TtsVoice UiModule)
 
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS} ${RESOURCE_SRCS})
 
@@ -78,7 +78,7 @@ link_package (POCO)
 link_package (QT4)
 link_package (CURL)   # NEEDED BY ProtocolUtilities
 link_package (XMLRPC) # NEEDED BY ProtocolUtilities
-link_modules (Core Foundation Interfaces RexCommon ProtocolUtilities OgreRenderingModule SceneManager EC_OpenSimPresence EC_OpenSimPrim UiModule)
+link_modules (Core Foundation Interfaces RexCommon ProtocolUtilities OgreRenderingModule SceneManager EC_OpenSimPresence EC_OpenSimPrim EC_TtsVoice UiModule)
 link_package (PROTOBUF) # NEEDED BY MUMBLECLIENT
 link_package (OPENSSL) # NEEDED BY MUMBLECLIENT
 link_package (CELT)

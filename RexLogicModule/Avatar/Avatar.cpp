@@ -29,6 +29,7 @@
 #include "EC_OgreAnimationController.h"
 #include "EC_HoveringText.h"
 #include "EC_OpenSimPresence.h"
+#include "EC_TtsVoice.h"
 
 #include <QPushButton>
 
@@ -120,6 +121,12 @@ namespace RexLogic
             CreateWidgetOverlay(placeable, entityid);
             CreateAvatarMesh(entityid);
         }
+
+		// Add EC_TtsVoice component to Avatar
+		if(owner_->GetFramework()->GetService<TTS::TTSServiceInterface>())
+		{
+			entity->AddComponent(owner_->GetFramework()->GetComponentManager()->CreateComponent(EC_TtsVoice::TypeNameStatic(),"voz"));
+		}
 
         return entity;
     }

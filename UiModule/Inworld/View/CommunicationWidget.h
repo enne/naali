@@ -10,6 +10,7 @@
 //Include TTSChat widget
 //Todo: Why is necessary? How to avoid this here?
 #include "TTSChatWidget.h"
+#include "EC_TtsVoice.h"
 //
 
 
@@ -108,6 +109,8 @@ namespace CoreUi
 		void UpdateTTSChatControls();
 		void InitializeInWorldTTS();
 		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
+		void GetAvatarVoiceComponent();
+		void UpdateAvatarVoice(TTS::Voice voice);
 		//
 
 
@@ -143,6 +146,7 @@ namespace CoreUi
 		TTS::TTSServiceInterface* tts_service_;
 		Communications::TTSChat::TTSChatConfig* tts_config_;
 		bool ownVoiceOn,othersVoiceOn;
+		boost::shared_ptr<EC_TtsVoice> avatar_voice_;
 
     signals:
         void SendMessageToServer(const QString &message);

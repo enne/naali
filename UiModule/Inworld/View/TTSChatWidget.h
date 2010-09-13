@@ -73,6 +73,7 @@ namespace Communications //added
 
 		 signals:
 				void TTSstateChanged();
+				void TTSVoiceChanged(TTS::Voice voice);
 
 		protected:
 			//Methods to move the window
