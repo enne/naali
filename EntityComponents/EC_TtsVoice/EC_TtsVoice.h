@@ -11,9 +11,12 @@
 #include "ComponentInterface.h"
 #include "Declare_EC.h"
 #include "TtsServiceInterface.h"
+#include "AttributeInterface.h"
 
 #include <QString>
 
+class QDomDocument;
+class QDomElement;
 
 class EC_TtsVoice : public Foundation::ComponentInterface
 {
@@ -34,12 +37,19 @@ public:
     /// @true If the chat bubble text is visible, false if it's hidden or not initialized properly.
     bool IsActive() const;
 
+	virtual bool IsSerializable() const { return true; }
+
     /// Send the message to tts service to play it
     /// @param msg Message to be shown.
 	/// @param voice The Voice to play
     /// @note If there is not param voice, plays the own voice.
 	void SpeakMessage(const QString msg, TTS::Voice voice);
 	void SpeakMessage(const QString msg);
+	void SpeakMessage();
+
+	/// Attributes
+	Foundation::Attribute<std::string> voice_;
+	Foundation::Attribute<std::string> message_;
 
 private:
     /// Constuctor.
@@ -52,7 +62,7 @@ private:
 	TTS::TTSServiceInterface* ttsService_;
 
 	// Voice that use the entity
-	TTS::Voice voice_;
+	//TTS::Voice voice_;
 };
 
 #endif

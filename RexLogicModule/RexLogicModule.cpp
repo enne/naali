@@ -88,6 +88,7 @@
 #include "EC_Ruler.h"
 #include "EC_SoundRuler.h"
 #include "EC_Name.h"
+#include "EC_TtsVoice.h"
 
 #include <OgreManualObject.h>
 #include <OgreSceneManager.h>
@@ -1072,7 +1073,11 @@ void RexLogicModule::EntityClicked(Scene::Entity* entity)
     boost::shared_ptr<EC_3DCanvasSource> canvas_source = entity->GetComponent<EC_3DCanvasSource>();
     if (canvas_source){
         canvas_source->Clicked();
-    }
+	}
+
+	boost::shared_ptr<EC_TtsVoice> tts_voice = entity->GetComponent<EC_TtsVoice>();
+    if (tts_voice)
+        tts_voice->SpeakMessage();
 }
 
 InWorldChatProviderPtr RexLogicModule::GetInWorldChatProvider() const
