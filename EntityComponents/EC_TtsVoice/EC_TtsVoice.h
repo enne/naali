@@ -15,9 +15,6 @@
 
 #include <QString>
 
-class QDomDocument;
-class QDomElement;
-
 class EC_TtsVoice : public Foundation::ComponentInterface
 {
 	DECLARE_EC(EC_TtsVoice);
@@ -33,10 +30,7 @@ public:
 	/// Gets the voice of entity.
 	TTS::Voice GetMyVoice() const;
 
-    /// Returns if the chat bubble is visible or not.
-    /// @true If the chat bubble text is visible, false if it's hidden or not initialized properly.
-    bool IsActive() const;
-
+	/// Return true if the component is serializable in XML
 	virtual bool IsSerializable() const { return true; }
 
     /// Send the message to tts service to play it
@@ -52,17 +46,13 @@ public:
 	Foundation::Attribute<std::string> message_;
 
 private:
+
     /// Constuctor.
     /// @param module Owner module.
     explicit EC_TtsVoice(Foundation::ModuleInterface *module);
 
-private:
-
     /// Tts pointer.
 	TTS::TTSServiceInterface* ttsService_;
-
-	// Voice that use the entity
-	//TTS::Voice voice_;
 };
 
 #endif

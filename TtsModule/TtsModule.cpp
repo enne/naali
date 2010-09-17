@@ -11,23 +11,11 @@
 #include "TTSModule.h"
 #include "EC_TtsVoice.h"
 
-#include "ConsoleCommandServiceInterface.h"
-#include "WorldStream.h"
-#include "WorldLogicInterface.h"
-#include "Entity.h"
-#include "SceneManager.h"
 #include "EventManager.h"
 #include "ModuleManager.h"
-#include "RealXtend/RexProtocolMsgIDs.h"
-#include "NetworkMessages/NetInMessage.h"
 #include "CoreStringUtils.h"
-#include "GenericMessageUtils.h"
-#include "ConfigurationManager.h"
-#include "EC_OpenSimPresence.h"
-#include "EC_OpenSimPrim.h"
-#include "EC_OgrePlaceable.h"
 #include "MemoryLeakCheck.h"
-#include "SceneEvents.h"
+
 
 #include <QColor>
 

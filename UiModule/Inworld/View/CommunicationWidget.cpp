@@ -350,7 +350,7 @@ namespace CoreUi
             in_world_chat_session_->SendTextMessage(message);
     }
 
-	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message)
+	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message,const QString& from_uuid)
 	{
 	
 		//Envia el mensaje al TTSChatSession si el flag está activo
@@ -377,7 +377,32 @@ namespace CoreUi
 			
 			if(!avatar_voice_)
 				GetAvatarVoiceComponent();
+
 			avatar_voice_->SpeakMessage(msg,voice);
+
+			//Scene::ScenePtr current_scene = framework_->GetDefaultWorldScene();
+			//boost::shared_ptr<EC_TtsVoice> other_voice;
+			//RexUUID* uuid=new RexUUID(from_uuid);
+			//EC_OpenSimPresence *presence_component;
+
+			//if (current_scene.get())
+			//{
+			//	for(Scene::SceneManager::iterator iter = current_scene->begin(); iter != current_scene->end(); ++iter)
+			//	{
+			//		Scene::Entity &entity = **iter;
+			//		presence_component = entity.GetComponent<EC_OpenSimPresence>().get();
+			//		if (presence_component)
+			//			if (presence_component->agentId.ToQString() == uuid->ToQString())
+			//				other_voice = entity.GetComponent<EC_TtsVoice>();
+			//	}
+			//}
+
+			//other_voice->ComponentChanged(AttributeChange::Network);
+
+			//if(other_voice)
+			//	avatar_voice_->SpeakMessage(msg,other_voice->GetMyVoice());
+			//else
+			//	avatar_voice_->SpeakMessage(msg);
 
 			//tts_service_->text2Speech(msg, voice);
 			//QString fileName1("\"./festival/audio\"");
@@ -588,7 +613,7 @@ namespace CoreUi
 		tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
 		if (!tts_service_)
 			return;
-		connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&)) );
+		connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&,const QString&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&,const QString&)) );
 		
 		// Pick up the EC_TtsVoice of the avatar entity
 		GetAvatarVoiceComponent();

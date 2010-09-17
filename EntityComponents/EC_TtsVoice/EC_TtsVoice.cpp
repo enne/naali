@@ -29,19 +29,14 @@ EC_TtsVoice::~EC_TtsVoice()
 void EC_TtsVoice::SetMyVoice(const TTS::Voice voice)
 {
 	voice_.Set(voice,AttributeChange::Local);
-	//voice_=voice;
+	//AttributeChanged(voice_,AttributeChange::Local);
 	ComponentChanged(AttributeChange::Local);
-	//ComponentChanged(AttributeChange::Network);
+	//voice_=voice;
 }
 
 TTS::Voice EC_TtsVoice::GetMyVoice() const
 {
 	return voice_.Get();
-}
-
-bool EC_TtsVoice::IsActive() const
-{
-	return true;
 }
 
 void EC_TtsVoice::SpeakMessage(const QString msg, TTS::Voice voice)

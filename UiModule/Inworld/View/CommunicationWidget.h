@@ -108,7 +108,7 @@ namespace CoreUi
         void HideTTSChatControls();
 		void UpdateTTSChatControls();
 		void InitializeInWorldTTS();
-		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message);
+		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message,const QString& from_uuid);
 		void GetAvatarVoiceComponent();
 		void UpdateAvatarVoice(TTS::Voice voice);
 		//
