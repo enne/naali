@@ -8,6 +8,7 @@
 
 #include "WorldObjectView.h"
 #include "BuildingWidget.h"
+#include "BuildToolbar.h"
 
 #include "PythonHandler.h"
 #include "CameraHandler.h"
@@ -17,6 +18,8 @@
 
 #include <QtInputKeyEvent.h>
 #include <QObject>
+#include <QTimer>
+#include <QPair>
 
 class QtAbstractPropertyBrowser;
 class QtProperty;
@@ -44,6 +47,7 @@ namespace WorldBuilding
     }
 
     typedef CoreUi::UiStateMachine StateMachine;
+    typedef QPair<QWidget*,QGraphicsProxyWidget*> TransferPair;
 
     class BuildSceneManager : public Foundation::WorldBuildingServiceInterface
     {
@@ -57,11 +61,15 @@ namespace WorldBuilding
         bool inworld_state;
 
     public slots:
+        //! Cleans the passed python widgets from our layout
+        void CleanPyWidgets();
+        bool IsBuildingActive();
+
         //! Handle our key context input
         void KeyPressed(KeyEvent *key);
         void KeyReleased(KeyEvent *key);
 
-        // Public functions called by WorldBuildingModule
+        //! Public functions called by WorldBuildingModule
         void ToggleBuildScene();
         void ShowBuildScene();
         void HideBuildScene();
@@ -72,6 +80,7 @@ namespace WorldBuilding
 
         void ObjectSelected(Scene::Entity *entity);
         void ObjectDeselected();
+        void UpdateObjectViewport();
         
         void RotateObject(qreal x, qreal y);
         void Zoom(qreal delta);
@@ -80,7 +89,7 @@ namespace WorldBuilding
         virtual QObject *GetPythonHandler() const;
 
     private slots:
-        void InitialseScene();
+        void InitScene();
         void SceneChangedNotification(const QString &old_name, const QString &new_name);
         void ObjectSelected(bool selected);
 
@@ -93,6 +102,12 @@ namespace WorldBuilding
 
         void ManipModeChanged(PythonParams::ManipulationMode mode);
 
+        void HandleWidgetTransfer(const QString &name, QGraphicsProxyWidget *widget);
+        void HandleTransfersBack();
+        void HandlePythonWidget(const QString &type, QWidget *widget);
+
+        void ToggleLights();
+
     private:
         Foundation::Framework *framework_;
         QString scene_name_;
@@ -101,10 +116,9 @@ namespace WorldBuilding
         AnchorLayout *layout_;
 
         WorldObjectView* world_object_view_;
-        ObjectViewData object_view_data_;
-
         Ui::BuildingWidget *object_info_widget_;
         Ui::BuildingWidget *object_manipulations_widget_;
+        Ui::BuildToolbar *toolbar_;
 
         Ui_ObjectInfoWidget object_info_ui;
         Ui_ObjectManipulationsWidget object_manip_ui;
@@ -113,11 +127,19 @@ namespace WorldBuilding
         PythonHandler *python_handler_;
         
         PropertyEditorHandler *property_editor_handler_;
-        bool prim_selected_;
         Scene::Entity* selected_entity_;
 
         View::CameraHandler *camera_handler_;
-        View::CameraID selected_camera_id_;        
+        View::CameraID selected_camera_id_;
+
+        QList<QWidget*> toggle_visibility_widgets_;
+        QList<QWidget*> python_deleted_widgets_;
+
+        QTimer *viewport_poller_;
+        bool override_server_time_;
+        bool prim_selected_;
+
+        QMap<QString, TransferPair > tranfer_widgets_;
     };
 }
 

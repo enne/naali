@@ -3,8 +3,6 @@ from PythonQt.QtGui import QLineEdit
 
 PRIMTYPES_REVERSED = {
     "Material": "45",
-    "Wav": "17",
-    "Ogg": "1",
     "Texture": "0"
 }
 
@@ -16,7 +14,7 @@ class DragDroppableEditline(QLineEdit):
         
         self.combobox = None #throw into another class...
         self.buttons = []
-	self.spinners = []
+        self.spinners = []
         self.index = None 
 
     def accept(self, ev):
@@ -93,10 +91,11 @@ class MeshAssetidEditline(DragDroppableEditline):
         if ent is not None:
             applymesh(ent, self.text)
             self.deactivateButtons()
+            self.mainedit.window.animation_widget.show()
+            self.mainedit.window.animationline.deactivateButtons()
 
 class SoundAssetidEditline(DragDroppableEditline):
     def doaction(self, ent, asset_type, inv_id, inv_name, asset_ref):
-        print "doaction in SoundAssetidEditline-class..."
         self.deactivateButtons()
     
     def applyAction(self):
@@ -107,7 +106,7 @@ class SoundAssetidEditline(DragDroppableEditline):
 
     def update_soundradius(self, radius):
         ent = self.mainedit.active
-	if ent is not None:
+        if ent is not None:
             self.spinners[0].setValue(radius)
         else:
             self.spinners[0].setValue(3.0)
@@ -119,6 +118,23 @@ class SoundAssetidEditline(DragDroppableEditline):
         else:
             self.spinners[1].setValue(3.0)
 
+class AnimationAssetidEditline(DragDroppableEditline):
+    def doaction(self, ent, asset_type, inv_id, inv_name, asset_ref):
+        self.deactivateButtons()
+    
+    def applyAction(self):
+        ent = self.mainedit.active
+        if ent is not None:
+            applyanimation(ent, self.text, self.combobox.currentText, self.spinners[0].value) 
+            self.deactivateButtons()
+            self.mainedit.window.updateAnimation(ent)
+
+    def update_animationrate(self, rate):
+        ent = self.mainedit.active
+        if ent is not None:
+            self.spinners[0].setValue(rate)
+        else:
+            self.spinners[0].setValue(1.0)
         
 class UUIDEditLine(DragDroppableEditline):
     def doaction(self, ent, asset_type, inv_id, inv_name, asset_ref):
@@ -160,6 +176,25 @@ def applymesh(ent, meshuuid):
         #ent.prim.MeshID = meshuuid # change meshuuid
     r.sendRexPrimData(ent.id)
     #~ r.logDebug("Mesh asset UUID after prim data sent to server: %s" % ent.mesh)
+
+def applyanimation(ent, animationuuid, animationname, animationrate):
+    ent.prim.AnimationPackageID = animationuuid
+    ent.prim.AnimationName = animationname
+    ent.prim.AnimationRate = animationrate
+
+    try:
+        ent.mesh
+    except:
+        return
+
+    try:
+        ac = ent.animationcontroller
+    except:
+        ent.createComponent('EC_OgreAnimationController')
+        ac = ent.animationcontroller
+        ac.SetMeshEntity(ent.mesh)
+    r.sendRexPrimData(ent.id)
+
 
 def applyaudio(ent, audiouuid, soundRadius, soundVolume):
     try:

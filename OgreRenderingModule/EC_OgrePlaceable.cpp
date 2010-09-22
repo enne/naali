@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "EC_OgrePlaceable.h"
 #include <Ogre.h>
+#include <QDebug>
 
 namespace OgreRenderer
 {
@@ -24,6 +25,7 @@ namespace OgreRenderer
         
         // In case the placeable is used for camera control, set fixed yaw axis
         link_scene_node_->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
+
     }
     
     EC_OgrePlaceable::~EC_OgrePlaceable()
@@ -138,17 +140,17 @@ namespace OgreRenderer
         link_scene_node_->lookAt(Ogre::Vector3(look_at.x, look_at.y, look_at.z), Ogre::Node::TS_WORLD);
     }
     
-    void EC_OgrePlaceable::SetYaw(Real radians)
+    void EC_OgrePlaceable::SetYaw(float radians)
     {
         link_scene_node_->yaw(Ogre::Radian(radians), Ogre::Node::TS_WORLD);
     }
 
-    void EC_OgrePlaceable::SetPitch(Real radians)
+    void EC_OgrePlaceable::SetPitch(float radians)
     {
         link_scene_node_->pitch(Ogre::Radian(radians));
     }
  
-   void EC_OgrePlaceable::SetRoll(Real radians)
+   void EC_OgrePlaceable::SetRoll(float radians)
     {
         link_scene_node_->roll(Ogre::Radian(radians));
     } 
@@ -268,7 +270,7 @@ namespace OgreRenderer
     {
         Ogre::Matrix3 m;
         Ogre::Vector3 v;
-        Real x, y, z;
+        float x, y, z;
         x = y = z = 0.0;
         m.SetColumn(0,  link_scene_node_->getOrientation().xAxis());
         m.SetColumn(1,  link_scene_node_->getOrientation().yAxis());
@@ -292,4 +294,5 @@ namespace OgreRenderer
         const Ogre::Vector3 newpos = link_scene_node_->getPosition();
         return QVector3D(newpos.x, newpos.y, newpos.z);
     }
+
 }

@@ -43,19 +43,22 @@ namespace RexLogic
             FocusOnObject
         };
 
-        float rotation_angle;
-        // current camera angle
-        float current_angle;
+        float rotation_angle_phi;
+        float rotation_angle_theta;
         float center_x, center_y, center_z;
         // new camera coordinates after mathematical calculations
         float new_x, new_y, new_z;
-        // the length from the camera to the pivot point
-        float focus_radius;
-        float camera_position_x, camera_position_y, camera_position_z, fixed_camera_position_z;
         bool isRotating;
+        // is camera rotating up/down around object
+        bool isUpDown;
         int rotation_direction;
         QMap<QString, int> mouse_position_map;
         QMap<QString, int> keep_mouse_position;
+        //camera's spherical coordinata system
+        float Radius, Theta, Phi;
+        float mouse_drag_sensitivity;
+        bool isDoubleClickZoom;
+        float doubleClickZoomDistance;
 
         //! default constructor
         //! \param fw Framework pointer
@@ -80,9 +83,9 @@ namespace RexLogic
         void SetCameraEntity(Scene::EntityPtr camera);
 
         //! returns camera pitch
-        Real GetPitch() const { return firstperson_pitch_; }
-        Real GetYaw() const { return firstperson_yaw_; }
-        void SetYawPitch(Real newyaw, Real newpitch); //experimental for py api
+        float GetPitch() const { return firstperson_pitch_; }
+        float GetYaw() const { return firstperson_yaw_; }
+        void SetYawPitch(float newyaw, float newpitch); //experimental for py api
 
         //! returns current state of camera
         State GetState() const { return current_state_; }
@@ -117,9 +120,11 @@ namespace RexLogic
         void ClampPosition(Vector3df &position);
 
         //! This function is called when the user holds ALT key and clicks somewhere;
-        void funcFocusOnObject(float, float, float);
+        void SetFocusOnObject(float, float, float);
+
         //! Rotate camera around the point that is clicked on
-        void rotateCameraAroundObject();
+        void RotateCameraAroundObject();
+        void FocusOnObjectZoom();
 
     private:
         typedef std::map<int, Vector3df> ActionTransMap;
@@ -134,13 +139,13 @@ namespace RexLogic
         Scene::EntityWeakPtr camera_entity_;
 
         //! current camera distance from target
-        Real camera_distance_;
+        float camera_distance_;
 
         //! minimum camera distance from target
-        Real camera_min_distance_;
+        float camera_min_distance_;
 
         //! maximum camera distance from target
-        Real camera_max_distance_;
+        float camera_max_distance_;
 
         //! third person camera offset
         Vector3Df camera_offset_;
@@ -149,25 +154,25 @@ namespace RexLogic
         Vector3df camera_offset_firstperson_;
 
         //! move speed
-        Real sensitivity_;
+        float sensitivity_;
 
         //! zoom speed
-        Real zoom_sensitivity_;
+        float zoom_sensitivity_;
 
         //! camera pitch when dragging
-        Real firstperson_pitch_;
+        float firstperson_pitch_;
 
         //! camera yaw when dragging
-        Real firstperson_yaw_;
+        float firstperson_yaw_;
 
         //! mouse look sensitivity
-        Real firstperson_sensitivity_;
+        float firstperson_sensitivity_;
 
         //! drag pitch
-        Real drag_pitch_;
+        float drag_pitch_;
 
         //! drag yaw
-        Real drag_yaw_;
+        float drag_yaw_;
 
         //! cached value for event category
         event_category_id_t action_event_category_;

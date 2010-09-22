@@ -13,7 +13,12 @@
 #include "EC_OgreMovableTextOverlay.h"
 #include "QOgreUIView.h"
 #include "QOgreWorldView.h"
+#include "CAVEManager.h"
+#include "StereoController.h"
+#include "OgreShadowCameraSetupFocusedPSSM.h"
+#include "CompositionHandler.h"
 
+#include "SceneManager.h"
 #include "SceneEvents.h"
 #include "ConfigurationManager.h"
 #include "EventManager.h"
@@ -22,12 +27,7 @@
 #include "Entity.h"
 #include "MainWindow.h"
 
-#include "OgreShadowCameraSetupFocusedPSSM.h"
-
-#include "CompositionHandler.h"
-
 #include <Ogre.h>
-//#include <OgreRenderQueue.h>
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -35,11 +35,10 @@
 #include <QVBoxLayout>
 #include <QGraphicsScene>
 #include <QCloseEvent>
+#include <QSize>
+#include <QUuid>
 
 #include "MemoryLeakCheck.h"
-
-///\todo Bring in the D3D9RenderSystem includes to fix Ogre & Qt fighting over SetCursor.
-//#include <OgreD3D9RenderWindow.h>
 
 using namespace Foundation;
 
@@ -133,11 +132,14 @@ namespace OgreRenderer
         q_ogre_ui_view_(0),
         last_width_(0),
         last_height_(0),
-        cave_manager_(this),
+        capture_screen_pixel_data_(0),
+        cave_manager_(new CAVEManager(this)),
+        stereo_controller_(new StereoController(this)),
         resized_dirty_(0),
         view_distance_(500.0),
         shadowquality_(Shadows_High),
-        texturequality_(Texture_Normal)
+        texturequality_(Texture_Normal),
+        c_handler_(new CompositionHandler)
     {
         InitializeQt();
         InitializeEvents();
@@ -194,12 +196,15 @@ namespace OgreRenderer
         }
 
         ///\todo Is compositorInstance->removeLister(listener) needed here?
-        foreach(OgreRenderer::GaussianListener* listener, gaussianListeners_)
+        foreach(GaussianListener* listener, gaussianListeners_)
             SAFE_DELETE(listener);
-        
+
         resource_handler_.reset();
         root_.reset();
+        SAFE_DELETE(c_handler_);
         SAFE_DELETE(q_ogre_world_view_);
+        SAFE_DELETE(stereo_controller_);
+        SAFE_DELETE(cave_manager_);
     }
 
     void Renderer::RemoveLogListener()
@@ -311,14 +316,6 @@ namespace OgreRenderer
         if (map.find("Floating-point mode") != map.end())
             rendersystem->setConfigOption("Floating-point mode", "Consistent");
 
-        //if ( map.find("useNVPerfHUD") != map.end() )
-        //{
-        //     rendersystem->setConfigOption("useNVPerfHUD", "true");
-            //rendersystem->setConfigOption("Allow NVPerfHUD", "Yes");
-        //}
-
-        //rendersystem->setConfigOption("Rendering Device", "NVIDIA PerfHUD");
-
         // Set the found rendering system
         root_->setRenderSystem(rendersystem);
         // Initialise but dont create rendering window yet
@@ -364,35 +361,35 @@ namespace OgreRenderer
         }
         else
             throw Exception("Could not create Ogre rendering window");
-
-
     }
 
-    bool Renderer::IsFullScreen()
+    bool Renderer::IsFullScreen() const
     {
         return main_window_->isFullScreen();
     }
 
     void Renderer::PostInitialize()
     {
-        
         resource_handler_->PostInitialize();
-        cave_manager_.InitializeUi();
-        
+        cave_manager_->InitializeUi();
+		stereo_controller_->InitializeUi();
     }
 
     void Renderer::SetFullScreen(bool value)
     {
         if(value)
-        {
             main_window_->showFullScreen();
-        }
         else
-        {
             main_window_->showNormal();
-        }
-        
     }
+
+
+	QVector<Ogre::RenderWindow*> Renderer::GetCAVERenderWindows()
+	{
+		
+		return cave_manager_->getExternalWindows();
+
+	}
 
     void Renderer::SetShadowQuality(ShadowQuality newquality)
     {
@@ -507,8 +504,8 @@ namespace OgreRenderer
         scenemanager_->getRenderQueue()->setRenderableListener(renderable_listener_.get());
 
         InitShadows();
-        
-        c_handler_.Initialize(framework_ ,viewport_);
+
+        c_handler_->Initialize(framework_ ,viewport_);
     }
 
     int Renderer::GetWindowWidth() const
@@ -555,7 +552,7 @@ namespace OgreRenderer
 
     void Renderer::Render()
     {
-        if (!initialized_) 
+        if (!initialized_)
             return;
 
         PROFILE(Renderer_Render);
@@ -790,8 +787,8 @@ namespace OgreRenderer
         if (!initialized_)
             return result;
 
-        Real screenx = x / (Real)renderwindow_->getWidth();
-        Real screeny = y / (Real)renderwindow_->getHeight();
+        float screenx = x / (float)renderwindow_->getWidth();
+        float screeny = y / (float)renderwindow_->getHeight();
 
         Ogre::Ray ray = camera_->getCameraToViewportRay(screenx, screeny);
         ray_query_->setRay(ray);
@@ -1016,55 +1013,112 @@ namespace OgreRenderer
         }
     }
 
-    void Renderer::CaptureWorldAndAvatarToFile(
-        const Vector3Df &avatar_position,
-        const Quaternion &avatar_orientation,
-        const std::string& worldfile,
-        const std::string& avatarfile)
+    void Renderer::PrepareImageRendering(int width, int height)
     {
-        if (!renderwindow_)
-            return;
-
-        if (worldfile.length() == 0 || avatarfile.length() == 0)
+        // Only do this once per connect as we create entitys here
+        Scene::ScenePtr scene = framework_->GetDefaultWorldScene();
+        if (scene && image_rendering_texture_name_.empty())
         {
-            OgreRenderingModule::LogError("Empty filename for world or avatarfile, cannot save.");
-            return;
+            image_rendering_texture_name_ = "ImageRenderingTexture-" + QUuid::createUuid().toString().toStdString();
+            Ogre::TexturePtr image_rendering = Ogre::TextureManager::getSingleton().createManual(
+                image_rendering_texture_name_, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+                Ogre::TEX_TYPE_2D, width, height, 0, Ogre::PF_A8R8G8B8, Ogre::TU_RENDERTARGET);
+            image_rendering->getBuffer()->getRenderTarget()->setAutoUpdated(false);
+
+            Scene::EntityPtr cam_entity = scene->CreateEntity(scene->GetNextFreeId());
+            if (!cam_entity)
+                return;
+
+            cam_entity->AddComponent(framework_->GetComponentManager()->CreateComponent(EC_OgrePlaceable::TypeNameStatic()));
+            cam_entity->AddComponent(framework_->GetComponentManager()->CreateComponent(EC_OgreCamera::TypeNameStatic()));
+            scene->EmitEntityCreated(cam_entity);
+            
+            Foundation::ComponentInterfacePtr component_placable = cam_entity->GetComponent(EC_OgrePlaceable::TypeNameStatic());
+            EC_OgreCamera *ec_camera = cam_entity->GetComponent<EC_OgreCamera>().get();
+            if (!component_placable.get() || !ec_camera)
+                return;
+            ec_camera->SetPlaceable(component_placable);
+            texture_rendering_cam_entity_ = cam_entity;
         }
+    }
 
-        // Set as active window so we wont take 
-        // screenshots of other applications
-        if (!main_window_->isActiveWindow())
-            main_window_->activateWindow();
+    void Renderer::ResetImageRendering()
+    {
+        if (!image_rendering_texture_name_.empty())
+        {
+            Ogre::TextureManager::getSingleton().remove(image_rendering_texture_name_);
+            image_rendering_texture_name_ = "";
+        }
+    }
 
-        // Hide ui
-        q_ogre_world_view_->HideUiOverlay();
-        q_ogre_world_view_->RenderOneFrame();
-
-        /*** World image ***/
+    QPixmap Renderer::RenderImage(bool use_main_camera)
+    {
         int window_width = renderwindow_->getWidth();
         int window_height = renderwindow_->getHeight();
-        Ogre::Box bounds(0, 0, window_width, window_height);
-        Ogre::uchar* pixelData = new Ogre::uchar[window_width * window_height * 4];
-        Ogre::PixelBox pixels(bounds, Ogre::PF_A8R8G8B8, pixelData);
+        PrepareImageRendering(window_width, window_height);
+        if (!texture_rendering_cam_entity_)
+            return QPixmap();
 
-        // Just use rendererwindow:s view for this
-        renderwindow_->copyContentsToMemory(pixels);
+        QImage captured_pixmap(QSize(window_width, window_height), QImage::Format_ARGB32_Premultiplied);
+        captured_pixmap.fill(Qt::gray);
 
-        // Save pixeldata to image
-        Ogre::Image screenshot;
-        screenshot.loadDynamicImage(pixelData, pixels.getWidth(), pixels.getHeight(), 1, Ogre::PF_A8R8G8B8);
-        screenshot.save(worldfile);
+        // Get the camera ec
+        EC_OgreCamera *ec_camera = texture_rendering_cam_entity_->GetComponent<EC_OgreCamera>().get();
+        if (!ec_camera)
+            return QPixmap::fromImage(captured_pixmap);
 
-        /*** Avatar image ***/
-        Ogre::Camera *screenshot_cam = GetSceneManager()->createCamera("ScreenshotCamera");
-        Ogre::Vector3 ogre_avatar_pos = ToOgreVector3(avatar_position);
-        Ogre::Quaternion ogre_avatar_orientation = ToOgreQuaternion(avatar_orientation);
+        Ogre::TexturePtr image_rendering = Ogre::TextureManager::getSingleton().getByName(image_rendering_texture_name_);
+        if (image_rendering.isNull())
+            return QPixmap::fromImage(captured_pixmap);
 
-        // Setup camera
-        screenshot_cam->setNearClipDistance(0.1f);
-        screenshot_cam->setFarClipDistance(2000.f);
-        screenshot_cam->setAspectRatio(Ogre::Real(viewport_->getActualWidth() / Ogre::Real(viewport_->getActualHeight())));
-        screenshot_cam->setAutoAspectRatio(true);
+        // Resize rendering texture if needed
+        if (image_rendering->getWidth() != window_width || image_rendering->getHeight() != window_height)
+        {
+            ResetImageRendering();
+            PrepareImageRendering(window_width, window_height);
+            image_rendering = Ogre::TextureManager::getSingleton().getByName(image_rendering_texture_name_);
+            if (image_rendering.isNull())
+                return QPixmap::fromImage(captured_pixmap);
+        }
+
+        // Set camera aspect ratio
+        if (!use_main_camera)
+            ec_camera->GetCamera()->setAspectRatio(Ogre::Real(window_width) / Ogre::Real(window_height));
+
+        // Get rendering texture and update it
+        Ogre::RenderTexture *render_texture = image_rendering->getBuffer()->getRenderTarget();
+        if (render_texture)
+        {
+            render_texture->removeAllViewports();
+            if (render_texture->getNumViewports() == 0)
+            {
+                // Use custom camera or main av camera
+                Ogre::Viewport *vp = 0;
+                if (use_main_camera)
+                    vp = render_texture->addViewport(GetCurrentCamera());
+                else
+                    vp = render_texture->addViewport(ec_camera->GetCamera());
+                // Exclude ui/name tag overlays
+                vp->setOverlaysEnabled(false);
+                // Exclude highlight mesh from rendering
+                vp->setVisibilityMask(0x2);
+            }
+            render_texture->update(false);
+
+            captured_pixmap = CreateQImageFromTexture(render_texture, window_width, window_height);
+        }
+        QPixmap return_pixmap = QPixmap::fromImage(captured_pixmap).copy(); // Deep copy so we can delete the buffer data
+        SAFE_DELETE(capture_screen_pixel_data_);
+        return return_pixmap;
+    }
+
+    QPixmap Renderer::RenderAvatar(const Vector3Df &avatar_position, const Quaternion &avatar_orientation)
+    {
+        int window_width = renderwindow_->getWidth();
+        int window_height = renderwindow_->getHeight();
+        PrepareImageRendering(window_width, window_height);
+        if (!texture_rendering_cam_entity_)
+            return QPixmap();
 
         // Calculate positions
         Vector3df pos = avatar_position;
@@ -1072,41 +1126,28 @@ namespace OgreRenderer
         pos += (avatar_orientation * Vector3df::NEGATIVE_UNIT_Z * 0.5f);
         Vector3df lookat = avatar_position + avatar_orientation * Vector3df(0,0,-0.4f);
 
-        // Create scenenode and attach camera to it
-        Ogre::SceneNode *cam_node = GetSceneManager()->createSceneNode("ScreenShotNode");
-        cam_node->attachObject(screenshot_cam);
+        EC_OgrePlaceable *cam_ec_placable = texture_rendering_cam_entity_->GetComponent<EC_OgrePlaceable>().get();
+        if (!cam_ec_placable)
+            return QPixmap();
 
-        // Setup camera to look at the avatar
-        cam_node->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
-        cam_node->setPosition(Ogre::Vector3(pos.x, pos.y, pos.z));
-        cam_node->lookAt(Ogre::Vector3(lookat.x, lookat.y, lookat.z), Ogre::Node::TS_WORLD, Ogre::Vector3::NEGATIVE_UNIT_Z);
+        cam_ec_placable->SetPosition(pos);
+        cam_ec_placable->LookAt(lookat);
 
-        // Render camera view to texture and save to file
-        Ogre::TexturePtr avatar_screenshot = Ogre::TextureManager::getSingleton().createManual(
-            "ScreenshotTexture", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-            Ogre::TEX_TYPE_2D, window_width, window_height, 0, Ogre::PF_A8R8G8B8, Ogre::TU_RENDERTARGET);
+        return RenderImage(false);
+    }
 
-        Ogre::RenderTexture *render_texture = avatar_screenshot->getBuffer()->getRenderTarget();
-        Ogre::Viewport *vp = render_texture->addViewport(screenshot_cam);
-        render_texture->update();
-
-        SAFE_DELETE_ARRAY(pixelData);
-        pixelData = new Ogre::uchar[window_width * window_height * 4];
-        pixels = Ogre::PixelBox(bounds, Ogre::PF_A8R8G8B8, pixelData);
+    QImage Renderer::CreateQImageFromTexture(Ogre::RenderTexture *render_texture, int width, int height)
+    {
+        SAFE_DELETE(capture_screen_pixel_data_);
+        capture_screen_pixel_data_ = new Ogre::uchar[width * height * 4];
+        Ogre::Box bounds(0, 0, width, height);
+        Ogre::PixelBox pixels = Ogre::PixelBox(bounds, Ogre::PF_A8R8G8B8, (void*)capture_screen_pixel_data_);
         render_texture->copyContentsToMemory(pixels, Ogre::RenderTarget::FB_AUTO);
 
-        screenshot.loadDynamicImage(pixelData, pixels.getWidth(), pixels.getHeight(), 1, Ogre::PF_A8R8G8B8);
-        screenshot.save(avatarfile);
-
-        // Cleanup
-        Ogre::TextureManager::getSingleton().remove("ScreenshotTexture");
-        GetSceneManager()->destroySceneNode(cam_node);
-        GetSceneManager()->destroyCamera(screenshot_cam);
-        SAFE_DELETE_ARRAY(pixelData);
-
-        // Show ui
-        q_ogre_world_view_->ShowUiOverlay();
-        q_ogre_world_view_->RenderOneFrame();
+        QImage image = QImage(capture_screen_pixel_data_, width, height, QImage::Format_ARGB32);
+        if (image.isNull())
+            OgreRenderingModule::LogError("Capturing render texture to a image failed");
+        return image;
     }
 
     void Renderer::AddResourceDirectory(const QString &qdirectory)
@@ -1162,7 +1203,7 @@ namespace OgreRenderer
     }
 
     void Renderer::UpdateKeyBindings(Foundation::KeyBindings *bindings) 
-    { 
+    {
         if (q_ogre_ui_view_) 
             q_ogre_ui_view_->UpdateKeyBindings(bindings); 
     }
@@ -1171,14 +1212,12 @@ namespace OgreRenderer
     {
         q_ogre_world_view_->HideUiOverlay();
     }
-    
+
     void Renderer::ShowCurrentWorldView()
     {
           q_ogre_world_view_->ShowUiOverlay();
-
     }
-    
-    
+
     void Renderer::InitShadows()
     {
         bool using_pssm = (shadowquality_ == Shadows_High);
@@ -1285,7 +1324,7 @@ namespace OgreRenderer
         {
             for(int i=0;i<shadowTextureCount;i++)
             {
-                OgreRenderer::GaussianListener* gaussianListener = new OgreRenderer::GaussianListener(); 
+                GaussianListener* gaussianListener = new GaussianListener(); 
                 Ogre::TexturePtr shadowTex = sceneManager->getShadowTexture(0);
                 Ogre::RenderTarget* shadowRtt = shadowTex->getBuffer()->getRenderTarget();
                 Ogre::Viewport* vp = shadowRtt->getViewport(0);
@@ -1297,5 +1336,4 @@ namespace OgreRenderer
             }
         }
     }
-    
 }

@@ -38,7 +38,7 @@ typedef std::map<uint8_t, Color> ColorMap;
 typedef std::map<uint8_t, uint8_t> MaterialTypeMap;
 
 //! Map for holding prim face uv parameter info
-typedef std::map<uint8_t, Real> UVParamMap;
+typedef std::map<uint8_t, float> UVParamMap;
 
 //! Each scene entity representing a prim in OpenSim sense has this component.
 class EC_OpenSimPrim : public Foundation::ComponentInterface
@@ -46,19 +46,14 @@ class EC_OpenSimPrim : public Foundation::ComponentInterface
     DECLARE_EC(EC_OpenSimPrim);
 
     Q_OBJECT
-    Q_PROPERTY(QString Name READ getName WRITE setName)
     Q_PROPERTY(QString FullId READ getFullId DESIGNABLE false)
     Q_PROPERTY(QString ServerScriptClass READ getServerScriptClass WRITE setServerScriptClass)
-    Q_PROPERTY(QString Description READ getDescription WRITE setDescription)
     Q_PROPERTY(QString MediaUrl READ getMediaUrl WRITE setMediaUrl DESIGNABLE false) // not handled anywhere
     Q_PROPERTY(QString HoveringText READ getHoveringText WRITE setHoveringText)
-    Q_PROPERTY(bool CastShadows READ getCastShadows WRITE setCastShadows)
     Q_PROPERTY(double SoundVolume READ getSoundVolume WRITE setSoundVolume)
     Q_PROPERTY(double SoundRadius READ getSoundRadius WRITE setSoundRadius)
     Q_PROPERTY(unsigned int Material READ getMaterial WRITE setMaterial DESIGNABLE false)
     Q_PROPERTY(unsigned int ClickAction READ getClickAction WRITE setClickAction)
-    Q_PROPERTY(unsigned int PathCurve READ getPathCurve WRITE setPathCurve)
-    Q_PROPERTY(unsigned int ProfileCurve READ getProfileCurve WRITE setProfileCurve)
     Q_PROPERTY(QVariant RegionHandle READ getRegionHandle WRITE setRegionHandle DESIGNABLE false)
     Q_PROPERTY(unsigned int LocalId READ getLocalId WRITE setLocalId DESIGNABLE false)
 
@@ -77,7 +72,6 @@ class EC_OpenSimPrim : public Foundation::ComponentInterface
     Q_PROPERTY(QString AnimationName READ getAnimationName WRITE setAnimationName)
     Q_PROPERTY(double AnimationRate READ getAnimationRate WRITE setAnimationRate)
 
-    Q_PROPERTY(bool IsVisible READ getIsVisible WRITE setIsVisible)
     Q_PROPERTY(bool LightCreatesShadows READ getLightCreatesShadows WRITE setLightCreatesShadows)
     Q_PROPERTY(bool DescriptionTexture READ getDescriptionTexture WRITE setDescriptionTexture)
     Q_PROPERTY(bool ScaleToPrim READ getScaleToPrim WRITE setScaleToPrim)
@@ -130,12 +124,6 @@ public:
     QString getAnimationName() const { return QString(AnimationName.c_str()); }
     void setAnimationName(QString value) { AnimationName = value.toStdString(); }
 
-    QString getName() const { return QString(Name.c_str()); }
-    void setName(QString name) { Name = name.toStdString(); }
-
-    QString getDescription() const { return QString(Description.c_str()); }
-    void setDescription(QString value) { Description = value.toStdString(); }
-
     QString getMediaUrl() const { return QString(MediaUrl.c_str()); }
     void setMediaUrl(QString value) { MediaUrl = value.toStdString(); }
 
@@ -144,9 +132,6 @@ public:
 
     QString getServerScriptClass() const { return QString(ServerScriptClass.c_str()); }
     void setServerScriptClass(const QString &scriptclass) { ServerScriptClass = scriptclass.toStdString(); }
-
-    bool getCastShadows() const { return CastShadows; }
-    void setCastShadows(bool shadows) { CastShadows = shadows; }
 
     double getSoundVolume() const { return (double)SoundVolume; }
     void setSoundVolume(double sound) { SoundVolume = (float)sound; }
@@ -166,12 +151,6 @@ public:
     void setDrawType(unsigned int mat) { DrawType = (uint8_t)mat; }
     unsigned int getDrawType() const { return DrawType; }
 
-    void setPathCurve(unsigned int value) { PathCurve = (uint8_t)value; }
-    unsigned int getPathCurve() const { return PathCurve; }
-
-    void setProfileCurve(unsigned int value) { ProfileCurve = (uint8_t)value; }
-    unsigned int getProfileCurve() const { return ProfileCurve; }
-
     void setRegionHandle(const QVariant &reg) { RegionHandle = reg.toULongLong(); }
     QVariant getRegionHandle() const { return QVariant(static_cast<qulonglong>(RegionHandle)); }
 
@@ -181,68 +160,68 @@ public:
     // PRIM SHAPE PROPERTIES
 
     // 0 to 1, quanta = 0.01
-    double getPathBegin() const { return (double)PathBegin; }
-    void setPathBegin(double value) { value = clamp<double>(value, 0.00, 1.00); PathBegin = (float)value; }
+    double getPathBegin() const { return (double)PathBegin.Get(); }
+    void setPathBegin(double value) { value = clamp<double>(value, 0.00, 1.00); PathBegin.Set((float)value, AttributeChange::Local); }
 
     // 0 to 1, quanta = 0.01
-    double getPathEnd()const  { return (double)PathEnd; }
-    void setPathEnd(double value) { value = clamp<double>(value, 0.00, 1.00); PathEnd = (float)value; }
+    double getPathEnd()const  { return (double)PathEnd.Get(); }
+    void setPathEnd(double value) { value = clamp<double>(value, 0.00, 1.00); PathEnd.Set((float)value, AttributeChange::Local); }
 
     // 0 to 1, quanta = 0.01
-    double getPathScaleX() const { return (double)PathScaleX; }
-    void setPathScaleX(double value) { value = clamp<double>(value, 0.00, 1.00); PathScaleX = (float)value; }
+    double getPathScaleX() const { return (double)PathScaleX.Get(); }
+    void setPathScaleX(double value) { value = clamp<double>(value, 0.00, 1.00); PathScaleX.Set((float)value, AttributeChange::Local); }
 
     // 0 to 1, quanta = 0.01
-    double getPathScaleY() const { return (double)PathScaleY; }
-    void setPathScaleY(double value) { value = clamp<double>(value, 0.00, 1.00); PathScaleY = (float)value; }
+    double getPathScaleY() const { return (double)PathScaleY.Get(); }
+    void setPathScaleY(double value) { value = clamp<double>(value, 0.00, 1.00); PathScaleY.Set((float)value, AttributeChange::Local); }
 
     // -.5 to .5, quanta = 0.01
-    double getPathShearX() const { return (double)PathShearX; }
-    void setPathShearX(double value) { value = clamp<double>(value, -0.50, 0.50); PathShearX = (float)value; }
+    double getPathShearX() const { return (double)PathShearX.Get(); }
+    void setPathShearX(double value) { value = clamp<double>(value, -0.50, 0.50); PathShearX.Set((float)value, AttributeChange::Local); }
 
     // -.5 to .5, quanta = 0.01
-    double getPathShearY() const { return (double)PathShearY; }
-    void setPathShearY(double value) { value = clamp<double>(value, -0.50, 0.50); PathShearY = (float)value; }
+    double getPathShearY() const { return (double)PathShearY.Get(); }
+    void setPathShearY(double value) { value = clamp<double>(value, -0.50, 0.50); PathShearY.Set((float)value, AttributeChange::Local); }
 
     // -1 to 1, quanta = 0.01
-    double getPathTwist() const { return (double)PathTwist; }
-    void setPathTwist(double value) { value = clamp<double>(value, -1.00, 1.00); PathTwist = (float)value; }
+    double getPathTwist() const { return (double)PathTwist.Get(); }
+    void setPathTwist(double value) { value = clamp<double>(value, -1.00, 1.00); PathTwist.Set((float)value, AttributeChange::Local); }
 
     // -1 to 1, quanta = 0.01
-    double getPathTwistBegin() const { return (double)PathTwistBegin; }
-    void setPathTwistBegin(double value) { value = clamp<double>(value, -1.00, 1.00); PathTwistBegin = (float)value; }
+    double getPathTwistBegin() const { return (double)PathTwistBegin.Get(); }
+    void setPathTwistBegin(double value) { value = clamp<double>(value, -1.00, 1.00); PathTwistBegin.Set((float)value, AttributeChange::Local); }
 
     // -1 to 1, quanta = 0.01
-    double getPathRadiusOffset() const { return (double)PathRadiusOffset; }
-    void setPathRadiusOffset(double value) { value = clamp<double>(value, -1.00, 1.00); PathRadiusOffset = (float)value; }
+    double getPathRadiusOffset() const { return (double)PathRadiusOffset.Get(); }
+    void setPathRadiusOffset(double value) { value = clamp<double>(value, -1.00, 1.00); PathRadiusOffset.Set((float)value, AttributeChange::Local); }
 
     // -1 to 1, quanta = 0.01
-    double getPathTaperX() const { return (double)PathTaperX; }
-    void setPathTaperX(double value) { value = clamp<double>(value, -1.00, 1.00); PathTaperX = (float)value; }
+    double getPathTaperX() const { return (double)PathTaperX.Get(); }
+    void setPathTaperX(double value) { value = clamp<double>(value, -1.00, 1.00); PathTaperX.Set((float)value, AttributeChange::Local); }
 
     // -1 to 1, quanta = 0.01
-    double getPathTaperY() const { return (double)PathTaperY; }
-    void setPathTaperY(double value) { value = clamp<double>(value, -1.00, 1.00); PathTaperY = (float)value; }
+    double getPathTaperY() const { return (double)PathTaperY.Get(); }
+    void setPathTaperY(double value) { value = clamp<double>(value, -1.00, 1.00); PathTaperY.Set((float)value, AttributeChange::Local); }
 
     // 0 to 3, quanta = 0.015
-    double getPathRevolutions() const { return (double)PathRevolutions; }
-    void setPathRevolutions(double value) { value = clamp<double>(value, 0.000, 3.000); PathRevolutions = (float)value; }
+    double getPathRevolutions() const { return (double)PathRevolutions.Get(); }
+    void setPathRevolutions(double value) { value = clamp<double>(value, 0.000, 3.000); PathRevolutions.Set((float)value, AttributeChange::Local); }
 
     // -1 to 1, quanta = 0.01
-    double getPathSkew() const { return (double)PathSkew; }
-    void setPathSkew(double value) { value = clamp<double>(value, -1.00, 1.00); (float)value; }
+    double getPathSkew() const { return (double)PathSkew.Get(); }
+    void setPathSkew(double value) { value = clamp<double>(value, -1.00, 1.00); PathSkew.Set((float)value, AttributeChange::Local); }
     
     // 0 to 1, quanta = 0.01
-    double getProfileBegin() const { return (double)ProfileBegin; }
-    void setProfileBegin(double value) { value = clamp<double>(value, 0.00, 1.00); ProfileBegin = (float)value; }
+    double getProfileBegin() const { return (double)ProfileBegin.Get(); }
+    void setProfileBegin(double value) { value = clamp<double>(value, 0.00, 1.00); ProfileBegin.Set((float)value, AttributeChange::Local); }
 
     // 0 to 1, quanta = 0.01
-    double getProfileEnd() const { return (double)ProfileEnd; }
-    void setProfileEnd(double value) { value = clamp<double>(value, 0.00, 1.00); ProfileEnd = (float)value; }
+    double getProfileEnd() const { return (double)ProfileEnd.Get(); }
+    void setProfileEnd(double value) { value = clamp<double>(value, 0.00, 1.00); ProfileEnd.Set((float)value, AttributeChange::Local); }
 
     // 0 to 1, quanta = 0.01
-    double getProfileHollow() const { return (double)ProfileHollow; }
-    void setProfileHollow(double value) { value = clamp<double>(value, 0.00, 1.00); ProfileHollow = (float)value; }
+    double getProfileHollow() const { return (double)ProfileHollow.Get(); }
+    void setProfileHollow(double value) { value = clamp<double>(value, 0.00, 1.00); ProfileHollow.Set((float)value, AttributeChange::Local); }
 
     bool getHasPrimShapeData() const { return HasPrimShapeData; }
 
@@ -254,20 +233,11 @@ public:
     bool getDescriptionTexture() const { return DescriptionTexture; }
     void setDescriptionTexture(bool value) { DescriptionTexture = value; }
 
-    bool getIsVisible() const { return IsVisible; }
-    void setIsVisible(bool value) { IsVisible = value; }
-
     bool getScaleToPrim() const { return ScaleToPrim; }
     void setScaleToPrim(bool value) { ScaleToPrim = value; }
 
     double getAnimationRate() const { return (double)AnimationRate; }
     void setAnimationRate(double value) { AnimationRate = (float)value; }
-
-    double getDrawDistance() const { return (double)DrawDistance; }
-    void setDrawDistance(double value) { DrawDistance = (float)value; }
-
-    double getLOD() const { return (double)LOD; }
-    void setLOD(double value) { LOD = (float)value; }
 
     void setSelectPriority(const QVariant value) { SelectPriority = value.toULongLong(); }
     QVariant getSelectPriority() const { return QVariant(static_cast<qulonglong>(SelectPriority)); }
@@ -296,8 +266,9 @@ public:
     uint16_t TimeDilation;
     uint8_t PCode;
 
-    std::string Name;
-    std::string Description;
+    DEFINE_QPROPERTY_ATTRIBUTE(QString, Name);
+    DEFINE_QPROPERTY_ATTRIBUTE(QString, Description);
+
     std::string HoveringText;
     std::string MediaUrl;
 
@@ -335,20 +306,26 @@ public:
     //! Drawing related variables
     Vector3df Scale; //not a property
     uint8_t DrawType; //enum!
-    bool IsVisible; 
-    bool CastShadows; 
+    DEFINE_QPROPERTY_ATTRIBUTE(bool, IsVisible);
+    DEFINE_QPROPERTY_ATTRIBUTE(bool, CastShadows);
+
+    DEFINE_QPROPERTY_ATTRIBUTE(float, DrawDistance);
+    DEFINE_QPROPERTY_ATTRIBUTE(float, LOD);
+
+    //bool IsVisible; 
+    //bool CastShadows; 
     bool LightCreatesShadows;
     bool DescriptionTexture;
     bool ScaleToPrim;
-    float DrawDistance;
-    float LOD;
+    //float DrawDistance;
+    //float LOD;
 
     RexTypes::RexAssetID MeshID;
     RexTypes::RexAssetID ParticleScriptID; 
 
     //! Animation
     RexTypes::RexAssetID AnimationPackageID;
-    std::string AnimationName; 
+    std::string AnimationName;
     float AnimationRate;
 
     //! reX materials
@@ -364,11 +341,11 @@ public:
     uint8_t PrimDefaultMaterialType;
     MaterialTypeMap PrimMaterialTypes; //not a property
 
-    Real PrimDefaultRepeatU;
-    Real PrimDefaultRepeatV;
-    Real PrimDefaultOffsetU;
-    Real PrimDefaultOffsetV;
-    Real PrimDefaultUVRotation;
+    float PrimDefaultRepeatU;
+    float PrimDefaultRepeatV;
+    float PrimDefaultOffsetU;
+    float PrimDefaultOffsetV;
+    float PrimDefaultUVRotation;
     UVParamMap PrimRepeatU;
     UVParamMap PrimRepeatV;
     UVParamMap PrimOffsetU;
@@ -376,7 +353,27 @@ public:
     UVParamMap PrimUVRotation;
 
     //! Primitive shape related variables
-    uint8_t PathCurve; 
+    DEFINE_QPROPERTY_ATTRIBUTE(int, PathCurve);
+    DEFINE_QPROPERTY_ATTRIBUTE(int, ProfileCurve);
+
+    Attribute<float> PathBegin;
+    Attribute<float> PathEnd;
+    Attribute<float> PathScaleX;
+    Attribute<float> PathScaleY;
+    Attribute<float> PathShearX;
+    Attribute<float> PathShearY;
+    Attribute<float> PathTwist;
+    Attribute<float> PathTwistBegin;
+    Attribute<float> PathRadiusOffset;
+    Attribute<float> PathTaperX;
+    Attribute<float> PathTaperY;
+    Attribute<float> PathRevolutions;
+    Attribute<float> PathSkew;
+    Attribute<float> ProfileBegin;
+    Attribute<float> ProfileEnd;
+    Attribute<float> ProfileHollow;
+
+    /*uint8_t PathCurve; 
     uint8_t ProfileCurve;
 
     float PathBegin;
@@ -394,7 +391,7 @@ public:
     float PathSkew;
     float ProfileBegin;
     float ProfileEnd;
-    float ProfileHollow;
+    float ProfileHollow;*/
     bool HasPrimShapeData;
 
 public slots:

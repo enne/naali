@@ -6,6 +6,7 @@
 #include "UDPAssetProvider.h"
 #include "XMLRPCAssetProvider.h"
 #include "QtHttpAssetProvider.h"
+#include "LocalAssetProvider.h"
 #include "NetworkEvents.h"
 #include "Framework.h"
 #include "Profiler.h"
@@ -46,6 +47,11 @@ namespace Asset
         http_asset_provider_ = Foundation::AssetProviderPtr(new QtHttpAssetProvider(framework_));
         manager_->RegisterAssetProvider(http_asset_provider_);
 
+        // Add localassethandler, with a hardcoded dir for now
+        // Note: this directory is a different concept than the "pre-warmed assetcache"
+        local_asset_provider_ = Foundation::AssetProviderPtr(new LocalAssetProvider(framework_, "./data/assets"));
+        manager_->RegisterAssetProvider(local_asset_provider_);
+        
         // Last fallback is UDP provider
         udp_asset_provider_ = Foundation::AssetProviderPtr(new UDPAssetProvider(framework_));
         manager_->RegisterAssetProvider(udp_asset_provider_);
@@ -64,11 +70,8 @@ namespace Asset
     {
         protocolModule_ = currentProtocolModule;
         udp_asset_provider_->SetCurrentProtocolModule(protocolModule_);
-
         network_state_category_id_ = framework_->GetEventManager()->QueryEventCategory("NetworkState");
-
         inboundcategory_id_ = framework_->GetEventManager()->QueryEventCategory("NetworkIn");
-        LogInfo("System " + Name() + " subscribed to network events [NetworkIn]");
     }
 
     void AssetModule::UnsubscribeNetworkEvents()
@@ -91,6 +94,7 @@ namespace Asset
     {
         manager_->UnregisterAssetProvider(udp_asset_provider_);
         manager_->UnregisterAssetProvider(xmlrpc_asset_provider_);
+        manager_->UnregisterAssetProvider(local_asset_provider_);
         manager_->UnregisterAssetProvider(http_asset_provider_);
 
         framework_->GetServiceManager()->UnregisterService(manager_);

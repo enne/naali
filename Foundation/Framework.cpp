@@ -78,8 +78,9 @@ namespace Foundation
         }
         else
         {
+#ifdef PROFILING
             ProfilerSection::SetProfiler(&profiler_);
-
+#endif
             PROFILE(FW_Startup);
             application_ = ApplicationPtr(new Application(this));
             platform_ = PlatformPtr(new Platform(this));
@@ -108,7 +109,7 @@ namespace Foundation
 
             // Set config values we explicitly always want to override
             config_manager_->SetSetting(Framework::ConfigurationGroup(), std::string("version_major"), std::string("0"));
-            config_manager_->SetSetting(Framework::ConfigurationGroup(), std::string("version_minor"), std::string("3.0"));
+            config_manager_->SetSetting(Framework::ConfigurationGroup(), std::string("version_minor"), std::string("3.1"));
 
             CreateLoggingSystem(); // depends on config and platform
 
@@ -162,10 +163,8 @@ namespace Foundation
 
         Poco::Channel *filechannel = loggingfactory->createChannel("FileChannel");
         
-        std::wstring logfilepath_w = platform_->GetUserDocumentsDirectoryW();
-        logfilepath_w += L"/" + ToWString(APPLICATION_NAME) + L".log";
-        std::string logfilepath;
-        Poco::UnicodeConverter::toUTF8(logfilepath_w, logfilepath);
+        std::string logfilepath = platform_->GetUserDocumentsDirectory();
+        logfilepath += "/" + std::string(APPLICATION_NAME) + ".log";
 
         filechannel->setProperty("path",logfilepath);
         filechannel->setProperty("rotation","3M");
@@ -310,6 +309,8 @@ namespace Foundation
                 PROFILE(FW_Render);
                 renderer.lock()->Render();
             }
+
+            emit FrameProcessed(frametime);
         }
         
         RESETPROFILER
@@ -545,6 +546,7 @@ namespace Foundation
 
     Console::CommandResult Framework::ConsoleProfile(const StringVector &params)
     {
+#ifdef PROFILING
         boost::shared_ptr<Console::ConsoleServiceInterface> console = GetService<Console::ConsoleServiceInterface>(Foundation::Service::ST_Console).lock();
         if (console)
         {
@@ -558,6 +560,7 @@ namespace Foundation
             console->Print(" ");
 //            profiler.Release();
         }
+#endif
         return Console::ResultSuccess();
     }
 
@@ -605,10 +608,12 @@ namespace Foundation
         return engine_->GetUIView();
     }
 
+#ifdef PROFILING
     Profiler &Framework::GetProfiler()
     {
         return profiler_;
     }
+#endif
 
     void Framework::SetUIView(std::auto_ptr <QGraphicsView> view)
     {

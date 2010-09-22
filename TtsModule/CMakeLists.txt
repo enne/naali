@@ -34,7 +34,6 @@ endmacro (UiFolder)
 
 configure_protobuf ()
 configure_openssl ()
-configure_mumbleclient ()
 configure_celt ()
 
 # Define target name and output directory

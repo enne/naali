@@ -244,10 +244,11 @@ namespace Communications
             Q_OBJECT
         public:
             enum State {STATE_CLOSED, STATE_INITIALIZING, STATE_OPEN, STATE_ERROR};
-
             virtual ~SessionInterface() {};
-            virtual QString Description() const = 0;
 
+        public slots:
+            
+            virtual QString Description() const = 0;
             virtual void Close() = 0;
             virtual State GetState() const = 0;
             virtual QString Reason() const = 0;
@@ -260,6 +261,8 @@ namespace Communications
             virtual void DisableAudioReceiving() = 0;
             virtual bool IsAudioReceivingEnabled() const = 0;
             virtual double SpeakerVoiceActivity() const = 0;
+            virtual int GetAverageBandwithIn() const = 0;
+            virtual int GetAverageBandwithOut() const = 0;
 
             //virtual void SetSelfPosition(const vector3df& pos) = 0;
 

@@ -14,7 +14,7 @@
 
 EC_TtsVoice::EC_TtsVoice(Foundation::ModuleInterface *module) :
 	Foundation::ComponentInterface(module->GetFramework()),
-	voice_(this, "voice", TTS::Voices.ES1),
+		voice_(this, "voice", TTS::Voices.ES1.c_str()),
     message_(this, "message", "")
 {
 	// Get TTS service
@@ -28,7 +28,7 @@ EC_TtsVoice::~EC_TtsVoice()
 
 void EC_TtsVoice::SetMyVoice(const TTS::Voice voice)
 {
-	voice_.Set(voice,AttributeChange::Local);
+	voice_.Set(voice.c_str(),AttributeChange::Local);
 	//AttributeChanged(voice_,AttributeChange::Local);
 	ComponentChanged(AttributeChange::Local);
 	//voice_=voice;
@@ -36,7 +36,7 @@ void EC_TtsVoice::SetMyVoice(const TTS::Voice voice)
 
 TTS::Voice EC_TtsVoice::GetMyVoice() const
 {
-	return voice_.Get();
+	return voice_.Get().toStdString();
 }
 
 void EC_TtsVoice::SpeakMessage(const QString msg, TTS::Voice voice)
@@ -52,7 +52,7 @@ void EC_TtsVoice::SpeakMessage(const QString msg)
 	if(!ttsService_)
 		ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
 	
-	ttsService_->text2Speech(msg,voice_.Get());
+	ttsService_->text2Speech(msg,voice_.Get().toStdString());
 }
 
 void EC_TtsVoice::SpeakMessage()
@@ -60,5 +60,5 @@ void EC_TtsVoice::SpeakMessage()
 	if(!ttsService_)
 		ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
 
-	ttsService_->text2Speech(message_.Get().c_str(),voice_.Get());
+	ttsService_->text2Speech(message_.Get(),voice_.Get().toStdString());
 }

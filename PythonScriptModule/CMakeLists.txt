@@ -8,7 +8,7 @@ set (PYTHON_FORCE_RELEASE_VERSION 0) # set if you want to use release version of
 file (GLOB CPP_FILES *.cpp)
 file (GLOB H_FILES *.h)
 file (GLOB XML_FILES *.xml)
-file (GLOB MOC_FILES PythonScriptModule.h Vector3Wrapper.h QuaternionWrapper.h QEC_Prim.h NaaliQtWrapper.h)
+file (GLOB MOC_FILES PythonScriptModule.h)
 set (SOURCE_FILES ${CPP_FILES} ${H_FILES})
 
 # Qt4 Wrap
@@ -30,19 +30,20 @@ use_package (PYTHON_QT)
 use_package (OGRE)
 use_package (CURL)
 use_package (XMLRPC)
-use_package (PROPERTYEDITOR)
 
 use_modules (Core Foundation Interfaces SceneManager OgreRenderingModule RexCommon RexLogicModule
     ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EntityComponents/EC_Highlight EntityComponents/EC_Touchable
     EntityComponents/EC_OpenSimPresence EntityComponents/EC_OpenSimPrim EntityComponents/EC_3DCanvas
-    EntityComponents/EC_3DCanvasSource EntityComponents/EC_DynamicComponent EntityComponents/EC_SoundRuler)
+    EntityComponents/EC_3DCanvasSource EntityComponents/EC_DynamicComponent EntityComponents/EC_SoundRuler
+    EntityComponents/EC_Script)
 
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS})
 
 link_directories (${PROJECT_BINARY_DIR}/RexLogicModule/Debug ${PROJECT_BINARY_DIR}/RexLogicModule/Release)
 
 link_modules (Core Foundation Interfaces SceneManager OgreRenderingModule RexCommon RexLogicModule EC_Highlight EC_Touchable
-    ProtocolUtilities EC_OpenSimPresence EC_OpenSimPrim EC_3DCanvas EC_3DCanvasSource EC_DynamicComponent EC_SoundRuler) # OgreRenderingModule)
+    ProtocolUtilities EC_OpenSimPresence EC_OpenSimPrim EC_3DCanvas EC_3DCanvasSource EC_DynamicComponent EC_SoundRuler
+    EC_Script)
 
 link_package (BOOST)
 link_package (POCO)
@@ -52,7 +53,6 @@ link_package (PYTHON_QT)
 link_package (OGRE)
 link_package (CURL)
 link_package (XMLRPC)
-link_package (PROPERTYEDITOR)
 
 # Copy XML files from source directory to target directory
 foreach (XML_FILE ${XML_FILES})

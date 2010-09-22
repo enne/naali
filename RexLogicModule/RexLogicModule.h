@@ -74,9 +74,6 @@ namespace RexLogic
     class LoginHandler;
     namespace InWorldChat { class Provider; }
 
-    //! @todo remove when can.
-    class ComponentResourceHandler;
-
     typedef boost::shared_ptr<InWorldChat::Provider> InWorldChatProviderPtr;
 
     typedef boost::shared_ptr<Avatar> AvatarPtr;
@@ -84,7 +81,6 @@ namespace RexLogic
     typedef boost::shared_ptr<Primitive> PrimitivePtr;
     typedef boost::shared_ptr<AvatarControllable> AvatarControllablePtr;
     typedef boost::shared_ptr<CameraControllable> CameraControllablePtr;
-    typedef boost::shared_ptr<ComponentResourceHandler> ComponentResourceHandlerPtr;
 
     //! Camera states handled by rex logic
     enum CameraState
@@ -99,7 +95,7 @@ namespace RexLogic
         CS_FocusOnObject
     };
 
-    class REXLOGIC_MODULE_API RexLogicModule : public QObject, public Foundation::ModuleInterface, public Foundation::WorldLogicInterface
+    class REXLOGIC_MODULE_API RexLogicModule : public Foundation::WorldLogicInterface, public Foundation::ModuleInterface
     {
         Q_OBJECT
 
@@ -124,6 +120,7 @@ namespace RexLogic
         Scene::EntityPtr GetUserAvatarEntity() const;
         Scene::EntityPtr GetCameraEntity() const;
         Scene::EntityPtr GetEntityWithComponent(uint entity_id, const QString &component) const;
+        const QString &GetAvatarAppearanceProperty(const QString &name) const;
 
         //=============== RexLogicModule API ===============/
 
@@ -140,7 +137,7 @@ namespace RexLogic
         void FocusOnObject(float, float, float);
 
         //! return camera state
-        CameraState GetCameraState() { return camera_state_; }
+        CameraState GetCameraState() const { return camera_state_; }
 
         //! reset camera state to CS_Follow
         void ResetCameraState();
@@ -206,26 +203,16 @@ namespace RexLogic
         //! XXX have linking probs to AvatarController so trying this wrapper
         //! \todo figure workarounds for these functions so that dependency to RexLogicModule
         //! is not needed anymore.
-        void SetAvatarYaw(Real newyaw);
+        void SetAvatarYaw(float newyaw);
         void SetAvatarRotation(const Quaternion &newrot);
-        void SetCameraYawPitch(Real newyaw, Real newpitch);
+        void SetCameraYawPitch(float newyaw, float newpitch);
 
         ///\todo Remove. Get this information using WorldStream and/or EC_OpenSimPresence.
         entity_id_t GetUserAvatarId() const;
-        ///\todo Remove. Get this information from other modules using EC_OgrePlaceable and/or EC_OgreCamera.
-        Vector3df GetCameraUp() const;
-        ///\todo Remove. Get this information from other modules using EC_OgrePlaceable and/or EC_OgreCamera.
-        Vector3df GetCameraRight() const;
-        ///\todo Remove. Get this information from other modules using EC_OgrePlaceable and/or EC_OgreCamera.
-        Vector3df GetCameraPosition() const;
-        ///\todo Remove. Get this information from other modules using EC_OgrePlaceable and/or EC_OgreCamera.
-        Quaternion GetCameraOrientation() const;
         ///\todo Remove. Get this information from other modules using EC_OgreCamera and/or Renderer.
-        Real GetCameraViewportWidth() const;
+        float GetCameraViewportWidth() const;
         ///\todo Remove. Get this information from other modules using EC_OgreCamera and/or Renderer.
-        Real GetCameraViewportHeight() const;
-        ///\todo Remove. Get this information from other modules using EC_OgreCamera.
-        Real GetCameraFOV() const;
+        float GetCameraViewportHeight() const;
 
         //! Sets visibility for all name display overlays, used e.g. in screenshot taking
         void SetAllTextOverlaysVisible(bool visible);
@@ -275,7 +262,7 @@ namespace RexLogic
         void UpdateObjects(f64 frametime);
 
         //! Update sound listener position
-        /*! Uses current camera for now
+        /*! Uses the default camera or avatar for now.
          */
         void UpdateSoundListener();
 
@@ -287,13 +274,6 @@ namespace RexLogic
 
         //! Handle an asset event.
         bool HandleAssetEvent(event_id_t event_id, Foundation::EventDataInterface* data);
-
-        /*! Does preparations before logout/delete of scene
-         *  For example: Takes ui screenshots of world/avatar with rendering service.
-         *  Add functionality if you need something done before logout.
-         *  \todo Move the av&world screenshot functionality to Ether/UiModule?
-         */
-        void AboutToDeleteWorld();
 
         //! Gets a map of all avatars in world and the distance from users avatar,
         //! for updating the name tag fades after certain distance.
@@ -333,7 +313,7 @@ namespace RexLogic
         WorldStreamPtr world_stream_;
 
         //! Movement damping constant
-        Real movement_damping_constant_;
+        float movement_damping_constant_;
 
         //! How long to keep doing dead reckoning
         f64 dead_reckoning_time_;
@@ -396,11 +376,32 @@ namespace RexLogic
 
         InWorldChatProviderPtr in_world_chat_provider_;
 
-        //! @todo remove this while can.
-        ComponentResourceHandlerPtr component_res_handler_;
-
         //! Login service.
         boost::shared_ptr<LoginHandler> login_service_;
+
+        //! List of possible sound listeners (entitities which have EC_SoundListener).
+        QList<Scene::Entity *> soundListeners_;
+
+        //! Currently active sound listener.
+        Scene::EntityWeakPtr activeSoundListener_;
+
+    private slots:
+        /** Called when new component is added to the active scene.
+         *  Currently used for handling sound listener EC's.
+         *  @param entity Entity for which the component was added.
+         *  @param component The added component.
+         */
+        void NewComponentAdded(Scene::Entity *entity, Foundation::ComponentInterface *component);
+
+        /** Called when component is removed from the active scene.
+         *  Currently used for handling sound listener EC's.
+         *  @param entity Entity from which the component was removed.
+         *  @param component The removed component.
+         */
+        void  ComponentRemoved(Scene::Entity *entity, Foundation::ComponentInterface *component);
+
+        /// Finds entity with active sound listener component and stores it.
+        void FindActiveListener();
     };
 }
 

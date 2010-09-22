@@ -12,16 +12,14 @@
 #include "AssetInterface.h"
 #include "Core.h"
 #include "CoreStdIncludes.h"
+#include "Transform.h"
 
 #include <QVariant>
 #include <QStringList>
 
 // Implementation code for some common attributes
 
-namespace Foundation
-{
-
-AttributeInterface::AttributeInterface(ComponentInterface* owner, const char* name) :
+AttributeInterface::AttributeInterface(Foundation::ComponentInterface* owner, const char* name) :
     owner_(owner),
     name_(name),
     change_(AttributeChange::None),
@@ -40,10 +38,10 @@ void AttributeInterface::Changed(AttributeChange::Type change)
 
     // TOSTRING TEMPLATE IMPLEMENTATIONS.
 
-template<> std::string Attribute<std::string>::ToString() const
+template<> std::string Attribute<QString>::ToString() const
 {
     ///\todo decode/encode XML-risky characters
-    return Get();
+    return Get().toStdString();
 }
 
 template<> std::string Attribute<bool>::ToString() const
@@ -64,44 +62,43 @@ template<> std::string Attribute<uint>::ToString() const
     return ::ToString<uint>(Get());
 }
 
-template<> std::string Attribute<Real>::ToString() const
+template<> std::string Attribute<float>::ToString() const
 {
-    return ::ToString<Real>(Get());
+    return ::ToString<float>(Get());
 }
 
 template<> std::string Attribute<Vector3df>::ToString() const
 {
     Vector3df value = Get();
     
-    return ::ToString<Real>(value.x) + " " +
-        ::ToString<Real>(value.y) + " " +
-        ::ToString<Real>(value.z);
+    return ::ToString<float>(value.x) + " " +
+        ::ToString<float>(value.y) + " " +
+        ::ToString<float>(value.z);
 }
     
 template<> std::string Attribute<Quaternion>::ToString() const
 {
     Quaternion value = Get();
     
-    return ::ToString<Real>(value.w) + " " +
-        ::ToString<Real>(value.x) + " " +
-        ::ToString<Real>(value.y) + " " +
-        ::ToString<Real>(value.z);
+    return ::ToString<float>(value.w) + " " +
+        ::ToString<float>(value.x) + " " +
+        ::ToString<float>(value.y) + " " +
+        ::ToString<float>(value.z);
 }
 
 template<> std::string Attribute<Color>::ToString() const
 {
     Color value = Get();
     
-    return ::ToString<Real>(value.r) + " " +
-        ::ToString<Real>(value.g) + " " +
-        ::ToString<Real>(value.b) + " " +
-        ::ToString<Real>(value.a);
+    return ::ToString<float>(value.r) + " " +
+        ::ToString<float>(value.g) + " " +
+        ::ToString<float>(value.b) + " " +
+        ::ToString<float>(value.a);
 }
 
-template<> std::string Attribute<AssetReference>::ToString() const
+template<> std::string Attribute<Foundation::AssetReference>::ToString() const
 {
-    AssetReference value = Get();
-    
+    Foundation::AssetReference value = Get();
     return value.type_ + "," + value.id_;
 }
 
@@ -126,6 +123,28 @@ template<> std::string Attribute<std::vector<QVariant> >::ToString() const
     return stringValue;
 }
 
+template<> std::string Attribute<Transform>::ToString() const
+{
+    QString value("");
+    Transform transform = Get();
+    Vector3D<float> editValues[3];
+    editValues[0] = transform.position;
+    editValues[1] = transform.rotation;
+    editValues[2] = transform.scale;
+
+    for(uint i = 0; i < 3; i++)
+    {
+        value += QString::number(editValues[i].x);
+        value += ",";
+        value += QString::number(editValues[i].y);
+        value += ",";
+        value += QString::number(editValues[i].z);
+        if(i < 2)
+            value += ",";
+    }
+    return value.toStdString();
+}
+
 // TYPENAMETOSTRING TEMPLATE IMPLEMENTATIONS.
 
 template<> std::string Attribute<int>::TypenameToString() const
@@ -138,12 +157,12 @@ template<> std::string Attribute<uint>::TypenameToString() const
     return "uint";
 }
 
-template<> std::string Attribute<Real>::TypenameToString() const
+template<> std::string Attribute<float>::TypenameToString() const
 {
     return "real";
 }
 
-template<> std::string Attribute<std::string>::TypenameToString() const
+template<> std::string Attribute<QString>::TypenameToString() const
 {
     return "string";
 }
@@ -168,7 +187,7 @@ template<> std::string Attribute<Color>::TypenameToString() const
     return "color";
 }
 
-template<> std::string Attribute<AssetReference>::TypenameToString() const
+template<> std::string Attribute<Foundation::AssetReference>::TypenameToString() const
 {
     return "assetreference";
 }
@@ -183,12 +202,17 @@ template<> std::string Attribute<std::vector<QVariant> >::TypenameToString() con
     return "qvariantarray";
 }
 
+template<> std::string Attribute<Transform>::TypenameToString() const
+{
+    return "transform";
+}
+
     // FROMSTRING TEMPLATE IMPLEMENTATIONS.
 
-template<> void Attribute<std::string>::FromString(const std::string& str, AttributeChange::Type change)
+template<> void Attribute<QString>::FromString(const std::string& str, AttributeChange::Type change)
 {
     ///\todo decode/encode XML-risky characters
-    Set(str, change);
+    Set(QString::fromStdString(str), change);
 }
 
 template<> void Attribute<bool>::FromString(const std::string& str, AttributeChange::Type change)
@@ -220,11 +244,11 @@ template<> void Attribute<uint>::FromString(const std::string& str, AttributeCha
     catch (...) {}
 }
 
-template<> void Attribute<Real>::FromString(const std::string& str, AttributeChange::Type change)
+template<> void Attribute<float>::FromString(const std::string& str, AttributeChange::Type change)
 {
     try
     {
-        Real value = ParseString<Real>(str);
+        float value = ParseString<float>(str);
         Set(value, change);
     }
     catch (...) {}
@@ -238,9 +262,9 @@ template<> void Attribute<Vector3df>::FromString(const std::string& str, Attribu
         try
         {
             Vector3df value;
-            value.x = ParseString<Real>(components[0]);
-            value.y = ParseString<Real>(components[1]);
-            value.z = ParseString<Real>(components[2]);
+            value.x = ParseString<float>(components[0]);
+            value.y = ParseString<float>(components[1]);
+            value.z = ParseString<float>(components[2]);
             Set(value, change);
         }
         catch (...) {}
@@ -255,9 +279,9 @@ template<> void Attribute<Color>::FromString(const std::string& str, AttributeCh
     {
         try
         {
-            value.r = ParseString<Real>(components[0]);
-            value.g = ParseString<Real>(components[1]);
-            value.b = ParseString<Real>(components[2]);
+            value.r = ParseString<float>(components[0]);
+            value.g = ParseString<float>(components[1]);
+            value.b = ParseString<float>(components[2]);
             Set(value, change);
         }
         catch (...) {}
@@ -266,10 +290,10 @@ template<> void Attribute<Color>::FromString(const std::string& str, AttributeCh
     {
         try
         {
-            value.r = ParseString<Real>(components[0]);
-            value.g = ParseString<Real>(components[1]);
-            value.b = ParseString<Real>(components[2]);
-            value.a = ParseString<Real>(components[3]);
+            value.r = ParseString<float>(components[0]);
+            value.g = ParseString<float>(components[1]);
+            value.b = ParseString<float>(components[2]);
+            value.a = ParseString<float>(components[3]);
             Set(value, change);
         }
         catch (...) {}
@@ -284,17 +308,17 @@ template<> void Attribute<Quaternion>::FromString(const std::string& str, Attrib
         try
         {
             Quaternion value;
-            value.w = ParseString<Real>(components[0]);
-            value.x = ParseString<Real>(components[1]);
-            value.y = ParseString<Real>(components[2]);
-            value.z = ParseString<Real>(components[3]);
+            value.w = ParseString<float>(components[0]);
+            value.x = ParseString<float>(components[1]);
+            value.y = ParseString<float>(components[2]);
+            value.z = ParseString<float>(components[3]);
             Set(value, change);
         }
         catch (...) {}
     }
 }
 
-template<> void Attribute<AssetReference>::FromString(const std::string& str, AttributeChange::Type change)
+template<> void Attribute<Foundation::AssetReference>::FromString(const std::string& str, AttributeChange::Type change)
 {
     // We store type first, then ",", then asset id
     std::string::size_type pos = str.find(',');
@@ -327,4 +351,24 @@ template<> void Attribute<std::vector<QVariant> >::FromString(const std::string&
     Set(value, change);
 }
 
+template<> void Attribute<Transform>::FromString(const std::string& str, AttributeChange::Type change)
+{
+    QString value = QString::fromStdString(str);
+    QStringList matrixElements = value.split(',');
+    Transform result;
+    if(matrixElements.size() == 9) //Ensure that we have right amount of elements.
+    {
+        float values[9];
+        for(uint i = 0; i < 3; i++)
+        {
+            uint startIndex = 3 * i;
+            for(uint j = 0; j < 3; j++)
+                values[j + startIndex] = ParseString<float>(matrixElements[j + startIndex].toStdString(), 0.0f);
+        }
+        result.SetPos(values[0], values[1], values[2]);
+        result.SetRot(values[3], values[4], values[5]);
+        result.SetScale(values[6], values[7], values[8]);
+    }
+    Set(result, change);
 }
+

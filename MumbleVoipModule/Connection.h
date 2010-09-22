@@ -12,6 +12,7 @@
 #include <QReadWriteLock>
 #include "Core.h"
 #include "MumbleDefines.h"
+#include "StatisticsHandler.h"
 
 class QNetworkReply;
 class QNetworkAccessManager;
@@ -53,11 +54,17 @@ namespace MumbleLib
     class Connection : public QObject
     {
         Q_OBJECT
+        Q_PROPERTY(int playback_buffer_max_length_ms READ GetPlaybackBufferMaxLengthMs WRITE SetPlaybackBufferMaxLengthMs ) 
+        Q_PROPERTY(double encoding_quality READ GetEncodingQuality WRITE SetEncodingQuality)
+        Q_PROPERTY(bool sending_audio) // \todo implement
+        Q_PROPERTY(bool receiving_audio) // \todo implement
+        Q_PROPERTY(bool sending_position) // \todo implement
+        
     public:
         enum State { STATE_CONNECTING, STATE_AUTHENTICATING, STATE_OPEN, STATE_CLOSED, STATE_ERROR };
 
         //! Default constructor
-        Connection(MumbleVoip::ServerInfo &info);
+        Connection(MumbleVoip::ServerInfo &info, int playback_buffer_length_ms);
 
         //! Default deconstructor
         virtual ~Connection();
@@ -155,6 +162,17 @@ namespace MumbleLib
         //! Remove user from user list if it exist
         void MarkUserLeft(const MumbleClient::User& user);
 
+
+        int GetPlaybackBufferMaxLengthMs() { return encoding_quality_; }
+        
+        //! Set the playback buffer max length for all user object.
+        void SetPlaybackBufferMaxLengthMs(int length); // {playback_buffer_length_ms_ = length; }
+        
+        double GetEncodingQuality() {return encoding_quality_;}
+
+        virtual int GetAverageBandwithIn() const;
+        virtual int GetAverageBandwithOut() const;
+
     private slots:
         void AddToUserList(User* user);
         void HandleIncomingCELTFrame(int session, unsigned char* data, int size);
@@ -187,6 +205,7 @@ namespace MumbleLib
         CELTMode* celt_mode_;
         CELTEncoder* celt_encoder_;
         CELTDecoder* celt_decoder_;
+        MumbleVoip::StatisticsHandler statistics_;
 
         unsigned char encode_buffer_[ENCODE_BUFFER_SIZE_];
         bool authenticated_;
@@ -196,6 +215,7 @@ namespace MumbleLib
         double encoding_quality_;
         int frame_sequence_;
         QTimer user_update_timer_;
+        int playback_buffer_length_ms_;
         
         QMutex mutex_channels_;
         QMutex mutex_authentication_;
@@ -203,11 +223,12 @@ namespace MumbleLib
         QMutex mutex_encoding_quality_;
         QMutex mutex_raw_udp_tunnel_;
         QMutex mutex_client_;
+        QMutex mutex_encoder_;
         QReadWriteLock lock_state_;
         QReadWriteLock lock_users_;
         
     signals:
-        void StateChanged(const State &state);
+        void StateChanged(MumbleLib::Connection::State state); // \todo register meta data or use int type..
         void TextMessageReceived(QString &text); 
         void AudioDataAvailable(short* data, int size);
 

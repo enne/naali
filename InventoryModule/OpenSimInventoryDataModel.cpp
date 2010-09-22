@@ -269,12 +269,12 @@ bool OpenSimInventoryDataModel::OpenItem(AbstractInventoryItem *item)
         switch(asset_type)
         {
         case RexAT_Texture:
-        {
+        /*{
             TextureServiceInterface *texture_service = owner_->GetFramework()->GetService<TextureServiceInterface>();
             if (texture_service)
                 tag = texture_service->RequestTexture(asset_id);
             break;
-        }
+        }*/
         case RexAT_MaterialScript:
         case RexAT_ParticleScript:
         case RexAT_SoundVorbis:
@@ -432,8 +432,7 @@ void OpenSimInventoryDataModel::DownloadFile(const QString &store_folder, Abstra
     }
 }
 
-/*
-void OpenSimInventoryDataModel::HandleResourceReady(Foundation::EventDataInterface *data)
+/*void OpenSimInventoryDataModel::HandleResourceReady(Foundation::EventDataInterface *data)
 {
     ///\todo    It seems that we don't necessarily need to handle ResourceReady.
     ///         Ogre seems to be able to create files from AssetReady events.
@@ -473,8 +472,7 @@ void OpenSimInventoryDataModel::HandleResourceReady(Foundation::EventDataInterfa
     InventoryModule::LogInfo("File " + i.value().toStdString() + " succesfully saved.");
 
     downloadRequests_.erase(i);
-}
-*/
+}*/
 
 void OpenSimInventoryDataModel::HandleAssetReadyForDownload(Foundation::EventDataInterface *data)
 {
@@ -540,35 +538,39 @@ void OpenSimInventoryDataModel::HandleAssetReadyForDownload(Foundation::EventDat
 
 void OpenSimInventoryDataModel::HandleAssetReadyForOpen(Foundation::EventDataInterface *data)
 {
-    Asset::Events::AssetReady *assetReady = checked_static_cast<Asset::Events::AssetReady*>(data);
-    request_tag_t tag = assetReady->tag_;
-    asset_type_t asset_type = RexTypes::GetAssetTypeFromTypeName(assetReady->asset_type_);
+    //Asset::Events::AssetReady *assetReady = checked_static_cast<Asset::Events::AssetReady*>(data);
+    Asset::Events::AssetReady *assetReady = dynamic_cast<Asset::Events::AssetReady*>(data);
+    if(assetReady)
+    {
+        request_tag_t tag = assetReady->tag_;
+        asset_type_t asset_type = RexTypes::GetAssetTypeFromTypeName(assetReady->asset_type_);
 
-    QPair<request_tag_t, QString> key = qMakePair(tag, STD_TO_QSTR(assetReady->asset_id_));
-    AssetRequestMap::iterator i = openRequests_.find(key);
-    if (i == openRequests_.end())
-        return;
+        QPair<request_tag_t, QString> key = qMakePair(tag, STD_TO_QSTR(assetReady->asset_id_));
+        AssetRequestMap::iterator i = openRequests_.find(key);
+        if (i == openRequests_.end())
+            return;
 
-    emit DownloadCompleted(assetReady->asset_id_.c_str());
+        emit DownloadCompleted(assetReady->asset_id_.c_str());
 
-    // Send InventoryItemDownloaded event.
-    Foundation::EventManagerPtr event_mgr = owner_->GetFramework()->GetEventManager();
-    event_category_id_t event_category = event_mgr->QueryEventCategory("Inventory");
+        // Send InventoryItemDownloaded event.
+        Foundation::EventManagerPtr event_mgr = owner_->GetFramework()->GetEventManager();
+        event_category_id_t event_category = event_mgr->QueryEventCategory("Inventory");
 
-    AbstractInventoryItem *item = GetChildById(i.value());
-    assert(item);
-    if (!item)
-        return;
+        AbstractInventoryItem *item = GetChildById(i.value());
+        assert(item);
+        if (!item)
+            return;
 
-    InventoryItemDownloadedEventData itemDownloaded;
-    itemDownloaded.inventoryId = QSTR_TO_UUID(i.value());
-    itemDownloaded.asset = assetReady->asset_;
-    itemDownloaded.name = item->GetName().toStdString();
-    itemDownloaded.requestTag = tag;
-    itemDownloaded.assetType = asset_type;
-    event_mgr->SendEvent(event_category, Inventory::Events::EVENT_INVENTORY_ITEM_DOWNLOADED, &itemDownloaded);
+        InventoryItemDownloadedEventData itemDownloaded;
+        itemDownloaded.inventoryId = QSTR_TO_UUID(i.value());
+        itemDownloaded.asset = assetReady->asset_;
+        itemDownloaded.name = item->GetName().toStdString();
+        itemDownloaded.requestTag = tag;
+        itemDownloaded.assetType = asset_type;
+        event_mgr->SendEvent(event_category, Inventory::Events::EVENT_INVENTORY_ITEM_DOWNLOADED, &itemDownloaded);
 
-    openRequests_.erase(i);
+        openRequests_.erase(i);
+    }
 }
 
 void OpenSimInventoryDataModel::HandleInventoryDescendents(Foundation::EventDataInterface *data)
@@ -619,40 +621,43 @@ void OpenSimInventoryDataModel::HandleInventoryDescendents(Foundation::EventData
     }
 }
 
-bool OpenSimInventoryDataModel::UploadFile(
+UploadResult OpenSimInventoryDataModel::UploadFile(
     const asset_type_t asset_type,
     std::string filename,
     const std::string &name,
     const std::string &description,
     const RexUUID &folder_id)
 {
+    UploadResult upload_result;
+    upload_result.first = false;
+    upload_result.second = QString("");
+
     if (!HasUploadCapability())
     {
         QString upload_url = currentWorldStream_->GetCapability("NewFileAgentInventory");
         if (upload_url.isEmpty())
         {
             InventoryModule::LogError("Could not get upload capability for uploading. Uploading not possible");
-            return false;
+            return upload_result;
         }
-
         SetUploadCapability(upload_url.toStdString());
     }
 
-    // Open the file.
 #ifdef Q_WS_WIN
     // Remove leading '/' on Windows environment, if it exists.
     if (filename.find('/',0) == 0)
         filename.erase(0, 1);
 #endif
+
+    // Open the file
     std::ifstream file(filename.c_str(), std::ios::binary);
     if (!file.is_open())
     {
         InventoryModule::LogError("Could not open the file: " + filename + ".");
-        return false;
+        return upload_result;
     }
 
     QVector<uchar> buffer;
-
     std::filebuf *pbuf = file.rdbuf();
     size_t size = pbuf->pubseekoff(0, std::ios::end, std::ios::in);
     buffer.resize(size);
@@ -663,7 +668,7 @@ bool OpenSimInventoryDataModel::UploadFile(
     return UploadBuffer(asset_type, filename, name, description, folder_id, buffer);
 }
 
-bool OpenSimInventoryDataModel::UploadBuffer(
+UploadResult OpenSimInventoryDataModel::UploadBuffer(
     const asset_type_t asset_type,
     const std::string& filename,
     const std::string& name,
@@ -671,10 +676,14 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     const RexUUID& folder_id,
     const QVector<uchar>& buffer)
 {
+    UploadResult upload_result;
+    upload_result.first = false;
+    upload_result.second = QString("");
+
     if (uploadCapability_.empty())
     {
         InventoryModule::LogError("Upload capability not set! Uploading not possible.");
-        return false;
+        return upload_result;
     }
 
     // Create the asset uploading info XML message.
@@ -692,14 +701,14 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     if (!request.GetSuccess())
     {
         InventoryModule::LogError(request.GetReason());
-        return false;
+        return upload_result;
     }
 
     std::vector<u8> response = request.GetResponseData();
     if (response.size() == 0)
     {
         InventoryModule::LogError("Size of the response data to \"NewFileAgentInventory\" message was zero.");
-        return false;
+        return upload_result;
     }
 
     response.push_back('\0');
@@ -711,7 +720,7 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     if (upload_url.empty())
     {
         InventoryModule::LogError("Invalid response data for uploading an asset.");
-        return false;
+        return upload_result;
     }
 
     HttpUtilities::HttpRequest request2;
@@ -732,7 +741,7 @@ bool OpenSimInventoryDataModel::UploadBuffer(
         catch (Ogre::Exception &e)
         {
             InventoryModule::LogError("Error loading image: " + std::string(e.what()));
-            return false;
+            return upload_result;
         }
 
         std::vector<u8> encoded_buffer;
@@ -740,7 +749,7 @@ bool OpenSimInventoryDataModel::UploadBuffer(
         if (!success)
         {
             InventoryModule::LogError("Could not J2k encode the image file.");
-            return false;
+            return upload_result;
         }
         
         request2.SetRequestData("application/octet-stream", encoded_buffer);
@@ -759,7 +768,7 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     if (!request2.GetSuccess())
     {
         InventoryModule::LogError("HTTP POST asset upload did not succeed: " + request.GetReason());
-        return false;
+        return upload_result;
     }
 
     response = request2.GetResponseData();
@@ -767,7 +776,7 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     if (response.size() == 0)
     {
         InventoryModule::LogError("Size of the response data to file upload was zero.");
-        return false;
+        return upload_result;
     }
 
     response.push_back('\0');
@@ -780,7 +789,7 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     if (asset_id.empty() || inventory_id.empty())
     {
         InventoryModule::LogError("Invalid XML response data for uploading an asset.");
-        return false;
+        return upload_result;
     }
 
     // Send event, if applicable.
@@ -801,7 +810,9 @@ bool OpenSimInventoryDataModel::UploadBuffer(
     event_mgr->SendDelayedEvent<InventoryItemEventData>(event_category, Inventory::Events::EVENT_INVENTORY_DESCENDENT, asset_data);
 
     InventoryModule::LogInfo("Upload succesfull. Asset id: " + asset_id + ", inventory id: " + inventory_id + ".");
-    return true;
+    upload_result.first = true;
+    upload_result.second = QString::fromStdString(asset_id);
+    return upload_result;
 }
 
 QString OpenSimInventoryDataModel::CreateNameFromFilename(const QString &filename)
@@ -927,10 +938,11 @@ void OpenSimInventoryDataModel::ThreadedUploadFiles(QStringList &filenames, QStr
             InventoryModule::LogError("Inventory folder for this type of file doesn't exists. File can't be uploaded.");
             continue;
         }
-
-        if (UploadFile(asset_type, filename.toStdString(), name.toStdString(), description, folder_id))
+        
+        UploadResult result = UploadFile(asset_type, filename.toStdString(), name.toStdString(), description, folder_id);
+        if (result.first)
         {
-            emit UploadCompleted(real_filename);
+            emit UploadCompleted(real_filename, result.second);
             ++asset_count;
         }
         else
@@ -981,8 +993,9 @@ void OpenSimInventoryDataModel::ThreadedUploadBuffers(QStringList filenames, QVe
             InventoryModule::LogError("Inventory folder for this type of file doesn't exists. File can't be uploaded.");
             continue;
         }
-
-        if (UploadBuffer(asset_type, filename.toStdString(), name.toStdString(), description, folder_id, *it2))
+        
+        UploadResult result = UploadBuffer(asset_type, filename.toStdString(), name.toStdString(), description, folder_id, *it2);
+        if (result.first)
             ++asset_count;
 
         ++it2;

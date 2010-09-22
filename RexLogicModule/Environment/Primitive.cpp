@@ -38,6 +38,9 @@
 #include "WorldStream.h"
 #include "EC_HoveringText.h"
 #include "EC_OpenSimPrim.h"
+#include "EC_Movable.h"
+
+#include "AttributeInterface.h"
 
 #include <OgreSceneNode.h>
 
@@ -61,7 +64,7 @@ void Primitive::Update(f64 frametime)
     SerializeECsToNetwork();
 }
 
-Scene::EntityPtr Primitive::GetOrCreatePrimEntity(entity_id_t entityid, const RexUUID &fullid)
+Scene::EntityPtr Primitive::GetOrCreatePrimEntity(entity_id_t entityid, const RexUUID &fullid, bool *created)
 {
     // Make sure scene exists
     Scene::ScenePtr scene = rexlogicmodule_->GetCurrentActiveScene();
@@ -86,6 +89,7 @@ Scene::EntityPtr Primitive::GetOrCreatePrimEntity(entity_id_t entityid, const Re
         prim->FullId = fullid;
         CheckPendingRexPrimData(entityid);
         CheckPendingRexFreeData(entityid);
+        *created = true;
         return entity;
     }
 
@@ -98,6 +102,7 @@ Scene::EntityPtr Primitive::GetOrCreatePrimEntity(entity_id_t entityid, const Re
     entity_event_data.sceneName = scene->Name();
     framework_->GetEventManager()->SendEvent(cat_id, Scene::Events::EVENT_ENTITY_UPDATED, &entity_event_data);
     */
+    *created = false;
     return entity;
 }
 
@@ -107,14 +112,13 @@ Scene::EntityPtr Primitive::CreateNewPrimEntity(entity_id_t entityid)
     if (!scene)
         return Scene::EntityPtr();
 
-    QStringList defaultcomponents;
-    defaultcomponents.append(EC_OpenSimPrim::TypeNameStatic());
-    defaultcomponents.append(EC_NetworkPosition::TypeNameStatic());
-    defaultcomponents.append(OgreRenderer::EC_OgrePlaceable::TypeNameStatic());
+    QStringList components;
+    components.append(EC_OpenSimPrim::TypeNameStatic());
+    components.append(EC_NetworkPosition::TypeNameStatic());
+    components.append(OgreRenderer::EC_OgrePlaceable::TypeNameStatic());
 
     // Note: we assume prim entity is created because of a message from network
-    Scene::EntityPtr entity = scene->CreateEntity(entityid, defaultcomponents, AttributeChange::Network); 
-
+    Scene::EntityPtr entity = scene->CreateEntity(entityid, components); 
     return entity;
 }
 
@@ -135,8 +139,9 @@ bool Primitive::HandleOSNE_ObjectUpdate(ProtocolUtilities::NetworkEventInboundDa
         RexUUID fullid = msg->ReadUUID();
         msg->SkipToNextVariable();        // CRC U32
         uint8_t pcode = msg->ReadU8();
+        bool was_created;
 
-        Scene::EntityPtr entity = GetOrCreatePrimEntity(localid, fullid);
+        Scene::EntityPtr entity = GetOrCreatePrimEntity(localid, fullid, &was_created);
         EC_OpenSimPrim *prim = entity->GetComponent<EC_OpenSimPrim>().get();
         EC_NetworkPosition *netpos = entity->GetComponent<EC_NetworkPosition>().get();
 
@@ -188,24 +193,24 @@ bool Primitive::HandleOSNE_ObjectUpdate(ProtocolUtilities::NetworkEventInboundDa
         prim->UpdateFlags = msg->ReadU32();
 
         // Read prim shape
-        prim->PathCurve = msg->ReadU8();
-        prim->ProfileCurve = msg->ReadU8();
-        prim->PathBegin = msg->ReadU16() * 0.00002f;
-        prim->PathEnd = msg->ReadU16() * 0.00002f;
-        prim->PathScaleX = msg->ReadU8() * 0.01f;
-        prim->PathScaleY = msg->ReadU8() * 0.01f;
-        prim->PathShearX = ((int8_t)msg->ReadU8()) * 0.01f;
-        prim->PathShearY = ((int8_t)msg->ReadU8()) * 0.01f;
-        prim->PathTwist = msg->ReadS8() * 0.01f;
-        prim->PathTwistBegin = msg->ReadS8() * 0.01f;
-        prim->PathRadiusOffset = msg->ReadS8() * 0.01f;
-        prim->PathTaperX = msg->ReadS8() * 0.01f;
-        prim->PathTaperY = msg->ReadS8() * 0.01f;
-        prim->PathRevolutions = 1.0f + msg->ReadU8() * 0.015f;
-        prim->PathSkew = msg->ReadS8() * 0.01f;
-        prim->ProfileBegin = msg->ReadU16() * 0.00002f;
-        prim->ProfileEnd = msg->ReadU16() * 0.00002f;
-        prim->ProfileHollow = msg->ReadU16() * 0.00002f;
+        prim->PathCurve.Set(msg->ReadU8(), AttributeChange::Local);
+        prim->ProfileCurve.Set(msg->ReadU8(), AttributeChange::Local);
+        prim->PathBegin.Set(msg->ReadU16() * 0.00002f, AttributeChange::Local);
+        prim->PathEnd.Set(msg->ReadU16() * 0.00002f, AttributeChange::Local);
+        prim->PathScaleX.Set(msg->ReadU8() * 0.01f, AttributeChange::Local);
+        prim->PathScaleY.Set(msg->ReadU8() * 0.01f, AttributeChange::Local);
+        prim->PathShearX.Set(((int8_t)msg->ReadU8()) * 0.01f, AttributeChange::Local);
+        prim->PathShearY.Set(((int8_t)msg->ReadU8()) * 0.01f, AttributeChange::Local);
+        prim->PathTwist.Set(msg->ReadS8() * 0.01f, AttributeChange::Local);
+        prim->PathTwistBegin.Set(msg->ReadS8() * 0.01f, AttributeChange::Local);
+        prim->PathRadiusOffset.Set(msg->ReadS8() * 0.01f, AttributeChange::Local);
+        prim->PathTaperX.Set(msg->ReadS8() * 0.01f, AttributeChange::Local);
+        prim->PathTaperY.Set(msg->ReadS8() * 0.01f, AttributeChange::Local);
+        prim->PathRevolutions.Set(1.0f + msg->ReadU8() * 0.015f, AttributeChange::Local);
+        prim->PathSkew.Set( msg->ReadS8() * 0.01f, AttributeChange::Local);
+        prim->ProfileBegin.Set(msg->ReadU16() * 0.00002f, AttributeChange::Local);
+        prim->ProfileEnd.Set(msg->ReadU16() * 0.00002f, AttributeChange::Local);
+        prim->ProfileHollow.Set(msg->ReadU16() * 0.00002f, AttributeChange::Local);
         prim->HasPrimShapeData = true;
 
         // Texture entry
@@ -261,6 +266,11 @@ bool Primitive::HandleOSNE_ObjectUpdate(ProtocolUtilities::NetworkEventInboundDa
         // Handle setting the prim as child of another object, or possibly being parent itself
         rexlogicmodule_->HandleMissingParent(localid);
         rexlogicmodule_->HandleObjectParent(localid);
+        if (was_created)
+        {
+            Scene::ScenePtr scene = rexlogicmodule_->GetCurrentActiveScene();
+            scene->EmitEntityCreated(entity, AttributeChange::Network);
+        }
     }
 
     return false;
@@ -352,10 +362,7 @@ void Primitive::HandleTerseObjectUpdateForPrim_60bytes(const uint8_t* bytes)
 
 bool Primitive::HandleRexGM_RexMediaUrl(ProtocolUtilities::NetworkEventInboundData* data)
 {
-    /// \todo tucofixme
-    //RexLogicModule::LogInfo("MediaURL GM received"); // + prim.MediaUrl);
-    //handled now in pymodules/mediaurlhandler/
-            
+    // handled now in pymodules/mediaurlhandler/
     return false;
 }
 
@@ -387,8 +394,9 @@ bool Primitive::HandleRexGM_RexPrimAnim(ProtocolUtilities::NetworkEventInboundDa
     Foundation::ComponentPtr mesh = entity->GetComponent(OgreRenderer::EC_OgreMesh::TypeNameStatic());
     if (!mesh)
         return false;
-    if (anim->GetMeshEntity() != mesh)
-        anim->SetMeshEntity(mesh);
+    OgreRenderer::EC_OgreMesh *ogre_mesh = dynamic_cast<OgreRenderer::EC_OgreMesh*>(mesh.get());
+    if (anim->GetMeshEntity() != ogre_mesh)
+        anim->SetMeshEntity(ogre_mesh);
     
     try
     {
@@ -531,13 +539,13 @@ void Primitive::SendRexPrimData(entity_id_t entityid)
     
     // graphical values
     WriteUInt8ToBytes(prim->DrawType, &buffer[0], idx);
-    WriteBoolToBytes(prim->IsVisible, &buffer[0], idx);
-    WriteBoolToBytes(prim->CastShadows, &buffer[0], idx);
+    WriteBoolToBytes(prim->IsVisible.Get(), &buffer[0], idx);
+    WriteBoolToBytes(prim->CastShadows.Get(), &buffer[0], idx);
     WriteBoolToBytes(prim->LightCreatesShadows, &buffer[0], idx);
     WriteBoolToBytes(prim->DescriptionTexture, &buffer[0], idx);
     WriteBoolToBytes(prim->ScaleToPrim, &buffer[0], idx);
-    WriteFloatToBytes(prim->DrawDistance, &buffer[0], idx);
-    WriteFloatToBytes(prim->LOD, &buffer[0], idx);   
+    WriteFloatToBytes(prim->DrawDistance.Get(), &buffer[0], idx);
+    WriteFloatToBytes(prim->LOD.Get(), &buffer[0], idx);   
     
     // UUIDs
     // Note: if the EC contains asset urls that can not be encoded as UUIDs, we still have to send
@@ -650,13 +658,13 @@ void Primitive::HandleRexPrimDataBlob(entity_id_t entityid, const uint8_t* primd
 
     // graphical values
     prim->DrawType = ReadUInt8FromBytes(primdata,idx);
-    prim->IsVisible = ReadBoolFromBytes(primdata,idx);
-    prim->CastShadows = ReadBoolFromBytes(primdata,idx);
+    prim->IsVisible.Set(ReadBoolFromBytes(primdata,idx), AttributeChange::Local);
+    prim->CastShadows.Set(ReadBoolFromBytes(primdata,idx), AttributeChange::Local);
     prim->LightCreatesShadows = ReadBoolFromBytes(primdata,idx);
     prim->DescriptionTexture = ReadBoolFromBytes(primdata,idx);
     prim->ScaleToPrim = ReadBoolFromBytes(primdata,idx);
-    prim->DrawDistance = ReadFloatFromBytes(primdata,idx);
-    prim->LOD = ReadFloatFromBytes(primdata,idx);
+    prim->DrawDistance.Set(ReadFloatFromBytes(primdata,idx), AttributeChange::Local);
+    prim->LOD.Set(ReadFloatFromBytes(primdata,idx), AttributeChange::Local);
 
     prim->MeshID = ReadUUIDFromBytes(primdata,idx).ToString();
     prim->CollisionMeshID = ReadUUIDFromBytes(primdata,idx).ToString();    
@@ -819,8 +827,8 @@ bool Primitive::HandleOSNE_ObjectProperties(ProtocolUtilities::NetworkEventInbou
     if (entity)
     {
         EC_OpenSimPrim *prim = entity->GetComponent<EC_OpenSimPrim>().get();
-        prim->Name = name;
-        prim->Description = desc;
+        prim->Name.Set(QString::fromStdString(name), AttributeChange::Local);
+        prim->Description.Set(QString::fromStdString(desc), AttributeChange::Local);
         
         ///\todo Odd behavior? The ENTITY_SELECTED event is passed only after the server responds with an ObjectProperties
         /// message. Should we maintain our own notion of what's selected and rename this event to PRIM_OBJECT_PROPERTIES or
@@ -905,8 +913,8 @@ void Primitive::HandleDrawType(entity_id_t entityid)
         
         
         // Set rendering distance & shadows
-        mesh.SetDrawDistance(prim.DrawDistance);
-        mesh.SetCastShadows(prim.CastShadows);
+        mesh.SetDrawDistance(prim.DrawDistance.Get());
+        mesh.SetCastShadows(prim.CastShadows.Get());
         
         // Check/request mesh textures
         HandleMeshMaterials(entityid);
@@ -924,7 +932,7 @@ void Primitive::HandleDrawType(entity_id_t entityid)
         OgreRenderer::EC_OgreAnimationController* anim =
             entity->GetComponent<OgreRenderer::EC_OgreAnimationController>().get();
         if (anim)
-            anim->SetMeshEntity(Foundation::ComponentPtr());
+            anim->SetMeshEntity(0);
 
         // Get/create custom (manual) object component 
         Foundation::ComponentPtr customptr = entity->GetOrCreateComponent(OgreRenderer::EC_OgreCustomObject::TypeNameStatic());
@@ -937,8 +945,8 @@ void Primitive::HandleDrawType(entity_id_t entityid)
             custom.SetPlaceable(entity->GetComponent(OgreRenderer::EC_OgrePlaceable::TypeNameStatic()));
 
         // Set rendering distance/cast shadows setting
-        custom.SetDrawDistance(prim.DrawDistance);
-        custom.SetCastShadows(prim.CastShadows);
+        custom.SetDrawDistance(prim.DrawDistance.Get());
+        custom.SetCastShadows(prim.CastShadows.Get());
 
         // Request prim textures
         HandlePrimTexturesAndMaterial(entityid);
@@ -1152,8 +1160,9 @@ void Primitive::HandleMeshAnimation(entity_id_t entityid)
             Foundation::ComponentPtr mesh = entity->GetComponent(OgreRenderer::EC_OgreMesh::TypeNameStatic());
             if (!mesh)
                 return;
-            if (anim->GetMeshEntity() != mesh)
-                anim->SetMeshEntity(mesh);
+            OgreRenderer::EC_OgreMesh* ogre_mesh = dynamic_cast<OgreRenderer::EC_OgreMesh*>(mesh.get());
+            if (anim->GetMeshEntity() != ogre_mesh)
+                anim->SetMeshEntity(ogre_mesh);
             
             // Check if any other animations than the supposed one is running, and stop them
             const OgreRenderer::EC_OgreAnimationController::AnimationMap& anims = anim->GetRunningAnimations();
@@ -1211,7 +1220,7 @@ void Primitive::HandleExtraParams(const entity_id_t &entity_id, const uint8_t *e
 void Primitive::AttachLightComponent(Scene::EntityPtr entity, Color &color, float radius, float falloff)
 {
     if (radius < 0.001)
-        radius = 0.001;
+        radius = 0.001f;
 
     // Attenuation calculation
     float x = 3.f * (1.f + falloff);
@@ -1604,7 +1613,7 @@ void Primitive::HandlePrimScaleAndVisibility(entity_id_t entityid)
     ogrepos->SetScale(prim->Scale);
 
     // Handle visibility
-    ogrepos->GetSceneNode()->setVisible(prim->IsVisible);
+    ogrepos->GetSceneNode()->setVisible(prim->IsVisible.Get());
 }
 
 void SkipTextureEntrySection(const uint8_t* bytes, int& idx, int length, int elementsize)
@@ -1839,7 +1848,7 @@ bool Primitive::HandleOSNE_AttachedSound(ProtocolUtilities::NetworkEventInboundD
     std::string asset_id = msg.ReadUUID().ToString();
     RexUUID entityid = msg.ReadUUID();
     msg.ReadUUID(); // OwnerID
-    Real gain = msg.ReadF32();
+    float gain = msg.ReadF32();
     u8 flags = msg.ReadU8();
 
     Scene::EntityPtr entity = rexlogicmodule_->GetPrimEntity(entityid);
@@ -1880,7 +1889,7 @@ bool Primitive::HandleOSNE_AttachedSoundGainChange(ProtocolUtilities::NetworkEve
     msg.ResetReading();
 
     RexUUID entityid = msg.ReadUUID();
-    Real gain = msg.ReadF32();
+    float gain = msg.ReadF32();
 
     Scene::EntityPtr entity = rexlogicmodule_->GetPrimEntity(entityid);
     if (!entity)
@@ -1996,7 +2005,7 @@ void Primitive::OnPrimNameChanged(const EC_OpenSimPrim& prim)
     {
         ProtocolUtilities::ObjectNameInfo name_info;
         name_info.local_id_ = prim.LocalId;
-        name_info.name_ = prim.Name;
+        name_info.name_ = prim.Name.Get().toStdString();
 
         connection->SendObjectNamePacket(name_info);
     }
@@ -2009,7 +2018,7 @@ void Primitive::OnPrimDescriptionChanged(const EC_OpenSimPrim& prim)
     {
         ProtocolUtilities::ObjectDescriptionInfo desc_info;
         desc_info.local_id_ = prim.LocalId;
-        desc_info.description_ = prim.Description;
+        desc_info.description_ = prim.Description.Get().toStdString();
 
         connection->SendObjectDescriptionPacket(desc_info);
     }
@@ -2058,7 +2067,7 @@ void Primitive::SerializeECsToNetwork()
         
         for (uint j = 0; j < components.size(); ++j)
         {
-            if (components[j]->IsSerializable())
+            if ((components[j]->IsSerializable()) && (components[j]->GetNetworkSyncEnabled()))
                 components[j]->SerializeTo(temp_doc, entity_elem);
             // Clear the change flag now that component has been processed
             components[j]->ResetChange();
@@ -2093,8 +2102,9 @@ void Primitive::DeserializeECsFromFreeData(Scene::EntityPtr entity, QDomDocument
             std::string name = comp_elem.attribute("name").toStdString();
             type_names.push_back(type_name);
             names.push_back(name);
-            Foundation::ComponentPtr new_comp = entity->GetOrCreateComponent(QString::fromStdString(type_name), QString::fromStdString(name)); //\todo just convert to use qstring all over here, not convert back & forth XXX
-            if (new_comp)
+            Foundation::ComponentPtr new_comp = entity->GetOrCreateComponent(type_name.c_str(), name.c_str());
+            // If it's an existing component, and has network sync disabled, skip
+            if ((new_comp) && (new_comp->GetNetworkSyncEnabled()))
             {
                 new_comp->DeserializeFrom(comp_elem, AttributeChange::Network);
                 new_comp->ComponentChanged(AttributeChange::Network);
@@ -2110,7 +2120,7 @@ void Primitive::DeserializeECsFromFreeData(Scene::EntityPtr entity, QDomDocument
     Scene::Entity::ComponentVector all_components = entity->GetComponentVector();
     for (uint i = 0; i < all_components.size(); ++i)
     {
-        if (all_components[i]->IsSerializable())
+        if ((all_components[i]->IsSerializable()) && (all_components[i]->GetNetworkSyncEnabled()))
         {
             bool found = false;
             for (uint j = 0; j < type_names.size(); ++j)

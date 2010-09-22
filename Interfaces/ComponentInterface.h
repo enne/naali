@@ -8,46 +8,35 @@
 #ifndef incl_Interfaces_ComponentInterface_h
 #define incl_Interfaces_ComponentInterface_h
 
-//#include "CoreDefines.h"
-//#include "ComponentFactoryInterface.h"
-//#include "ComponentRegistrarInterface.h"
-//#include "CoreModuleApi.h"
-
+#include "ForwardDefines.h"
 #include "AttributeChangeType.h"
 #include "AttributeInterface.h"
+#include "EventDataInterface.h"
+#include "CoreTypes.h"
 
 #include <QObject>
 
-#include <vector>
 #include <set>
 
 class QDomDocument;
 class QDomElement;
 
-namespace Scene
-{
-    class Entity;
-}
-
 namespace Foundation
 {
-    class Framework;
-    class AttributeInterface;
-    typedef std::vector<AttributeInterface*> AttributeVector;
-
     //! Base class for all components. Inherit from this class when creating new components.
     /*! Use the ComponentInterface typedef to refer to the abstract component type.
     */
     class ComponentInterface : public QObject
     {
-        friend class AttributeInterface;
+        friend class ::AttributeInterface;
 
         Q_OBJECT
-        Q_PROPERTY(QString Name READ Name)
+        Q_PROPERTY(QString Name READ Name WRITE SetName)
+        Q_PROPERTY(QString TypeName READ TypeName)
 
     public:
         //! Constuctor.
-        ComponentInterface(Framework* framework);
+        explicit ComponentInterface(Framework* framework);
 
         //! Copy-constructor.
         ComponentInterface(const ComponentInterface& rhs);
@@ -57,7 +46,7 @@ namespace Foundation
 
         //! Returns type name of the component.
         virtual const QString &TypeName() const = 0;
-        
+
         //! Returns name of the component.
         const QString Name() const { return name_; }
 
@@ -74,10 +63,18 @@ namespace Foundation
         //! \note Returns null if called in the component's constuctor because the parent entity is not yet set there.
         Scene::Entity* GetParentEntity() const;
 
+        //! Sets network sync enabled/disabled. By default on.
+        void SetNetworkSyncEnabled(bool enabled);
+
+        //! Gets whether network enabled/disabled.
+        bool GetNetworkSyncEnabled() { return network_sync_; }
+
         //! Return true for components that support XML serialization
         virtual bool IsSerializable() const { return false; }
+
         //! Get number of attributes in this component.
         int GetNumberOfAttributes() const { return attributes_.size(); }
+
         //! Return attributes of this component for reflection
         const AttributeVector& GetAttributes() const { return attributes_; }
 
@@ -124,6 +121,15 @@ namespace Foundation
         //! Deserialize from XML
         virtual void DeserializeFrom(QDomElement& element, AttributeChange::Type change);
 
+        /** Handles an event. Override in your own module if you want to receive events. Do not call.
+            @param category_id Category id of the event
+            @param event_id Id of the event
+            @param data Event data, or 0 if no data passed.
+            @return True if the event was handled and is not to be propagated further.
+            For more information, see @ref EventSystem.
+        */
+        virtual bool HandleEvent(event_category_id_t category_id, event_id_t event_id, EventDataInterface* data) { return false; }
+
     signals:
         //! Signal when component data has changed. Often used internally to sync eg. renderer state with EC
         void OnChanged();
@@ -142,18 +148,20 @@ namespace Foundation
         //! Emitted when the parent entity is set.
         void ParentEntitySet();
 
+        //! Emitted when the parent entity detached from this component, i.e. set to null.
+        void ParentEntityDetached();
+
     protected:
-        //! Helper function for starting component serialization. Creates a component element with name, adds it to the document, and returns it
+        //! Helper function for starting component serialization.
+        /*! Creates a component element with name, adds it to the document, and returns it
+         */
         QDomElement BeginSerialization(QDomDocument& doc, QDomElement& base_element) const;
 
         //! Helper function for adding an attribute to the component xml serialization
-        void WriteAttribute(QDomDocument& doc, QDomElement& comp_element, const std::string& name, const std::string& value) const;
+        void WriteAttribute(QDomDocument& doc, QDomElement& comp_element, const QString& name, const QString& value) const;
 
         //! Helper function for adding an attribute and it's type to the component xml serialization.
-        void WriteAttribute(QDomDocument& doc, QDomElement& comp_element, 
-                                                const std::string& name, 
-                                                const std::string& value, 
-                                                const std::string &type) const;
+        void WriteAttribute(QDomDocument& doc, QDomElement& comp_element, const QString& name, const QString& value, const QString &type) const;
 
         //! Helper function for starting deserialization. 
         /*! Checks that xml element contains the right kind of EC, and if it is right, sets the component name.
@@ -162,10 +170,10 @@ namespace Foundation
         bool BeginDeserialization(QDomElement& comp_element);
 
         //! Helper function for getting an attribute from serialized component
-        std::string ReadAttribute(QDomElement& comp_element, const std::string& name) const;
+        QString ReadAttribute(QDomElement& comp_element, const QString &name) const;
 
         //! Helper function for getting a attribute type from serialized component.
-        std::string ReadAttributeType(QDomElement& comp_element, const std::string& name) const;
+        QString ReadAttributeType(QDomElement& comp_element, const QString &name) const;
 
         //! Pointer to parent entity (null if not attached to any entity)
         Scene::Entity* parent_entity_;
@@ -179,9 +187,12 @@ namespace Foundation
         //! Change status for the component itself
         AttributeChange::Type change_;
 
+        //! Network sync enable flag
+        bool network_sync_;
+        
         //! Framework pointer. Needed so that component is able to perform important uninitialization etc. even when not in an entity
         Framework* framework_;
-        
+
     private:
         //! Called by AttributeInterface on initialization of each attribute
         void AddAttribute(AttributeInterface* attr) { attributes_.push_back(attr); }

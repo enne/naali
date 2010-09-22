@@ -16,6 +16,7 @@
 #include "ModuleManager.h"
 #include "EC_DynamicComponent.h"
 #include "UiServiceInterface.h"
+#include "UiProxyWidget.h"
 
 #include "MemoryLeakCheck.h"
 
@@ -68,6 +69,7 @@ namespace ECEditor
         scene_event_category_ = event_manager_->QueryEventCategory("Scene");
         framework_event_category_ = event_manager_->QueryEventCategory("Framework");
         input_event_category_ = event_manager_->QueryEventCategory("Input");
+        network_state_event_category_ = event_manager_->QueryEventCategory("NetworkState");
 
         AddEditorWindowToUI();
     }
@@ -86,9 +88,6 @@ namespace ECEditor
 
     bool ECEditorModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface* data)
     {
-        if (category_id == framework_event_category_ && event_id == Foundation::NETWORKING_REGISTERED)
-            network_state_event_category_ = event_manager_->QueryEventCategory("NetworkState");
-
         if (category_id == scene_event_category_)
         {
             switch(event_id)
@@ -111,9 +110,9 @@ namespace ECEditor
                 break;
             case Scene::Events::EVENT_ENTITY_DELETED:
             {
-                Scene::Events::EntityClickedData *entity_clicked_data = dynamic_cast<Scene::Events::EntityClickedData *>(data);
-                if(editor_window_ && entity_clicked_data)
-                    editor_window_->RemoveEntity(entity_clicked_data->entity->GetId());
+                Scene::Events::SceneEventData *entity_clicked_data = dynamic_cast<Scene::Events::SceneEventData*>(data);
+                if (editor_window_ && entity_clicked_data)
+                    editor_window_->RemoveEntity(entity_clicked_data->localID);
                 break;
             }
             default:
@@ -139,8 +138,9 @@ namespace ECEditor
 
         editor_window_ = new ECEditorWindow(GetFramework());
 
-        ui->AddWidgetToScene(editor_window_);
+        UiProxyWidget *editor_proxy = ui->AddWidgetToScene(editor_window_);
         ui->AddWidgetToMenu(editor_window_, tr("Entity-component Editor"), "", "./data/ui/images/menus/edbutton_OBJED_normal.png");
+        ui->RegisterUniversalWidget("Components", editor_proxy);
 
         connect(editor_window_, SIGNAL(EditEntityXml(Scene::EntityPtr)), this, SLOT(CreateXmlEditor(Scene::EntityPtr)));
         connect(editor_window_, SIGNAL(EditComponentXml(Foundation::ComponentPtr)), this, SLOT(CreateXmlEditor(Foundation::ComponentPtr)));
@@ -190,7 +190,7 @@ namespace ECEditor
                 EC_DynamicComponent *dynComp = dynamic_cast<EC_DynamicComponent *>(comp.get());
                 if(!dynComp)
                     return Console::ResultFailure("Wrong component type name" + params[2]);
-                Foundation::AttributeInterface *attribute = dynComp->CreateAttribute(QString::fromStdString(params[4]), params[3].c_str());
+                AttributeInterface *attribute = dynComp->CreateAttribute(QString::fromStdString(params[4]), params[3].c_str());
                 if(!attribute)
                     return Console::ResultFailure("invalid attribute type" + params[4]);
                 attribute->FromString(params[5], AttributeChange::Local);

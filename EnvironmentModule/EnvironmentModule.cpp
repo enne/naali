@@ -26,9 +26,12 @@
 #include "ModuleManager.h"
 #include "EventManager.h"
 #include "RexNetworkUtils.h"
+#include "CompositionHandler.h"
 
 #include "UiServiceInterface.h"
 #include "UiProxyWidget.h"
+
+#include "WorldBuildingServiceInterface.h"
 
 #include "MemoryLeakCheck.h"
 
@@ -79,8 +82,7 @@ namespace Environment
         if (renderer)
         {
             // Initialize post-process dialog.
-            postprocess_dialog_ = new PostProcessWidget(renderer->GetCompositionHandler().GetAvailableCompositors());
-            postprocess_dialog_->SetHandler(&renderer->GetCompositionHandler());
+            postprocess_dialog_ = new PostProcessWidget(renderer->GetCompositionHandler());
 
             // Add to scene.
             Foundation::UiServiceInterface *ui = GetFramework()->GetService<Foundation::UiServiceInterface>();
@@ -92,7 +94,13 @@ namespace Environment
                 "./data/ui/images/menus/edbutton_POSTPR_normal.png");
         }
 
-         environment_editor_ = new EnvironmentEditor(this);
+        environment_editor_ = new EnvironmentEditor(this);
+        Foundation::WorldBuildingServicePtr wb_service = GetFramework()->GetService<Foundation::WorldBuildingServiceInterface>(Foundation::Service::ST_WorldBuilding).lock();
+        if (wb_service)
+        {
+            QObject::connect(wb_service.get(), SIGNAL(OverrideServerTime(int)), environment_editor_, SLOT(TimeOfDayOverrideChanged(int)));
+            QObject::connect(wb_service.get(), SIGNAL(SetOverrideTime(int)), environment_editor_, SLOT(TimeValueChanged(int)));
+        }
     }
 
     void EnvironmentModule::Uninitialize()
@@ -269,7 +277,7 @@ namespace Environment
                     //button is checked
                     if (postprocess_dialog_)
                     {
-                        QString effect_name = renderer->GetCompositionHandler().MapNumberToEffectName(vec.at(0)).c_str();
+                        QString effect_name = renderer->GetCompositionHandler()->MapNumberToEffectName(vec.at(0)).c_str();
                         bool enabled = true;
                         if (vec.at(1) == "False")
                             enabled = false;
@@ -431,7 +439,7 @@ namespace Environment
         msg.SkipToNextVariable(); // IsEstateManager
 
         // Water height.
-        Real water_height = msg.ReadF32();
+        float water_height = msg.ReadF32();
         if(water_.get())
             water_->SetWaterHeight(water_height);
 
@@ -447,13 +455,13 @@ namespace Environment
         terrain[2] = msg.ReadUUID().ToString();
         terrain[3] = msg.ReadUUID().ToString();
 
-        Real TerrainStartHeights[4];
+        float TerrainStartHeights[4];
         TerrainStartHeights[0] = msg.ReadF32();
         TerrainStartHeights[1] = msg.ReadF32();
         TerrainStartHeights[2] = msg.ReadF32();
         TerrainStartHeights[3] = msg.ReadF32();
 
-        Real TerrainStartRanges[4];
+        float TerrainStartRanges[4];
         TerrainStartRanges[0] = msg.ReadF32();
         TerrainStartRanges[1] = msg.ReadF32();
         TerrainStartRanges[2] = msg.ReadF32();
@@ -488,13 +496,13 @@ namespace Environment
         return water_;
     }
 
-    void EnvironmentModule::SendModifyLandMessage(f32 x, f32 y, u8 brush, u8 action, Real seconds, Real height)
+    void EnvironmentModule::SendModifyLandMessage(f32 x, f32 y, u8 brush, u8 action, float seconds, float height)
     {
         if (currentWorldStream_.get())
             currentWorldStream_->SendModifyLandPacket(x, y, brush, action, seconds, height);
     }
 
-    void EnvironmentModule::SendTextureHeightMessage(Real start_height, Real height_range, uint corner)
+    void EnvironmentModule::SendTextureHeightMessage(float start_height, float height_range, uint corner)
     {
         if (currentWorldStream_.get())
         {
@@ -516,9 +524,10 @@ namespace Environment
     {
         terrain_ = TerrainPtr(new Terrain(this));
 
-        Scene::EntityPtr entity = GetFramework()->GetDefaultWorldScene()->CreateEntity(GetFramework()->GetDefaultWorldScene()->GetNextFreeId());
+        Scene::ScenePtr scene = GetFramework()->GetDefaultWorldScene();
+        Scene::EntityPtr entity = scene->CreateEntity(GetFramework()->GetDefaultWorldScene()->GetNextFreeId());
         entity->AddComponent(GetFramework()->GetComponentManager()->CreateComponent("EC_Terrain"));
-
+        scene->EmitEntityCreated(entity);
         terrain_->FindCurrentlyActiveTerrain();
         
         if ( environment_editor_ != 0 )
@@ -541,24 +550,15 @@ namespace Environment
     {
         environment_ = EnvironmentPtr(new Environment(this));
         environment_->CreateEnvironment();
-        
-        /*
-        if ( environment_editor_ != 0)
-        {
-            environment_editor_->InitAmbientTabWindow();
-            environment_editor_->InitFogTabWindow();
-        }
-        */
-        
-        
     }
 
     void EnvironmentModule::CreateSky()
     {
         sky_ = SkyPtr(new Sky(this));
-        Scene::EntityPtr sky_entity = GetFramework()->GetDefaultWorldScene()->CreateEntity(GetFramework()->GetDefaultWorldScene()->GetNextFreeId());
+        Scene::ScenePtr scene = GetFramework()->GetDefaultWorldScene();
+        Scene::EntityPtr sky_entity = scene->CreateEntity(GetFramework()->GetDefaultWorldScene()->GetNextFreeId());
         sky_entity->AddComponent(GetFramework()->GetComponentManager()->CreateComponent("EC_OgreSky"));
-
+        scene->EmitEntityCreated(sky_entity);
         sky_->FindCurrentlyActiveSky();
 
         if (!GetEnvironmentHandler()->IsCaelum())

@@ -9,6 +9,7 @@
 #include "MultiEditPropertyManager.h"
 #include "MultiEditPropertyFactory.h"
 #include "LineEditPropertyFactory.h"
+#include "Transform.h"
 
 // QtPropertyBrowser headers.
 #include <qtvariantproperty.h>
@@ -21,7 +22,7 @@
 namespace ECEditor
 {
     ECAttributeEditorBase::ECAttributeEditorBase(QtAbstractPropertyBrowser *owner,
-                                                 Foundation::AttributeInterface *attribute,
+                                                 AttributeInterface *attribute,
                                                  QObject *parent):
         QObject(parent),
         owner_(owner),
@@ -91,7 +92,7 @@ namespace ECEditor
         }
     }
 
-    void ECAttributeEditorBase::AddNewAttribute(Foundation::AttributeInterface *attribute)
+    void ECAttributeEditorBase::AddNewAttribute(AttributeInterface *attribute)
     {
         AttributeList::iterator iter = attributes_.begin();
         for(;iter != attributes_.end(); iter++)
@@ -103,7 +104,7 @@ namespace ECEditor
         UpdateEditorUI();
     }
 
-    void ECAttributeEditorBase::RemoveAttribute(Foundation::AttributeInterface *attribute)
+    void ECAttributeEditorBase::RemoveAttribute(AttributeInterface *attribute)
     {
         AttributeList::iterator iter = attributes_.begin();
         for(;iter != attributes_.end(); iter++)
@@ -122,6 +123,8 @@ namespace ECEditor
         if(attributes_.size() > 1)
         {
             AttributeList::const_iterator iter = attributes_.begin();
+            if ((*iter) == 0)
+                return false;
             std::string value = (*iter)->ToString();
             while(iter != attributes_.end())
             {
@@ -173,7 +176,7 @@ namespace ECEditor
 
     //-------------------------REAL ATTRIBUTE TYPE-------------------------
 
-    template<> void ECAttributeEditor<Real>::Initialize()
+    template<> void ECAttributeEditor<float>::Initialize()
     {
         ECAttributeEditorBase::PreInitialize();
         if(!useMultiEditor_)
@@ -184,17 +187,21 @@ namespace ECEditor
             factory_ = variantFactory;
             rootProperty_ = realPropertyManager->addProperty(QVariant::Double, attributeName_);
 
-            Foundation::AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
+            AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
             if(metaData)
             {
-                if(!metaData->min.empty())
+                if(!metaData->min.isEmpty())
                     metaDataFlag_ |= UsingMinValue;
-                if(!metaData->max.empty())
+                if(!metaData->max.isEmpty())
                     metaDataFlag_ |= UsingMaxValue;
+                if(!metaData->step.isEmpty())
+                    metaDataFlag_ |= UsingStepValue;
                 if((metaDataFlag_ & UsingMinValue) != 0)
-                    realPropertyManager->setAttribute(rootProperty_, "minimum", ::ParseString<Real>(metaData->min));
+                    realPropertyManager->setAttribute(rootProperty_, "minimum", ::ParseString<float>(metaData->min.toStdString()));
                 if((metaDataFlag_ & UsingMaxValue) != 0)
-                    realPropertyManager->setAttribute(rootProperty_, "maximum", ::ParseString<Real>(metaData->max));
+                    realPropertyManager->setAttribute(rootProperty_, "maximum", ::ParseString<float>(metaData->max.toStdString()));
+                if((metaDataFlag_ & UsingStepValue) != 0)
+                    realPropertyManager->setAttribute(rootProperty_, "singleStep", ::ParseString<float>(metaData->step.toStdString()));
             }
 
             if(rootProperty_)
@@ -211,7 +218,7 @@ namespace ECEditor
     }
 
 
-    template<> void ECAttributeEditor<Real>::Update()
+    template<> void ECAttributeEditor<float>::Update()
     {
         if(!useMultiEditor_)
         {
@@ -225,7 +232,7 @@ namespace ECEditor
             {
                 if(rootProperty_)
                 {
-                    Foundation::Attribute<Real> *attribute = dynamic_cast<Foundation::Attribute<Real>*>(*iter);
+                    Attribute<float> *attribute = dynamic_cast<Attribute<float>*>(*iter);
                     realPropertyManager->setValue(rootProperty_, attribute->Get());
                 }
             }
@@ -234,11 +241,11 @@ namespace ECEditor
             UpdateMultiEditorValue();
     }
 
-    template<> void ECAttributeEditor<Real>::Set(QtProperty *property)
+    template<> void ECAttributeEditor<float>::Set(QtProperty *property)
     {
         if(listenEditorChangedSignal_)
         {
-            Real newValue = ParseString<Real>(property->valueText().toStdString());
+            float newValue = ParseString<float>(property->valueText().toStdString());
             SetValue(newValue);
         }
     }
@@ -259,7 +266,7 @@ namespace ECEditor
             {
                 if(rootProperty_)
                 {
-                    Foundation::Attribute<int> *attribute = dynamic_cast<Foundation::Attribute<int>*>(*iter);
+                    Attribute<int> *attribute = dynamic_cast<Attribute<int>*>(*iter);
                     intPropertyManager->setValue(rootProperty_, attribute->Get());
                 }
             }
@@ -274,19 +281,21 @@ namespace ECEditor
         if(!useMultiEditor_)
         {
             //Check if int need to have min and max value setted and also enum types are presented as a int value.
-            Foundation::AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
+            AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
             if(metaData)
             {
                 if(!metaData->enums.empty())
                     metaDataFlag_ |= UsingEnums;
                 else
                 {
-                    if(!metaData->min.empty())
+                    if(!metaData->min.isEmpty())
                         metaDataFlag_ |= UsingMinValue;
-                    if(!metaData->max.empty())
+                    if(!metaData->max.isEmpty())
                         metaDataFlag_ |= UsingMaxValue;
+                    if(!metaData->step.isEmpty())
+                        metaDataFlag_ |= UsingStepValue;
                 }
-                if(!metaData->description.empty())
+                if(!metaData->description.isEmpty())
                     metaDataFlag_ |= UsingDescription;
             }
 
@@ -299,21 +308,21 @@ namespace ECEditor
                 prop = intPropertyManager->addProperty(QtVariantPropertyManager::enumTypeId(), attributeName_);
                 rootProperty_ = prop;
                 QStringList enumNames;
-                Foundation::EnumDescMap_t::iterator iter = metaData->enums.begin();
+                AttributeMetadata::EnumDescMap_t::iterator iter = metaData->enums.begin();
                 for(; iter != metaData->enums.end(); iter++)
-                {
-                    QString enumValue = QString::fromStdString(iter->second);
-                    enumNames << enumValue;
-                }
+                    enumNames << QString::fromStdString(iter->second);
+
                 prop->setAttribute(QString("enumNames"), enumNames);
             }
             else
             {
                 rootProperty_ = intPropertyManager->addProperty(QVariant::Int, attributeName_);
                 if((metaDataFlag_ & UsingMinValue) != 0)
-                    intPropertyManager->setAttribute(rootProperty_, "minimum", ::ParseString<int>(metaData->min));
+                    intPropertyManager->setAttribute(rootProperty_, "minimum", ::ParseString<int>(metaData->min.toStdString()));
                 if((metaDataFlag_ & UsingMaxValue) != 0)
-                    intPropertyManager->setAttribute(rootProperty_, "maximum", ::ParseString<int>(metaData->max));
+                    intPropertyManager->setAttribute(rootProperty_, "maximum", ::ParseString<int>(metaData->max.toStdString()));
+                if((metaDataFlag_ & UsingStepValue) != 0)
+                    intPropertyManager->setAttribute(rootProperty_, "singleStep", ::ParseString<int>(metaData->step.toStdString()));
             }
             propertyMgr_ = intPropertyManager;
             factory_ = variantFactory;
@@ -338,13 +347,11 @@ namespace ECEditor
             std::string valueString = property->valueText().toStdString();
             if((metaDataFlag_ & UsingEnums) != 0)
             {
-                Foundation::AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
-                Foundation::EnumDescMap_t::iterator iter = metaData->enums.begin();
+                AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
+                AttributeMetadata::EnumDescMap_t::iterator iter = metaData->enums.begin();
                 for(; iter != metaData->enums.end(); iter++)
-                {
                     if(valueString == iter->second)
                         newValue = iter->first;
-                }
             }
             else
                 newValue = ParseString<int>(valueString);
@@ -401,7 +408,7 @@ namespace ECEditor
             {
                 if(rootProperty_)
                 {
-                    Foundation::Attribute<bool> *attribute = dynamic_cast<Foundation::Attribute<bool>*>(*iter);
+                    Attribute<bool> *attribute = dynamic_cast<Attribute<bool>*>(*iter);
                     boolPropertyManager->setValue(rootProperty_, attribute->Get());
                 }
             }
@@ -422,7 +429,7 @@ namespace ECEditor
                 QList<QtProperty *> children = rootProperty_->subProperties();
                 if(children.size() >= 3)
                 {
-                    Foundation::Attribute<Vector3df> *attribute = dynamic_cast<Foundation::Attribute<Vector3df> *>(*(attributes_.begin()));
+                    Attribute<Vector3df> *attribute = dynamic_cast<Attribute<Vector3df> *>(*(attributes_.begin()));
                     if(!attribute)
                         return;
 
@@ -478,18 +485,18 @@ namespace ECEditor
             QList<QtProperty *> children = rootProperty_->subProperties();
             if(children.size() >= 3)
             {
-                Foundation::Attribute<Vector3df> *attribute = dynamic_cast<Foundation::Attribute<Vector3df> *>(*(attributes_.begin()));
+                Attribute<Vector3df> *attribute = dynamic_cast<Attribute<Vector3df> *>(*(attributes_.begin()));
                 if(!attribute)
                     return;
 
                 Vector3df newValue = attribute->Get();
                 QString propertyName = property->propertyName();
                 if(propertyName == "x")
-                    newValue.x = ParseString<Real>(property->valueText().toStdString());
+                    newValue.x = ParseString<float>(property->valueText().toStdString());
                 else if(propertyName == "y")
-                    newValue.y = ParseString<Real>(property->valueText().toStdString());
+                    newValue.y = ParseString<float>(property->valueText().toStdString());
                 else if(propertyName == "z")
-                    newValue.z = ParseString<Real>(property->valueText().toStdString());
+                    newValue.z = ParseString<float>(property->valueText().toStdString());
                 SetValue(newValue);
             }
         }
@@ -507,7 +514,7 @@ namespace ECEditor
                 QList<QtProperty *> children = rootProperty_->subProperties();
                 if(children.size() >= 4)
                 {
-                    Foundation::Attribute<Color> *attribute = dynamic_cast<Foundation::Attribute<Color> *>(*(attributes_.begin()));
+                    Attribute<Color> *attribute = dynamic_cast<Attribute<Color> *>(*(attributes_.begin()));
                     if(!attribute)
                         return;
 
@@ -576,7 +583,7 @@ namespace ECEditor
             QList<QtProperty *> children = rootProperty_->subProperties();
             if(children.size() >= 4)
             {
-                Foundation::Attribute<Color> *attribute = dynamic_cast<Foundation::Attribute<Color> *>(*(attributes_.begin()));
+                Attribute<Color> *attribute = dynamic_cast<Attribute<Color> *>(*(attributes_.begin()));
                 if(!attribute)
                     return;
 
@@ -595,9 +602,9 @@ namespace ECEditor
         }
     }
 
-    //-------------------------STD::STRING ATTRIBUTE TYPE-------------------------
+    //-------------------------QSTRING ATTRIBUTE TYPE-------------------------
 
-    template<> void ECAttributeEditor<std::string>::Initialize()
+    template<> void ECAttributeEditor<QString>::Initialize()
     {
         ECAttributeEditorBase::PreInitialize();
         if(!useMultiEditor_)
@@ -620,13 +627,13 @@ namespace ECEditor
         }
     }
 
-    template<> void ECAttributeEditor<std::string>::Set(QtProperty *property)
+    template<> void ECAttributeEditor<QString>::Set(QtProperty *property)
     {
         if (listenEditorChangedSignal_)
-            SetValue(property->valueText().toStdString());
+            SetValue(property->valueText());
     }
 
-    template<> void ECAttributeEditor<std::string>::Update()
+    template<> void ECAttributeEditor<QString>::Update()
     {
         if(!useMultiEditor_)
         {
@@ -641,8 +648,8 @@ namespace ECEditor
             {
                 if (rootProperty_)
                 {
-                    Foundation::Attribute<std::string> *attribute = dynamic_cast<Foundation::Attribute<std::string>*>(*iter);
-                    qStringPropertyManager->setValue(rootProperty_, attribute->Get().c_str());
+                    Attribute<QString> *attribute = dynamic_cast<Attribute<QString>*>(*iter);
+                    qStringPropertyManager->setValue(rootProperty_, attribute->Get());
                 }
                 iter++;
             }
@@ -699,7 +706,7 @@ namespace ECEditor
             {
                 if (rootProperty_)
                 {
-                    Foundation::Attribute<QVariant> *attribute = dynamic_cast<Foundation::Attribute<QVariant>*>(*iter);
+                    Attribute<QVariant> *attribute = dynamic_cast<Attribute<QVariant>*>(*iter);
                     qStringPropertyManager->setValue(rootProperty_, attribute->Get().toString());
                 }
                 iter++;
@@ -729,7 +736,7 @@ namespace ECEditor
             {
                 QtProperty *childProperty = 0;
                 // Get number of elements in attribute array and create for property for each array element.
-                Foundation::Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Foundation::Attribute<std::vector<QVariant> >*>(*(attributes_.begin()));
+                Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Attribute<std::vector<QVariant> >*>(*(attributes_.begin()));
                 std::vector<QVariant> variantArray = attribute->Get();
                 for(uint i = 0; i < variantArray.size(); i++)
                 {
@@ -752,7 +759,7 @@ namespace ECEditor
     {
         if (listenEditorChangedSignal_)
         {
-            Foundation::Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Foundation::Attribute<std::vector<QVariant> >*>(*(attributes_.begin()));
+            Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Attribute<std::vector<QVariant> >*>(*(attributes_.begin()));
             QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(optionalPropertyManagers_[0]);
             QList<QtProperty*> children = rootProperty_->subProperties();
             std::vector<QVariant> value;
@@ -775,7 +782,7 @@ namespace ECEditor
     {
         if(!useMultiEditor_)
         {
-            Foundation::Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Foundation::Attribute<std::vector<QVariant> >*>(*(attributes_.begin()));
+            Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Attribute<std::vector<QVariant> >*>(*(attributes_.begin()));
             QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(optionalPropertyManagers_[0]);
             QList<QtProperty*> children = rootProperty_->subProperties();
             std::vector<QVariant> value = attribute->Get();
@@ -808,7 +815,7 @@ namespace ECEditor
             if(children.size() == 2)
             {
                 QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(children[0]->propertyManager());
-                Foundation::Attribute<Foundation::AssetReference> *attribute = dynamic_cast<Foundation::Attribute<Foundation::AssetReference> *>(*(attributes_.begin()));
+                Attribute<Foundation::AssetReference> *attribute = dynamic_cast<Attribute<Foundation::AssetReference> *>(*(attributes_.begin()));
                 if(!attribute || !stringManager)
                     return;
 
@@ -861,7 +868,7 @@ namespace ECEditor
             if(children.size() == 2)
             {
                 QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(children[0]->propertyManager());
-                Foundation::Attribute<Foundation::AssetReference> *attribute = dynamic_cast<Foundation::Attribute<Foundation::AssetReference> *>(*(attributes_.begin()));
+                Attribute<Foundation::AssetReference> *attribute = dynamic_cast<Attribute<Foundation::AssetReference> *>(*(attributes_.begin()));
                 if(!attribute || !stringManager)
                     return;
 
@@ -869,6 +876,173 @@ namespace ECEditor
                 value.id_ = stringManager->value(children[0]).toStdString();
                 value.type_ = stringManager->value(children[1]).toStdString();
                 SetValue(value);
+            }
+        }
+    }
+
+    //---------------------------TRANSFORM----------------------------
+    template<> void ECAttributeEditor<Transform>::Update()
+    {
+        if(!useMultiEditor_)
+        {
+            QtVariantPropertyManager *variantManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
+            if(rootProperty_)
+            {
+                QList<QtProperty *> children = rootProperty_->subProperties();
+                if(children.size() >= 3)
+                {
+                    Attribute<Transform> *attribute = dynamic_cast<Attribute<Transform> *>(*(attributes_.begin()));
+                    if(!attribute)
+                        return;
+
+                    Transform transformValue = attribute->Get();
+                    QList<QtProperty *> positions = children[0]->subProperties();
+                    variantManager->setValue(positions[0], transformValue.position.x);
+                    variantManager->setValue(positions[1], transformValue.position.y);
+                    variantManager->setValue(positions[2], transformValue.position.z);
+
+                    QList<QtProperty *> rotations = children[1]->subProperties();
+                    variantManager->setValue(rotations[0], transformValue.rotation.x);
+                    variantManager->setValue(rotations[1], transformValue.rotation.y);
+                    variantManager->setValue(rotations[2], transformValue.rotation.z);
+
+                    QList<QtProperty *> scales    = children[2]->subProperties();
+                    variantManager->setValue(scales[0], transformValue.scale.x);
+                    variantManager->setValue(scales[1], transformValue.scale.y);
+                    variantManager->setValue(scales[2], transformValue.scale.z);
+                }
+            }
+        }
+        else
+            UpdateMultiEditorValue();
+    }
+
+    template<> void ECAttributeEditor<Transform>::Initialize()
+    {
+        ECAttributeEditorBase::PreInitialize();
+        if(!useMultiEditor_)
+        {
+            QtVariantPropertyManager *variantManager = new QtVariantPropertyManager(this);
+            QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory(this);
+            propertyMgr_ = variantManager;
+            factory_ = variantFactory;
+
+            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), attributeName_);
+            if(rootProperty_)
+            {
+                QtVariantProperty *childProperty = 0;
+                QtVariantProperty *positionProperty = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), "Position");
+                rootProperty_->addSubProperty(positionProperty);
+                childProperty = variantManager->addProperty(QVariant::Double, "x");
+                positionProperty->addSubProperty(childProperty);
+
+                childProperty = variantManager->addProperty(QVariant::Double, "y");
+                positionProperty->addSubProperty(childProperty);
+
+                childProperty = variantManager->addProperty(QVariant::Double, "z");
+                positionProperty->addSubProperty(childProperty);
+
+                QtVariantProperty *rotationProperty = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), "Rotation");
+                rootProperty_->addSubProperty(rotationProperty);
+                childProperty = variantManager->addProperty(QVariant::Double, "x");
+                rotationProperty->addSubProperty(childProperty);
+
+                childProperty = variantManager->addProperty(QVariant::Double, "y");
+                rotationProperty->addSubProperty(childProperty);
+
+                childProperty = variantManager->addProperty(QVariant::Double, "z");
+                rotationProperty->addSubProperty(childProperty);
+
+                QtVariantProperty *scaleProperty = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), "Scale");
+                rootProperty_->addSubProperty(scaleProperty);
+                childProperty = variantManager->addProperty(QVariant::Double, "x");
+                scaleProperty->addSubProperty(childProperty);
+
+                childProperty = variantManager->addProperty(QVariant::Double, "y");
+                scaleProperty->addSubProperty(childProperty);
+
+                childProperty = variantManager->addProperty(QVariant::Double, "z");
+                scaleProperty->addSubProperty(childProperty);
+
+                Update();
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+            }
+            owner_->setFactoryForManager(variantManager, variantFactory);
+        }
+        else
+        {
+            InitializeMultiEditor();
+        }
+    }
+
+    template<> void ECAttributeEditor<Transform>::Set(QtProperty *property)
+    {
+        if(listenEditorChangedSignal_)
+        {
+            QtVariantPropertyManager *variantManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
+            QList<QtProperty *> children = rootProperty_->subProperties();
+            if(children.size() >= 3)
+            {
+                Attribute<Transform> *attribute = dynamic_cast<Attribute<Transform> *>(*(attributes_.begin()));
+                if(!attribute)
+                    return;
+                Transform trans = attribute->Get();
+
+                int foundIndex = -1;
+                for(uint i = 0; i < children.size(); i++)
+                {
+                    QList<QtProperty *> properties = children[i]->subProperties();
+                    for(uint j = 0; j < properties.size(); j++)
+                    {
+                        if(properties[j] == property)
+                        {
+                            foundIndex = (i * 3) + j;
+                            break;
+                        }
+                    }
+                }
+                if(foundIndex != -1)
+                {
+                    bool success = false;
+                    float value = property->valueText().toFloat(&success);
+                    if(!success)
+                    {
+                        ECEditorModule::LogError("Failed to convert the property value in float format.");
+                        return;
+                    } 
+
+                    switch(foundIndex)
+                    {
+                    case 0:
+                        trans.position.x = value;
+                        break;
+                    case 1:
+                        trans.position.y = value;
+                        break;
+                    case 2:
+                        trans.position.z = value;
+                        break;
+                    case 3:
+                        trans.rotation.x = value;
+                        break;
+                    case 4:
+                        trans.rotation.y = value;
+                        break;
+                    case 5:
+                        trans.rotation.z = value;
+                        break;
+                    case 6:
+                        trans.scale.x = value;
+                        break;
+                    case 7:
+                        trans.scale.y = value;
+                        break;
+                    case 8:
+                        trans.scale.z = value;
+                        break;
+                    }
+                    SetValue(trans);
+                }
             }
         }
     }

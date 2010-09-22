@@ -32,9 +32,9 @@ namespace Foundation
         //! Submesh index in entity, starting from 0
         uint submesh_;
         //! U coord in entity. 0 if no texture mapping
-        Real u_;
+        float u_;
         //! V coord in entity. 0 if no texture mapping
-        Real v_;
+        float v_;
     };
 
     //! Render service interface.
@@ -87,10 +87,10 @@ namespace Foundation
         virtual void UnsubscribeLogListener(const LogListenerPtr &listener) = 0;
 
         //! set maximum view distance
-        virtual void SetViewDistance(Real distance) = 0;
+        virtual void SetViewDistance(float distance) = 0;
 
         //! get maximum view distance
-        virtual Real GetViewDistance() const = 0;
+        virtual float GetViewDistance() const = 0;
 
         //! force UI repaint
         virtual void RepaintUi() = 0;
@@ -103,16 +103,12 @@ namespace Foundation
         //! \param fileName File name.
         virtual void TakeScreenshot(const std::string& filePath, const std::string& fileName) = 0;
 
-        //! capture the world and avatar for ether ui when requested to worldfile and avatarfile
-        //! \param avatar_position Avatar's position.
-        //! \param avatar_orientation Avatar's orientation.
-        //! \param worldfile Worldfile's filename.
-        //! \param avatarfile Avatarfile's filename.
-        virtual void CaptureWorldAndAvatarToFile(
-            const Vector3Df &avatar_position,
-            const Quaternion &avatar_orientation,
-            const std::string& worldfile,
-            const std::string& avatarfile) = 0;
+        //! Render current main window content to texture
+        virtual QPixmap RenderImage(bool use_main_camera = true) = 0;
+
+        //! Render current main window with focus on the avatar
+        //! @todo make this focus non hard coded but as param
+        virtual QPixmap RenderAvatar(const Vector3Df &avatar_position, const Quaternion &avatar_orientation) = 0;
 
         //! Gets a renderer-specific resource
         /*! Does not automatically queue a download request

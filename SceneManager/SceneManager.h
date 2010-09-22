@@ -3,24 +3,18 @@
 #ifndef incl_SceneManager_SceneManager_h
 #define incl_SceneManager_SceneManager_h
 
+#include "ForwardDefines.h"
 #include "CoreStdIncludes.h"
 #include "CoreAnyIterator.h"
 #include "Entity.h"
 #include "ComponentInterface.h"
-#include <QObject>
-#include <qvariant.h>
-#include <QStringList>
 
-namespace Foundation
-{
-    class AttributeInterface;
-}
+#include <QObject>
+#include <QVariant>
+#include <QStringList>
 
 namespace Scene
 {
-    class SceneManager;
-    typedef boost::shared_ptr<SceneManager> ScenePtr;
-    typedef boost::weak_ptr<SceneManager> SceneWeakPtr;
     typedef std::list<EntityPtr> EntityList;
     typedef std::list<EntityPtr>::iterator EntityListIterator;
 
@@ -35,7 +29,7 @@ namespace Scene
     class SceneManager : public QObject
     {
         Q_OBJECT
-        
+
         friend class Foundation::Framework;
     private:
         //! default constructor
@@ -53,7 +47,15 @@ namespace Scene
         //! Current global id for entities
         static uint gid_;
 
+    //overrides that use native and qt types, so can be called from pythonqt and qtscript.'
+    //for docs see the implementing plain c++ public methods below. 
     public slots:
+        bool HasEntityId(uint id) const { return HasEntity((entity_id_t)id); }
+        uint NextFreeId() { return (uint)GetNextFreeId(); }
+
+        Scene::Entity* CreateEntityRaw(uint id = 0, const QStringList &components = QStringList::QStringList()) { return CreateEntity((entity_id_t)id, components).get(); }
+
+        Scene::Entity* GetEntityRaw(uint id) { return GetEntity(id).get(); }
         QVariantList GetEntityIdsWithComponent(const QString &type_name);
 
     public:
@@ -90,8 +92,7 @@ namespace Scene
             \param components Optional list of component names the entity will use. If omitted or the list is empty, creates an empty entity.
             \param change Origin of change regards to network replication
         */
-        EntityPtr CreateEntity(entity_id_t id = 0, const QStringList &components = QStringList::QStringList(),
-             AttributeChange::Type change = AttributeChange::LocalOnly);
+        EntityPtr CreateEntity(entity_id_t id = 0, const QStringList &components = QStringList::QStringList());
 
         //! Returns entity with the specified id
         /*!
@@ -110,6 +111,12 @@ namespace Scene
         */
         void RemoveEntity(entity_id_t id, AttributeChange::Type change = AttributeChange::LocalOnly);
 
+        //! Remove all entities
+        /*! The entities may not get deleted if dangling references to a pointer to them exist.
+            \param send_events whether to send events & signals of each delete
+         */
+        void RemoveAllEntities(bool send_events = true, AttributeChange::Type change = AttributeChange::LocalOnly);
+        
         //! Get the next free entity id. Can be used with CreateEntity().
         entity_id_t GetNextFreeId();
 
@@ -143,7 +150,7 @@ namespace Scene
             \param attribute Attribute pointer
             \param change Type of change (local, from network...)
          */
-        void EmitAttributeChanged(Foundation::ComponentInterface* comp, Foundation::AttributeInterface* attribute, AttributeChange::Type change);
+        void EmitAttributeChanged(Foundation::ComponentInterface* comp, AttributeInterface* attribute, AttributeChange::Type change);
         
         //! Emit a notification of a component being added to entity. Called by the entity
         /*! \param entity Entity pointer
@@ -167,7 +174,9 @@ namespace Scene
             \param entity Entity pointer
             \param change Type of change (local, from network...)
          */
-        void EmitEntityCreated(Scene::Entity* entity, AttributeChange::Type change);
+        void EmitEntityCreated(Scene::Entity* entity, AttributeChange::Type change = AttributeChange::LocalOnly);
+
+        void EmitEntityCreated(Scene::EntityPtr entity, AttributeChange::Type change = AttributeChange::LocalOnly);
         
         //! Emit a notification of an entity being removed. 
         /*! Note: the entity pointer will be invalid shortly after!
@@ -176,6 +185,21 @@ namespace Scene
          */
         void EmitEntityRemoved(Scene::Entity* entity, AttributeChange::Type change);
 
+        //! Load the scene (from an XML file for now, and only serializable components)
+        /*! Note: will remove all existing entities
+            \param filename File name
+            \param change Changetype that will be used, when removing the old scene, and deserializing the new
+           
+            \return true if successful
+         */
+        bool LoadScene(const std::string& filename, AttributeChange::Type change);
+        
+        //! Save the scene (into an XML file for now, and only serializable components)
+        /*! \param filename File name
+            \return true if successful
+         */
+        bool SaveScene(const std::string& filename);
+        
     private:
         SceneManager &operator =(const SceneManager &other);
 
@@ -195,7 +219,7 @@ namespace Scene
         void ComponentChanged(Foundation::ComponentInterface* comp, AttributeChange::Type change);
 
         //! Signal when an attribute of a component has changed
-        void AttributeChanged(Foundation::ComponentInterface* comp, Foundation::AttributeInterface* attribute, AttributeChange::Type change);
+        void AttributeChanged(Foundation::ComponentInterface* comp, AttributeInterface* attribute, AttributeChange::Type change);
 
         //! Signal when a component is added to an entity and should possibly be replicated (if the change originates from local)
         /*! Network synchronization managers should connect to this

@@ -64,16 +64,18 @@ use_package (QT4)
 use_package (POCO)
 use_package (CURL)
 use_package (XMLRPC)
-use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules TTSModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)# WorldInputModule)
+use_package (OGRE)
+use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule TTSModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)
 
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS} ${RESOURCE_SRCS})
 
-link_modules (Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules EC_TtsVoice EC_OpenSimPresence)
+link_modules (Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule EC_TtsVoice EC_OpenSimPresence)
 link_package (BOOST)
 link_package (QT4)
 link_package (POCO)
 link_package (XMLRPC)
 link_package (CURL)
+link_package (OGRE)
 
 # Copy XML files from source directory to target directory
 foreach (XML_FILE ${XML_FILES})

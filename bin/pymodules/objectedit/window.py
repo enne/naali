@@ -1,7 +1,7 @@
 import rexviewer as r
 
 import PythonQt
-from PythonQt.QtGui import QTreeWidgetItem, QSizePolicy, QIcon, QHBoxLayout, QComboBox, QDoubleSpinBox
+from PythonQt.QtGui import QWidget, QTreeWidgetItem, QSizePolicy, QIcon, QHBoxLayout, QVBoxLayout, QComboBox, QDoubleSpinBox, QPixmap, QLabel, QComboBox
 from PythonQt.QtUiTools import QUiLoader
 from PythonQt.QtCore import QFile, QSize, Qt
 import conversions as conv
@@ -23,112 +23,128 @@ else:
 
 PRIMTYPES = {
     "45": "Material",
-    "17": "Wav",
-    "1": "Ogg",
-    "0": "Texture"
+    "0" : "Texture"
 }
 
 class ObjectEditWindow:
     UIFILE = "pymodules/objectedit/editobject.ui"
     
-    ICON_OK = "pymodules/objectedit/ok.png"
-    ICON_CANCEL = "pymodules/objectedit/cancel.png" 
+    ICON_FOLDER = "pymodules/objectedit/folder.png"
+    ICON_OK = "pymodules/objectedit/ok-small.png"
+    ICON_CANCEL = "pymodules/objectedit/cancel-small.png" 
     
     def __init__(self, controller):
         self.controller = controller
         loader = QUiLoader()
+        loader.setLanguageChangeEnabled(True)
         uifile = QFile(self.UIFILE)
 
         ui = loader.load(uifile)
         width = ui.size.width()
         height = ui.size.height()
         
-        #if not DEV:
         uism = r.getUiSceneManager()
-        #uiprops = r.createUiWidgetProperty(1) # 1 = Qt::Dialog
-        #uiprops.name_ = "Object Edit"
-        #uiprops.my_size_ = QSize(width, height) #not needed anymore, uimodule reads it
-        self.proxywidget = r.createUiProxyWidget(ui)
-        self.proxywidget.setWindowTitle("Object Edit")
-
-        if not uism.AddWidgetToScene(self.proxywidget):
-            r.logInfo("Adding ProxyWidget failed.")
-
-        uism.AddWidgetToMenu(self.proxywidget, "Object Edit", "", "./data/ui/images/menus/edbutton_OBJED_normal.png")
 
         self.widget = ui
-        self.tabwidget = ui.findChild("QTabWidget", "MainTabWidget")
 
-        self.mainTab = ui.findChild("QWidget", "MainFrame")
-        self.materialTab = ui.findChild("QWidget", "MaterialsTab")
-        self.tabwidget.setTabEnabled(1, False)
-        self.materialTabFormWidget = self.materialTab.formLayoutWidget
-        self.mainTab.label.text = "<none>"
+        # Material/Texture widgets
+        self.materialTabFormWidget = ui.findChild("QWidget", "MaterialsTab").formLayoutWidget
 
+        # Mesh line edit and buttons
         self.meshline = lines.MeshAssetidEditline(controller) 
         self.meshline.name = "meshLineEdit"
 
         button_ok = self.getButton("Apply", self.ICON_OK, self.meshline, self.meshline.applyAction)
         button_cancel = self.getButton("Cancel", self.ICON_CANCEL, self.meshline, self.meshline.cancelAction)
+        button_browse = self.getButton("Browse", self.ICON_FOLDER, None, None)
         
-        box = self.mainTab.findChild("QHBoxLayout", "meshLine")
+        box = QHBoxLayout()
+        box.setContentsMargins(0,0,0,0)
         box.addWidget(self.meshline)
+        box.addWidget(button_browse)
         box.addWidget(button_ok)
         box.addWidget(button_cancel)
+        self.mesh_widget = QWidget()
+        self.mesh_widget.setLayout(box)
         
+        # Sound line edit and buttons
         self.soundline = lines.SoundAssetidEditline(controller) 
         self.soundline.name = "soundLineEdit"
-
         soundbutton_ok = self.getButton("Apply", self.ICON_OK, self.soundline, self.soundline.applyAction)
         soundbutton_cancel = self.getButton("Cancel", self.ICON_CANCEL, self.soundline, self.soundline.cancelAction)
-
+        soundbutton_browse = self.getButton("Browse", self.ICON_FOLDER, None, None)
         soundRadius = self.getDoubleSpinBox("soundRadius", "Set sound radius", self.soundline)
         soundVolume = self.getDoubleSpinBox("soundVolume", "Set sound volume", self.soundline)
         
-        box = self.mainTab.findChild("QHBoxLayout", "soundLine")
-        box.addWidget(self.soundline)
-        box.addWidget(soundRadius)
-        box.addWidget(soundVolume)
-        box.addWidget(soundbutton_ok)
-        box.addWidget(soundbutton_cancel)
+        main_box = QVBoxLayout()
+        main_box.setContentsMargins(0,0,0,0)
+        box_buttons = QHBoxLayout()
+        box_buttons.setContentsMargins(0,0,0,0)
+        
+        # TODO no need for self?
+        # crashed always if didnt put self to second label :P you can try to remove them...
+        # basically the qwidget ptr must stay somewhere in py otherwise will crash when gets to painting -Pforce
+        self.label_radius = QLabel("Radius")
+        self.label_radius.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        self.label_volume = QLabel("Volume")
+        self.label_volume.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
-        self.propedit = r.getPropertyEditor()
-        self.tabwidget.addTab(self.propedit, "Properties")
-        self.tabwidget.setTabEnabled(2, False)
+        box_buttons.addWidget(self.label_radius)
+        box_buttons.addWidget(soundRadius)
+        box_buttons.addWidget(self.label_volume)
+        box_buttons.addWidget(soundVolume)
+        box_buttons.addWidget(soundbutton_browse)        
+        box_buttons.addWidget(soundbutton_ok)
+        box_buttons.addWidget(soundbutton_cancel)
+
+        main_box.addWidget(self.soundline)
+        main_box.addLayout(box_buttons)
+        self.sound_widget = QWidget()
+        self.sound_widget.setLayout(main_box)
+
+        # Animation line edit and buttons
+        self.animation_title = QLabel("Skeleton Animation")
+        self.animation_title.setStyleSheet("font-size:18px;font-weight:bold;padding-top:5px;")
+        self.animation_title.setIndent(0)
+        self.animationline = lines.AnimationAssetidEditline(controller)
+        self.animationline.name = "animationLineEdit"
+        animation_combobox = self.getCombobox("AnimationName", "Animation Name", self.animationline)
+        animationbutton_ok = self.getButton("Apply", self.ICON_OK, self.animationline, self.animationline.applyAction)
+        animationbutton_cancel = self.getButton("Cancel", self.ICON_CANCEL, self.animationline, self.animationline.cancelAction)
+        animationbutton_browse = self.getButton("Browse", self.ICON_FOLDER, None, None)
+        animationRate = self.getDoubleSpinBox("animationRate", "Set animation rate", self.animationline)
+
+        animationbox = QVBoxLayout()
+        animationbox.setContentsMargins(0,0,0,0)
+        self.anim_box_buttons = QHBoxLayout()
+        self.anim_box_buttons.name = "AnimBoxButtons"
+        self.anim_box_buttons.setContentsMargins(0,0,0,0)
+
+        label_rate = QLabel("Rate")
+        label_rate.name = "Animation Rate"
+        label_rate.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+
+        self.anim_box_buttons.addWidget(animation_combobox)
+        self.anim_box_buttons.addWidget(label_rate)
+        self.anim_box_buttons.addWidget(animationRate)
+        self.anim_box_buttons.addWidget(animationbutton_browse)
+        self.anim_box_buttons.addWidget(animationbutton_ok)
+        self.anim_box_buttons.addWidget(animationbutton_cancel)
+
+        animationbox.addWidget(self.animation_title)
+        animationbox.addWidget(self.animationline)
+        animationbox.addLayout(self.anim_box_buttons)
+        self.animation_widget = QWidget()
+        self.animation_widget.setLayout(animationbox)
+        self.animation_widget.hide()
 
         self.updatingSelection = False
         
-        def poschanger(i):
-            def pos_at_index(v):
-                self.controller.changepos(i, v)
-            return pos_at_index
-        for i, poswidget in enumerate([self.mainTab.xpos, self.mainTab.ypos, self.mainTab.zpos]):
-            poswidget.connect('valueChanged(double)', poschanger(i))
-
-        def rotchanger(i):
-            def rot_at_index(v):
-                if not self.controller.usingManipulator and not self.updatingSelection:
-                    self.controller.changerot(i, (self.mainTab.rot_x.value, self.mainTab.rot_y.value, self.mainTab.rot_z.value))
-            return rot_at_index
-        for i, rotwidget in enumerate([self.mainTab.rot_x, self.mainTab.rot_y, self.mainTab.rot_z]):
-            rotwidget.connect('valueChanged(double)', rotchanger(i))
-        
-        def scalechanger(i):
-            def scale_at_index(v):
-                self.controller.changescale(i, v)
-            return scale_at_index
-        for i, scalewidget in enumerate([self.mainTab.scalex, self.mainTab.scaley, self.mainTab.scalez]):
-            scalewidget.connect('valueChanged(double)', scalechanger(i))
-        
-        self.mainTab.treeWidget.connect('clicked(QModelIndex)', self.itemActivated)
-        self.mainTab.treeWidget.connect('activated(QModelIndex)', self.itemActivated)
-        
-        self.proxywidget.connect('Visible(bool)', self.controller.on_hide)
-        #self.tabwidget.connect('currentChanged(int)', self.tabChanged)
-
+        # mesh buttons
         self.meshline.connect('textEdited(QString)', button_ok.lineValueChanged)
         self.meshline.connect('textEdited(QString)', button_cancel.lineValueChanged)
 
+        # audio buttons
         self.soundline.connect('textEdited(QString)', soundbutton_ok.lineValueChanged)
         self.soundline.connect('textEdited(QString)', soundbutton_cancel.lineValueChanged)
         soundRadius.connect('valueChanged(double)', soundbutton_ok.lineValueChanged)
@@ -136,23 +152,34 @@ class ObjectEditWindow:
         soundVolume.connect('valueChanged(double)', soundbutton_ok.lineValueChanged)
         soundVolume.connect('valueChanged(double)', soundbutton_cancel.lineValueChanged)
 
-        
-        self.mainTab.findChild("QPushButton", "newObject").connect('clicked()', self.controller.createObject)
-        self.mainTab.findChild("QPushButton", "deleteObject").connect('clicked()', self.controller.deleteObject)
-        self.mainTab.findChild("QPushButton", "duplicate").connect('clicked()', self.controller.duplicate)
-        
-        self.mainTab.findChild("QPushButton", "undo").connect('clicked()', self.controller.undo)
-        
-        self.mainTab.findChild("QToolButton", "move_button").connect('clicked()', self.manipulator_move)
-        self.mainTab.findChild("QToolButton", "scale_button").connect('clicked()', self.manipulator_scale)
-        self.mainTab.findChild("QToolButton", "rotate_button").connect('clicked()', self.manipulator_rotate)
-
-        self.mainTab.useLocalTransform.connect('toggled(bool)', self.controller.setUseLocalTransform)
+        # animation buttons
+        self.animationline.connect('textEdited(QString)', animationbutton_ok.lineValueChanged)
+        self.animationline.connect('textEdited(QString)', animationbutton_cancel.lineValueChanged)
+        animationRate.connect('valueChanged(double)', animationbutton_ok.lineValueChanged)
+        animationRate.connect('valueChanged(double)', animationbutton_cancel.lineValueChanged)
+        animation_combobox.connect('currentIndexChanged(int)', animationbutton_ok.lineValueChanged)
+        animation_combobox.connect('currentIndexChanged(int)', animationbutton_cancel.lineValueChanged)
 
         self.mainTabList = {}
-        
         self.currentlySelectedTreeWidgetItem = []
 
+    def selected(self, ent, keepold=False):
+        self.meshline.update_text(ent.prim.MeshID)
+        self.soundline.update_text(ent.prim.SoundID)
+        self.soundline.update_soundradius(ent.prim.SoundRadius)
+        self.soundline.update_soundvolume(ent.prim.SoundVolume)
+        self.updateAnimation(ent)
+        self.updateMaterialTab(ent)
+        self.updatingSelection = True
+        self.update_guivals(ent)
+        self.updatingSelection = False
+        self.controller.soundRuler(ent)
+        
+    def deselected(self):
+        self.meshline.update_text("")
+        self.soundline.update_text("")
+        self.updateAnimation()
+        
     def update_guivals(self, ent):
         if ent is not None:
             self.update_posvals(ent.placeable.Position)
@@ -161,15 +188,13 @@ class ObjectEditWindow:
             #self.controller.updateSelectionBox(ent) #PositionAndOrientation(ent)
         
     def update_scalevals(self, scale):
-        self.mainTab.scalex.setValue(scale.x())
-        self.mainTab.scaley.setValue(scale.y())
-        self.mainTab.scalez.setValue(scale.z())
-        
+        if self.controller.cpp_python_handler != None:
+            self.controller.cpp_python_handler.SetScaleValues(scale.x(), scale.y(), scale.z())
+
     def update_posvals(self, pos):
-        self.mainTab.xpos.setValue(pos.x())
-        self.mainTab.ypos.setValue(pos.y())
-        self.mainTab.zpos.setValue(pos.z())
-        
+        if self.controller.cpp_python_handler != None:
+            self.controller.cpp_python_handler.SetPosValues(pos.x(), pos.y(), pos.z())
+
     def update_rotvals(self, placeable):
         # We use now pitch, yaw and roll we get directly from placeable
         # this ensures we don't have to do weird conversions with all
@@ -180,53 +205,48 @@ class ObjectEditWindow:
         x_val = math.degrees(placeable.Pitch)
         y_val = math.degrees(placeable.Yaw)
         z_val = math.degrees(placeable.Roll)
-        self.mainTab.rot_x.setValue(x_val)
-        self.mainTab.rot_y.setValue(y_val)
-        self.mainTab.rot_z.setValue(z_val)
         if self.controller.cpp_python_handler != None:
             self.controller.cpp_python_handler.SetRotateValues(x_val, y_val, z_val)
     
-    def reset_guivals(self):
-        self.mainTab.xpos.setValue(0)
-        self.mainTab.ypos.setValue(0)
-        self.mainTab.zpos.setValue(0)
+    def updateAnimation(self, ent = None):
+        # Hide by default
+        self.animation_widget.setVisible(False)
+        self.animationline.update_text("")
+        self.animationline.update_animationrate(0.0)
+        combobox = self.animationline.combobox
+        combobox.clear()
+        # Return if no mesh
+        if not ent:
+            return
+        try:
+            ent.mesh
+        except:
+            return
+        # Show, update animation id and rate
+        self.animation_widget.setVisible(True)
+        self.animationline.update_text(ent.prim.AnimationPackageID)
+        self.animationline.update_animationrate(ent.prim.AnimationRate)
+        # Down update other elements if no asset ref in place
+        if ent.prim.AnimationPackageID in (u'', '00000000-0000-0000-0000-000000000000'):
+            return
+        # Get anim component
+        try:
+            ac = ent.animationcontroller
+        except:
+            ent.createComponent('EC_OgreAnimationController')
+            ac = ent.animationcontroller
+            ac.SetMeshEntity(ent.mesh)
+        # Update rest of the ui
+        current_animation = ent.prim.AnimationName
+        available_animations = ac.GetAvailableAnimations()
+        for anim in available_animations:
+            combobox.addItem(anim)
+        if current_animation in available_animations:
+            idx = combobox.findText(current_animation)
+            combobox.setCurrentIndex(idx)
+        # Deactivate as this is the current data, no changes made
+        self.animationline.deactivateButtons()
 
-        self.mainTab.scalex.setValue(0)
-        self.mainTab.scaley.setValue(0)
-        self.mainTab.scalez.setValue(0)
-
-        self.mainTab.rot_x.setValue(0)
-        self.mainTab.rot_y.setValue(0)
-        self.mainTab.rot_z.setValue(0)
-    
-    def deselected(self):
-        self.mainTab.label.text = "<none>"
-        self.tabwidget.setTabEnabled(1, False)
-        self.tabwidget.setTabEnabled(2, False)
-        
-        self.meshline.update_text("")
-        self.soundline.update_text("")
-
-        self.reset_guivals()
-        
-        self.untoggleButtons()
-        
-        self.unsetSelection()
-        
-    def unsetSelection(self):
-        for tuples in self.mainTabList.values():
-            tWid = tuples[1]
-            tWid.setSelected(False)
-        
-        self.currentlySelectedTreeWidgetItem = []
-        
-    def deselectSelection(self, id):
-        for listid in self.mainTabList.keys():
-            if listid == str(id):
-                tuple = self.mainTabList[listid]
-                tWid = tuple[1]
-                tWid.setSelected(False)
-            
     def updateMaterialTab(self, ent):
         #ent = self.controller.active
         if ent is not None:
@@ -266,8 +286,6 @@ class ObjectEditWindow:
                 box.addWidget(cancelButton)
                 
                 self.materialTabFormWidget.materialFormLayout.addRow(combobox, box)
-                
-            self.tabwidget.setTabEnabled(1, True)
 
     def clearDialogForm(self):
         children = self.materialTabFormWidget.children()
@@ -281,19 +299,10 @@ class ObjectEditWindow:
             self.materialTabFormWidget.materialFormLayout.removeItem(child)
             child.delete()
 
-    def itemActivated(self, item=None): #the item from signal is not used, same impl used by click
-        #print "Got the following item index...", item, dir(item), item.data, dir(item.data) #we has index, now what? WIP
-        current = self.mainTab.treeWidget.currentItem()
-        text = current.text(0)
-        if self.mainTabList.has_key(text):
-            ent = self.mainTabList[text][0]
-            self.controller.select(ent)
-    
     def getButton(self, name, iconname, line, action):
-        size = QSize(16, 16)
+        size = QSize(20, 20)
         button = buttons.PyPushButton()
-        icon = QIcon(iconname)
-        icon.actualSize(size)
+        icon = QIcon(QPixmap(iconname).scaled(size))
         button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         button.setMaximumSize(size)
         button.setMinimumSize(size)
@@ -301,9 +310,11 @@ class ObjectEditWindow:
         button.name = name
         button.setIcon(icon)
         button.setFlat(True)
-        button.setEnabled(False)
-        button.connect('clicked()', action)
-        line.buttons.append(button)
+        if action != None:
+            button.connect('clicked()', action)
+        if line != None:
+            button.setEnabled(False)
+            line.buttons.append(button)
         return button
 
     def getDoubleSpinBox(self, name, tooltip, line):
@@ -315,150 +326,10 @@ class ObjectEditWindow:
         line.spinners.append(spinner)
         return spinner
 
-    def manipulator_move(self):
-        print "MOVE",
-        ent = self.controller.active
-        if self.controller.keypressed:
-            self.controller.keypressed = False
-            if not self.mainTab.move_button.isChecked():
-                self.mainTab.move_button.setChecked(True)
-            else:
-                self.mainTab.move_button.setChecked(False)
-        
-        freemove = False
-
-        if not self.mainTab.move_button.isChecked():
-            freemove = True
-            self.controller.hideManipulator()
-        else: #activated
-            if ent is not None:
-                self.mainTab.scale_button.setChecked(False)
-                self.mainTab.rotate_button.setChecked(False)
-                self.controller.changeManipulator(self.controller.MANIPULATE_MOVE)   
-            else:
-                self.mainTab.move_button.setChecked(False)
-                freemove = True
-        
-        if freemove:
-            self.controller.changeManipulator(self.controller.MANIPULATE_FREEMOVE)
-        print "2"
-        
-    def manipulator_scale(self):
-        ent = self.controller.active
-        if self.controller.keypressed:
-            self.controller.keypressed = False
-            if not self.mainTab.scale_button.isChecked():
-                self.mainTab.scale_button.setChecked(True)
-            else:
-                self.mainTab.scale_button.setChecked(False)
-                
-        freemove = False
-        if not self.mainTab.scale_button.isChecked():
-            freemove = True
-            self.controller.hideManipulator()
-        else: #activated
-            if ent is not None:
-                self.mainTab.move_button.setChecked(False)
-                self.mainTab.rotate_button.setChecked(False)
-                self.controller.changeManipulator(self.controller.MANIPULATE_SCALE)
-            else:
-                self.mainTab.scale_button.setChecked(False)
-                freemove = True
-        
-        if freemove:
-            self.controller.changeManipulator(self.controller.MANIPULATE_FREEMOVE)
-            
-    def manipulator_rotate(self):
-        ent = self.controller.active
-        
-        if self.controller.keypressed:
-            self.controller.keypressed = False
-            if not self.mainTab.rotate_button.isChecked():
-                self.mainTab.rotate_button.setChecked(True)
-            else:
-                self.mainTab.rotate_button.setChecked(False)
-                
-        freemove = False
-        if not self.mainTab.rotate_button.isChecked():
-            freemove = True
-            self.controller.hideManipulator()
-        else: #activated
-            if ent is not None:
-                self.controller.changeManipulator(self.controller.MANIPULATE_ROTATE)
-                self.mainTab.scale_button.setChecked(False)
-                self.mainTab.move_button.setChecked(False)
-            else:
-                self.mainTab.rotate_button.setChecked(False) 
-                freemove = True
-        
-        if freemove:
-            self.controller.changeManipulator(self.controller.MANIPULATE_FREEMOVE)
-            
-    def selected(self, ent, keepold=False):
-        self.untoggleButtons()
-        
-        if not keepold:
-            self.unsetSelection()
-        
-        self.addToList(ent)
-        self.highlightEntityFromList(ent)
-        self.showName(ent)
-        self.meshline.update_text(ent.prim.MeshID)
-        self.soundline.update_text(ent.prim.SoundID)
-        self.soundline.update_soundradius(ent.prim.SoundRadius)
-        self.soundline.update_soundvolume(ent.prim.SoundVolume)
-        self.updateMaterialTab(ent)
-        self.updatePropertyEditor(ent)
-        self.updatingSelection = True
-        self.update_guivals(ent)
-        self.updatingSelection = False
-        self.controller.soundRuler(ent)
-
-    def updatePropertyEditor(self, ent):
-        qprim = ent.prim
-        if qprim is not None:
-            self.tabwidget.setTabEnabled(2, True)
-            
-    def untoggleButtons(self):
-        self.mainTab.move_button.setChecked(False)
-        self.mainTab.rotate_button.setChecked(False)
-        self.mainTab.scale_button.setChecked(False)
-        
-    def highlightEntityFromList(self, ent):
-        if self.mainTabList.has_key(str(ent.id)):
-            tWid = self.mainTabList[str(ent.id)][1]
-            tWid.setSelected(True)
-        
-    def addToList(self, ent):
-        if not self.mainTabList.has_key(str(ent.id)):
-           tWid = QTreeWidgetItem(self.mainTab.treeWidget)
-           id = ent.id
-           tWid.setText(0, id)
-            
-           self.mainTabList[str(id)] = (ent, tWid)
-           return True
-        return False
-        
-    def showName(self, ent):
-        """show the id and name of the object. name is sometimes empty it seems. 
-        swoot: actually, seems like the name just isn't gotten fast enough or 
-        something.. next time you click on the same entity, it has a name."""
-            
-        name = ent.prim.Name
-
-        if name == "":
-            self.mainTab.label.text = "%d" % (ent.id)
-        else:
-            self.mainTab.label.text = "%d Name: %s" % (ent.id, name)
-        
-    def on_exit(self):
-        self.proxywidget.hide()
-        uism = r.getUiSceneManager()
-        uism.RemoveWidgetFromMenu(self.proxywidget)
-        uism.RemoveWidgetFromScene(self.proxywidget)
-        
-    def objectDeleted(self, ent_id): #XXX not the best way of doing this
-        if self.mainTabList.has_key(ent_id):
-            id, tWid = self.mainTabList.pop(ent_id)
-            tWid.delete()
-            
+    def getCombobox(self, name, tooltip, line):
+        combobox = QComboBox()
+        combobox.name = name
+        combobox.toolTip = tooltip
+        combobox.setEnabled(True)
+        line.combobox = combobox
+        return combobox

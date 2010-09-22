@@ -5,18 +5,34 @@
  *  @brief  
  */
 
-#include "ServiceInterface.h"
-
 #ifndef incl_Interfaces_WorldLogicInterface_h
 #define incl_Interfaces_WorldLogicInterface_h
 
+#include "ServiceInterface.h"
 #include "ForwardDefines.h"
- #include <QString>
+
+#include <QObject>
+
+class QString;
 
 namespace Foundation
 {
-    class WorldLogicInterface : public ServiceInterface
+    class WorldLogicInterface : public QObject, public ServiceInterface
     {
+        Q_OBJECT
+
+    public slots:
+        /// Returns user's avatar entity, as a QObject* which works for py & js which don't know about boost shared pointers
+        virtual Scene::Entity* GetUserAvatarEntityRaw() const 
+        {
+            return GetUserAvatarEntity().get();
+        }
+
+        virtual Scene::Entity* GetCameraEntityRaw() const 
+        {
+            return GetCameraEntity().get();
+        }
+
     public:
         /// Default constructor.
         WorldLogicInterface() {}
@@ -35,7 +51,12 @@ namespace Foundation
         /// @param component Type name of the component.
         virtual Scene::EntityPtr GetEntityWithComponent(uint entity_id, const QString &component) const = 0;
 
-        // 
+        /// Hack function for getting EC_AvatarAppearance info to UiModule
+        virtual const QString &GetAvatarAppearanceProperty(const QString &name) const = 0;
+
+    signals:
+        /// Emitted just before we start to delete world (scene).
+        void AboutToDeleteWorld();
     };
 }
 

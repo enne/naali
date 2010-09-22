@@ -42,8 +42,8 @@ public:
 	void SpeakMessage();
 
 	/// Attributes
-	Foundation::Attribute<std::string> voice_;
-	Foundation::Attribute<std::string> message_;
+	Attribute<QString> voice_;
+	Attribute<QString> message_;
 
 private:
 

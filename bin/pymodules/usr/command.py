@@ -1,6 +1,8 @@
 """this is executed when you press '.' in the ogre window, the viewer main window.
 used for quick testing of py commands."""
 
+import naali
+naali = reload(naali) #hopefully allows devving naali.py without naali restarts
 import rexviewer as r
 import math
 
@@ -17,20 +19,23 @@ new_id = 9999999
 av_entid = 8880000
 
 def rotate(e):
-    o = e.orientation    
-    newort = (o[0], o[1], o[2] + 0.5, o[3])
-    print "Rotating to ort:", newort
-    e.orientation = newort
+    p = e.placeable
+    o = p.Orientation    
+    #newort = (o.scalar(), o.x(), o.y() + 0.5, o.z())
+    o.setY(o.y() + 0.5)
+    print "Rotating to ort:", o
+    p.Orientation = o
     #assert e.orientation[2] > (oldz+0.9) #xxx some logic fail here?
     #print "TEST ORIENTATION SUCCEEDED", e.orientation[2], oldortz
     
 def move(e):
-    p = e.pos #.pos - the w.i.p. api has a shortcut now that instead of a placeable with loc,rot,scale it just gives loc now directly
-    oldx = p[0] #p.x - Vector3 not wrapped (yet), just gives a tuple
-    #p.x += 1 #change the x-coordinate
-    newpos = (p[0] - 1, p[1], p[2])
-    print "Moving to move to pos:", newpos
-    e.pos = newpos
+    p = e.placeable
+    pos = p.Position
+    #oldx = pos.x()
+    #newpos = (p[0] - 1, p[1], p[2])
+    pos.setX(pos.x() + 1) #change the x-coordinate
+    print "Moving to move to pos:", pos
+    p.Position = pos
 
 if 0:
     print "Testing taking a screenshot..."
@@ -52,22 +57,22 @@ if 0:
     
 if 0: #get entity
     #idnum = new_id
+    idnum = naali.getCamera().id
     print "Getting entity id", idnum,
-    e = r.getEntity(idnum)
+    e = naali.getEntity(idnum)
     print "got:", e
     #print dir(r)
-    rotate(e)
+    #rotate(e)
     #move(e)
 
 if 0: #test avatartracking, works :)
-    av_entid = r.getUserAvatarId()
-    print "<:::",
     try:
-        a = r.getEntity(av_entid)
-    except:
-        print "could find the avatar with the given id", av_entid
+        a = naali.getUserAvatar()
+    except ValueError:
+        print "could find the user avatar"
     else:
-        print "Avatar pos:", a.placeable.Position
+        print "<:::",
+        print "Avatar pos:", a.placeable.Position,
         print ":::>"
         """
         perhaps some local script could track movement?
@@ -104,21 +109,16 @@ if 0: #push an event, input and/or chat
     #print viewer._event_stack
 
 if 0: #create entity
-    #not safe now:
-    """
-    New entity created:16:39:22 [Foundation] Error: Can't create entity with given i
-d because it's already used: 9999999
-Assertion failed: px != 0, file D:\k2\rex\viewer\trunk\external_libs\include\boo
-st/shared_ptr.hpp, line 419
-    """
     print "Testing entity creation"
     meshname = "axes.mesh"
     
-    avatar = r.getEntity(r.getUserAvatarId())
-    ent = r.createEntity(meshname)
-    #print "New entity created:", ent, ent.pos
-    ent.pos = avatar.pos
-    ent.scale = 0.0, 0.0, 0.0
+    avatar = naali.getUserAvatar()
+    ent = naali.createMeshEntity(meshname)
+    #print "New entity created:", ent, ent.placeable.Position
+    ent.placeable.Position = avatar.placeable.Position
+
+    #from PythonQt.QtGui import QVector3D as Vec
+    #ent.placeable.Scale = Vec(0.1, 0.1, 0.1)
     #print "new pos", ent.pos, ent.scale
 
 if 0: #placeable and text tests
@@ -161,20 +161,28 @@ if 0: #camera pitch
     print r.getCameraYawPitch()
 
 if 0: #camera entity - it is an entity nowadays, and there is EC cam even
-    camid = r.getCameraId()
-    print "CAM:", camid
-    cament = r.getEntity(camid)
-    p = cament.placeable
-    print p.Position, p.Orientation
+    try:
+        cament = naali.getCamera()
+        print "CAM:", cament.id
+    except ValueError:
+        print "no CAM"
+    else:
+        p = cament.placeable
+        print p.Position, p.Orientation
 
-    import PythonQt.QtGui
-    from PythonQt.QtGui import QQuaternion as Quat
-    from PythonQt.QtGui import QVector3D as Vec
-    ort = p.Orientation
-    rot = Quat.fromAxisAndAngle(Vec(0, 1, 0), 10)
-    #ort *= Quat(0, -.707, 0, .707)
-    ort *= rot
-    p.Orientation = ort
+        import PythonQt.QtGui
+        from PythonQt.QtGui import QQuaternion as Quat
+        from PythonQt.QtGui import QVector3D as Vec
+        ort = p.Orientation
+        rot = Quat.fromAxisAndAngle(Vec(0, 1, 0), 10)
+        #ort *= Quat(0, -.707, 0, .707)
+        ort *= rot
+        p.Orientation = ort
+        
+        #ec cam stuff:
+        print "FOV:", cament.camera.GetVerticalFov()
+        
+        
 
 if 0: #calcing the camera angle around up axis for web ui
     import PythonQt.QtGui
@@ -198,8 +206,7 @@ if 0: #calcing the camera angle around up axis for web ui
 
         return vec, ang
 
-    camid = r.getCameraId()
-    cament = r.getEntity(camid)
+    cament = naali.getCamera()
     p = cament.placeable
 
     #print toAngleAxis(p.Orientation)
@@ -381,7 +388,15 @@ if 0: #pythonqt introspec
 if 0: # EC_OgreCamera
     import naali
     cam = naali.getCamera()
-    print dir(cam), cam.className, cam
+    if cam is not None:
+        print dir(cam), cam.className, cam
+
+    #the slot is there now also directly, not with the 'pythonified' name
+    #print "cam from slot directly:", naali.GetCameraEntity()
+    from __main__ import _naali
+    print dir(_naali)
+    _naali.delete()
+    _naali.deleteLater()
 
 if 0:
     import naali
@@ -603,9 +618,8 @@ if 0:
     worldstream.SendObjectAddPacket(start_x, start_y, start_z)
 
 if 0: #getUserAvatar 
-    id = r.getUserAvatarId()
-    ent = r.getEntity(id)
-    print "User's avatar_id:", id
+    ent = naali.getUserAvatar()
+    print "User's avatar_id:", ent.id
     #print "Avatar's mesh_name:", ent.mesh.GetMeshName(0)
     #ent.mesh = "cruncah1.mesh"
     
@@ -614,94 +628,21 @@ if 0:
     print r.getCameraRight()
 
 if 0: #test changing the mesh asset a prim is using
-    ent_id = 1659586053 #penkki, arkku was: 2461025163
+    ent_id = 2088826433
     #print arkku_id, type(arkku_id)
-    ent = r.getEntity(ent_id)
+    ent = naali.getEntity(ent_id)
     print "Test entity:", ent
     print ent.mesh
-    ent.mesh = 1 #should raise an exception
-    ruukku = "681b1680-fab5-4203-83a7-c567571c6acf"
-    penkki = "04d335b6-8f0c-480e-a941-33517bf438d8"
-    ent.mesh = penkki #"35da6174-8743-4026-a83e-18b23984120d"
+    #ent.mesh = 1 #should raise an exception
+    #ruukku = "681b1680-fab5-4203-83a7-c567571c6acf"
+    #penkki = "04d335b6-8f0c-480e-a941-33517bf438d8"
+    jack = "6b9cf239-d1ec-4290-8bc7-f5ac51288dea" #on w.r.o:9000
+    ent.mesh.SetMesh(jack) #"35da6174-8743-4026-a83e-18b23984120d"
     print "new mesh set:", ent.mesh
     
     print "sending prim data update to server"
     r.sendRexPrimData(ent.id) #arkku
     print "..done", ent.mesh
-    
-if 0: #old deprecated wrapper - testing vector3/quat wrapping 
-    from PythonQt import *
-    from objectedit.conversions import *
-    
-    print "Creating Vectors:"
-    vec = Vector3df(0, 0, 0)
-    print "vec1 (%.1f, %.1f, %.1f)" % (vec.x(), vec.y(), vec.z())
-    
-    vec2 = Vector3df(1, 1, 1)
-    print "vec2 (%.1f, %.1f, %.1f)" % (vec2.x(), vec2.y(), vec2.z())
-    
-    print "distance between the two", vec.getDistanceFrom(vec2)
-    
-    vec.setx(1.0)
-    vec.sety(1.0)
-    vec.setz(1.0)
-    
-    print "changed vec1 (%.1f, %.1f, %.1f)" % (vec.x(), vec.y(), vec.z())
-    print "new distance between the two", vec.getDistanceFrom(vec2)
-    
-    vec.setx(4.0)
-    vec.sety(4.0)
-    vec.setz(4.0)
-    print "changed vec1 (%.1f, %.1f, %.1f)" % (vec.x(), vec.y(), vec.z())
-    print "another new distance between the two", vec.getDistanceFrom(vec2)
-    
-    print "Creating quats:"
-    quat = Quaternion(0, 0, 0, 0)
-    print "quat (%.4f, %.4f, %.4f, %.4f)" % (quat.x(), quat.y(), quat.z(), quat.w())
-    
-    quat.setx(2.0)
-    quat.sety(2.0)
-    quat.setz(3.0)
-    quat.setw(2.0)
-    print "changed quat (%.4f, %.4f, %.4f, %.4f)" % (quat.x(), quat.y(), quat.z(), quat.w())
-    
-    print "Quat to Euler:"
-    x = 0.707
-    y = 0
-    z = 0
-    w = 0.707
-    quat = Quaternion(x, y, z, w)
-    euls = Vector3df(0,0,0)
-    quat.toEuler(euls)
-    euls2 = quat_to_euler((x, y, z, w))
-    print "eulers (%.1f, %.1f, %.1f)" % (math.degrees(euls.x()), math.degrees(euls.y()), math.degrees(euls.z()))
-    print "eulers2", euls2
-    
-    print "Euler to Quat:"
-    x = math.radians(0)
-    y = math.radians(90)
-    z = math.radians(0)
-    
-    euler = Vector3df(x, y, z)
-    #~ quat_from_euler = Quaternion(euler)
-    #~ print "quat from eulers (%.4f, %.4f, %.4f, %.4f)" % (quat_from_euler.x(), quat_from_euler.y(), quat_from_euler.z(), quat_from_euler.w())
-
-    quat_from_euler = Quaternion(x, y, z)
-    print "quat from eulers (%.4f, %.4f, %.4f, %.4f)" % (quat_from_euler.x(), quat_from_euler.y(), quat_from_euler.z(), quat_from_euler.w())
-        
-    from editgui.conversions import *
-    euler = euler_to_quat((0, 90, 0))
-    print "quat from eulers", euler
-    
-if 0:
-    avatar = r.getEntity(r.getUserAvatarId())
-    avatar.text = "Swoot"
-    import PythonQt as qt
-    ent = r.getEntity(1392229722)
-    print ent.name, ent.pos, ent.scale, ent.orientation, ent.prim
-    pos = qt.Vector3df(ent.pos[0], ent.pos[1], ent.pos[2])
-    print pos, pos.x(), pos.y(), pos.z()
-    ent.pos = pos
     
 if 0: #property editor tests
     #print r.c
@@ -723,39 +664,45 @@ if 0:
     #print  dir(r.c.widget.move_button)
     r.c.widget.move_button.setChecked(False)
     
-if 0:
-    from editgui.vector3 import Vector3 as V3
-    fov = r.getCameraFOV()
-    rightvec = V3(r.getCameraRight())
-    campos = V3(r.getCameraPosition())
-    ent = r.getEntity(r.getUserAvatarId())
-    entpos = V3(ent.pos)
-    width, height = r.getScreenSize()
-    
-    x = 613
-    y = 345
-    normalized_width = 1/width
-    normalized_height = 1/height
-    
-    #print x * normalized_width
-    
-    length = (campos-entpos).length
-    worldwidth = (math.tan(fov/2)*length) * 2
+if 0: #camera FOV
+    #fov = r.getCameraFOV()
+    #rightvec = V3(r.getCameraRight())
+    fov = naali.getCamera().camera.GetVerticalFov()
+    print "FOV:", fov
+    campos = naali.getCamera().placeable.Position
+    #ent = naali.getUserAvatar()
+    #entpos = V3(ent.pos)
+    #width, height = r.getScreenSize()
+    import naali
+    rend = naali.renderer
+    #print r.getScreenSize()
+    print rend.GetWindowWidth(), rend.GetWindowHeight()
 
-    #print campos, entpos, length, fov, width, height
+    if 0: #didn't port the above vec getters now to current
+        x = 613
+        y = 345
+        normalized_width = 1/width
+        normalized_height = 1/height
     
-    ent1 = r.createEntity("cruncah.mesh")
-    ent1.pos = pos.x, pos.y+worldwidth/2, pos.z
-    ent2 = r.createEntity("cruncah.mesh")
-    ent2.pos = pos.x, pos.y+worldwidth/2, pos.z
-    #~ newpos = 
-    #~ print newpos
+        #print x * normalized_width
+    
+        length = (campos-entpos).length
+        worldwidth = (math.tan(fov/2)*length) * 2
+
+        #print campos, entpos, length, fov, width, height
+    
+        ent1 = r.createEntity("cruncah.mesh")
+        ent1.pos = pos.x, pos.y+worldwidth/2, pos.z
+        ent2 = r.createEntity("cruncah.mesh")
+        ent2.pos = pos.x, pos.y+worldwidth/2, pos.z
+        #~ newpos = 
+        #~ print newpos
     
     
-if 0: #bounding box tests
+if 0: #bounding box tests. not ported to naali.Entity now, is not used anymore by obedit either?
     #robo 1749872183
     #ogrehead 1749872798
-    ent = r.getEntity(1749871222)#r.getUserAvatarId())
+    ent = r.getEntity(1749871222)#naali.getUserAvatar()
     from editgui.vector3 import Vector3 as V3
     #~ print ent.boundingbox
     bb = list(ent.boundingbox)
@@ -790,7 +737,7 @@ if 0: #login - for running tests automatically
     user, pwd, server = "d d", "d", "world.evocativi.com:8002"
     r.startLoginOpensim(user, pwd, server)
     
-if 0: #getserver test
+if 0: #getserverconnection test
     #print dir(r)
     #print "YO", r.getTrashFolderId()
     #r.deleteObject(2351241440)
@@ -810,6 +757,32 @@ if 0: #getrexlogic test
     #entid = entity_id_t(2)
     #l.SendRexPrimData(entid)
     
+if 0: #rexlogic as service with qt mechanism
+    #from __main__ import _naali
+    #l = _naali.GetWorldLogic()
+    #print l, dir(l)
+    import naali
+    qent = naali.worldlogic.GetUserAvatarEntityRaw()
+    if qent is not None:
+        print qent.Id
+        pyent = r.getEntity(qent.Id)
+        print pyent, pyent.id
+        
+if 0: #using entity directly to get components, without PyEntity
+    import naali
+    qent = naali.worldlogic.GetUserAvatarEntityRaw()
+    if qent is not None:
+        print qent.Id
+        print dir(qent)
+        p = qent.GetComponentRaw("EC_OgrePlaceable")
+        print p, p.Position
+        
+        #ent = naali.Entity(qent)
+        #print ent, ent.placeable, ent.placeable.Position
+        
+        ent = naali.getEntity(qent.Id)
+        print ent, ent.placeable, ent.placeable.Position
+    
 if 0: #undo tests
     e = r.getEntity(1752805599)
     print e.prim, e.uuid
@@ -819,19 +792,19 @@ if 0: #undo tests
     worldstream.SendObjectUndoPacket(e.uuid)
     
 if 0: #undo tests and ent.uuid
-    e = r.getEntity(1752805599)
-    print e, e.uuid, e.editable  
+    e = naali.getEntity(1752805599)
+    print e, e.prim.FullId
     worldstream = r.getServerConnection()
     #print worldstream, dir(worldstream), worldstream.SendObjectDeRezPacket
     worldstream.SendObjectSelectPacket(ent.id)
     
 if 0: #updateflag checks, duplicate tests
-    e = r.getEntity(2054915991)
-    print e, e.uuid, e.editable, e.updateflags
+    e = naali.getEntity(2054915991)
+    print e, e.prim.FullId, e.prim.UpdateFlags
     ws = r.getServerConnection()
     #print dir(ws)
-    x, y, z = e.pos
-    ws.SendObjectDuplicatePacket(e.id, e.updateflags, 1, 1, 1)
+    #x, y, z = e.placeable.Position.x(), ... #didn't port this unused line to new version
+    ws.SendObjectDuplicatePacket(e.id, e.prim.UpdateFlags, 1, 1, 1)
     
 if 0: #proxywidget signal connecting
     #~ from PythonQt.QtUiTools import QUiLoader
@@ -967,7 +940,7 @@ if 0:
     
 if 0: #qprim
     #qprim = r.getQPrim(1680221423)
-    e = r.getEntity(1680221423)
+    e = naali.getEntity(1680221423)
     qprim = e.prim
     mats = qprim.Materials
     print mats
@@ -988,7 +961,7 @@ if 0: #qprim
 if 0: #qplaceable
     id = 2138143966
     #qplace = r.getQPlaceable(id)
-    e = e.getEntity(id)
+    e = naali.getEntity(id)
     qplace = e.placeable
     print qplace, qplace.Position
 
@@ -1265,10 +1238,10 @@ if 0:
     worldstream.SendObjectLinkPacket(ids)
     #~ worldstream.SendObjectDelinkPacket(ids)
 
-if 0: #position has a qvec3d prop of placeable component
+if 0: #position as a qvec3d prop of placeable component
     import PythonQt.QtGui
     id = 2703563778
-    ent = r.getEntity(id)
+    ent = naali.getEntity(id)
     changevec = PythonQt.QtGui.QVector3D(0, 0, 1)
     print ent.placeable.Position, ent.placeable.Orientation, changevec
     ent.placeable.Position = ent.placeable.Position + changevec
@@ -1282,15 +1255,9 @@ if 0:
     b = PythonQt.QtGui.QVector3D(5, 5, 0)
     print a == b, a.toString(), b.toString()
     
-if 0:
-    ent = r.getEntity(1876645602)
-    mesh = ent.mesh
-    if mesh is not None:
-        print "swoot"
 
 if 0:
-    avid = r.getUserAvatarId()
-    e = r.getEntity(avid)
+    e = naali.getUserAvatar()
     try:
         e.sound
     except AttributeError:
@@ -1307,8 +1274,7 @@ if 0:
         print "sound removed successfully"
 
 if 0: #create a new component, hilight
-    avid = r.getUserAvatarId()
-    e = r.getEntity(avid)
+    e = naali.getUserAvatar()
     try:
         e.highlight
     except AttributeError:
@@ -1328,9 +1294,7 @@ if 0: #create a new component, hilight
         print "not"
         
 if 0: #create a new component, touchable
-    entid = r.getUserAvatarId()
-    #entid = 2979274737
-    e = r.getEntity(entid)
+    e = naali.getUserAvatar()
     try:
         t = e.touchable
     except AttributeError:
@@ -1358,39 +1322,10 @@ if 0: #create a new component, touchable
      #   print "not"
 
 
-if 0: #test adding a dynamiccomponent
-    #entid = r.getUserAvatarId()
-    entid = 2394749782
-    ent = r.getEntity(entid)
-
-    if 0:
-        try:
-            ent.dynamic
-            print "found dynamic comp"
-        except AttributeError:
-            ent.createComponent("EC_DynamicComponent")
-            print "created new dynamic comp", ent.id
-        print ent.dynamic
-
-    d = ent.dynamic
-    #print dir(d)
-    #d.AddAttribute()
-    print d, d.GetAttribute()
-
-    if 0: #door
-        d.SetAttribute('{"locked": false, "opened": true}')
-       
-    if 0: #javascript source url .. and door data
-        d.SetAttribute("""{
-        "animpos": 0.0,
-        "js_src": "http://an.org/realxtend/door.js", 
-        "locked": false, 
-        "opened": true
-        }""")
-
 if 0: #the new DynamicComponent with individual attrs etc
-    doorid = 1948506985
-    e = r.getEntity(doorid)
+    doorid = 2088825623
+
+    e = naali.getEntity(doorid)
     dc = e.getDynamicComponent("door")
     a = dc.GetAttribute("opened")
     print a, type(a)
@@ -1401,8 +1336,7 @@ if 0: #the new DynamicComponent with individual attrs etc
     print jssrc
 
 if 0: #animation control
-    avid = r.getUserAvatarId()
-    ent = r.getEntity(avid)
+    ent = naali.getUserAvatar()
     try:
         ent.animationcontroller
     except AttributeError:
@@ -1440,6 +1374,13 @@ if 0: #local object creation, testing if local previews of .scenes would work
     e.placeable.Position = Vec3(128, 128, 60)
     e.placeable.Scale = Vec3(5, 5, 5)
     e.placeable.Orientation = Quat(0, 0, 0, 1)
+
+if 0: #createentity directly from the c++ scenemanager where it's a qt slot now
+    #s = naali.getDefaultScene()
+    #id = s.NextFreeId()
+    #ent = s.CreateEntityRaw(id)
+    ent = naali.createEntity()
+    print "new entity created:", ent, ent.Id
 
 if 0: #running localscene dotscene loader
     import localscene.loader
@@ -1495,3 +1436,68 @@ if 0: #webview as 3dcanvas
     #r.applyUICanvasToSubmeshes(avid, [0], webview, refreshrate)
 
     print webview
+
+if 0: #old PyEntity - doesn't crash when is removed
+    try:
+        newent = r.newent
+    except:
+        newent = r.newent = r.createEntity("axes.mesh", 1234567)
+        print "Created newent:", newent
+    else:
+        print "Found newent", newent
+
+    if 0:
+        r.removeEntity(newent.id)
+        print "Deleted newent"
+
+    print newent.id
+    print newent.placeable
+
+if 0:
+    del r.newent
+
+if 0: #using Scene::Entity directly. does it crash when i keep a ref and it's removed? no!
+    try:
+        newent = r.newent
+    except:
+        newent = r.newent = naali.createEntity()
+        print "Created newent:", newent
+    else:
+        print "Found newent", newent
+
+    if 0:
+        r.removeEntity(newent.Id) #uh i'm an idiot, forgot to expose RemoveEntity in SM
+        print "Deleted newent"
+
+    print newent.Id
+    print newent.GetComponentRaw("EC_OgrePlaceable")
+
+if 0: #Scene::Entity CreateEntity with components .. to reimplement createMeshEntity
+    #XXX wasn't possible yet. lead into research about adding QPointer support to PythonQt internals etc
+    ent = naali.createEntity(["EC_OgrePlaceable", "EC_OgreMesh"])
+
+    ent.mesh.SetPlaceable(ent.placeable) #wants a boost shared_ptr, which we don't have :/
+    ent.mesh.SetMesh("axes.mesh")
+
+if 0: #adding components as dynamic properties of Scene::Entity
+    ent = naali.getUserAvatar()
+    qent = ent.qent
+    print qent.dynamicPropertyNames()
+
+    if 0:
+        qent.setProperty("myplace", ent.placeable)
+        print qent.myplace
+
+    #print dir(qent), type(qent.EC_OgrePlaceable), qent.EC_OgrePlaceable
+    print dir(ent.placeable)
+    print "Name:", ent.placeable.Name
+    print "objectName:", ent.placeable.objectName
+
+    print "DynProp check:", 'myplace' in qent.dynamicPropertyNames()
+    
+if 0: #using the dynamic property component getters implemented in core/componentpropertyadder now
+    ent = naali.getUserAvatar()
+    qent = ent.qent
+    print dir(qent)
+    print qent.dynamicPropertyNames()
+    print qent.placeable

@@ -40,8 +40,8 @@ EC_ChatBubble::EC_ChatBubble(Foundation::ModuleInterface *module) :
     billboard_(0),
     pop_timer_(new QTimer(this)),
     bubble_max_rect_(0,0,1000,500),
-    current_scale_(1.0),
-    default_z_pos_(1.9)
+    current_scale_(1.0f),
+    default_z_pos_(1.9f)
 {
     // Get renderer service
     renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>();
@@ -243,7 +243,8 @@ void EC_ChatBubble::Refresh()
     // Update texture buffer
     Ogre::Box update_box(0,0, buffer.width(), buffer.height());
     Ogre::PixelBox pixel_box(update_box, Ogre::PF_A8R8G8B8, (void*)buffer.bits());
-    texture->getBuffer()->blitFromMemory(pixel_box, update_box);
+    if (!texture->getBuffer().isNull())
+        texture->getBuffer()->blitFromMemory(pixel_box, update_box);
 }
 
 void EC_ChatBubble::Update()
@@ -257,7 +258,7 @@ void EC_ChatBubble::Update()
         return;
 
     Scene::Entity *entity = GetParentEntity();
-    assert(entity);
+//    assert(entity);
     if (!entity)
         return;
 

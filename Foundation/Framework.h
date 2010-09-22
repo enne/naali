@@ -48,13 +48,16 @@ namespace Foundation
 
         \ingroup Foundation_group
     */
-    class Framework
+    class Framework : public QObject
     {
+        Q_OBJECT
+
     public:
         typedef std::map<std::string, Scene::ScenePtr> SceneMap;
 
         //! constructor. Initializes the framework.
         Framework(int argc, char** argv);
+
         //! destructor
         ~Framework();
 
@@ -177,10 +180,11 @@ namespace Foundation
         //! Returns the scene map for self reflection / introspection.
         const SceneMap &GetSceneMap() const;
 
+#ifdef PROFILING
         //! Returns the default profiler used by all normal profiling blocks. For profiling code, use PROFILE-macro.
         //! Profiler &GetProfiler() { return *ProfilerSection::GetProfiler(); }
         Profiler &GetProfiler();
-
+#endif
         //! Add a new log listener for poco log
         void AddLogChannel(Poco::Channel *channel);
 
@@ -256,13 +260,16 @@ namespace Foundation
             return GetServiceManager()->GetService<T>().lock().get();
         }
 
+    signals:
+        /** Emitted after one frame is processed.
+         *  @param frametime Elapsed time in seconds since the last frame.
+         */
+        void FrameProcessed(double frametime);
+
     private:
         //! Registers framework specific console commands
         //! Should be called after modules are loaded and initialized
         void RegisterConsoleCommands();
-
-        //! default event subscriber tree XML file path
-        static const char *DEFAULT_EVENT_SUBSCRIBER_TREE_PATH;
 
         //! Create logging system
         void CreateLoggingSystem();
@@ -309,9 +316,10 @@ namespace Foundation
         //! Bridges QtApplication and Framework bridge object.
         std::auto_ptr <FrameworkQtApplication> engine_;
 
+#ifdef PROFILING
         //! profiler
         Profiler profiler_;
-
+#endif
         //! program options
         boost::program_options::variables_map cm_options_;
 

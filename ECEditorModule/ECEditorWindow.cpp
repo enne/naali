@@ -108,11 +108,11 @@ namespace ECEditor
 
     void ECEditorWindow::AddEntity(entity_id_t entity_id)
     {
-        if ((isVisible()) && (entity_list_))
+        if (entity_list_)
         {
             QString entity_id_str;
             entity_id_str.setNum((int)entity_id);
-            
+            entity_list_->clearSelection();
             entity_list_->setCurrentRow(AddUniqueListItem(entity_list_, entity_id_str));
         }
     }
@@ -268,7 +268,8 @@ namespace ECEditor
                 ECEditorModule::LogWarning("ECEditorWindow cannot create a new copy of entity, cause scene manager couldn't find entity. (id " + id.toStdString() + ").");
                 return;
             }
-            Scene::EntityPtr entity = framework_->GetDefaultWorldScene()->CreateEntity(framework_->GetDefaultWorldScene()->GetNextFreeId());
+            Scene::ScenePtr scene = framework_->GetDefaultWorldScene();
+            Scene::EntityPtr entity = scene->CreateEntity(framework_->GetDefaultWorldScene()->GetNextFreeId());
             assert(entity.get());
             if(!entity.get())
                 return;
@@ -287,10 +288,10 @@ namespace ECEditor
                 if(components[i]->IsSerializable())
                 {
                     Foundation::ComponentInterfacePtr component = entity->GetOrCreateComponent(components[i]->TypeName(), components[i]->Name(), components[i]->GetChange());
-                    Foundation::AttributeVector attributes = components[i]->GetAttributes();
+                    AttributeVector attributes = components[i]->GetAttributes();
                     for(uint j = 0; j < attributes.size(); j++)
                     {
-                        Foundation::AttributeInterface *attribute = component->GetAttribute(attributes[j]->GetNameString());
+                        AttributeInterface *attribute = component->GetAttribute(attributes[j]->GetNameString());
                         if(attribute)
                             attribute->FromString(attributes[j]->ToString(), AttributeChange::Local);
                     }
@@ -303,6 +304,7 @@ namespace ECEditor
                 entityPlacer->setObjectName("EntityPlacer");
             }
             AddEntity(entity->GetId());
+            scene->EmitEntityCreated(entity);
         }
     }
 
@@ -487,7 +489,7 @@ namespace ECEditor
         if (e->type() == QEvent::LanguageChange)
         {
             QString title = QApplication::translate("ECEditor", "Entity-component Editor");
-            graphicsProxyWidget()->setWindowTitle(title);
+            setWindowTitle(title);
         }
         else
            QWidget::changeEvent(e);
@@ -537,6 +539,7 @@ namespace ECEditor
         if(browserWidget)
         {
             browser_ = new ECBrowser(framework_, browserWidget);
+            browser_->setMinimumWidth(100);
             QVBoxLayout *property_layout = dynamic_cast<QVBoxLayout *>(browserWidget->layout());
             if (property_layout)
                 property_layout->addWidget(browser_);

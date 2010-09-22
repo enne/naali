@@ -190,7 +190,7 @@ namespace ECEditor
                     names << item->parent()->text(0);
 
                 // Try to find the right attribute.
-                Foundation::AttributeInterface *attr = 0;
+                AttributeInterface *attr = 0;
                 for(uint i = 0; i < names.size(); i++)
                 {
                     attr = compWeak.lock()->GetAttribute(names[i].toStdString());
@@ -201,16 +201,16 @@ namespace ECEditor
                     continue;
                 if(attr->TypenameToString() == "string")
                 {
-                    Foundation::Attribute<std::string> *attribute = dynamic_cast<Foundation::Attribute<std::string> *>(attr);
+                    Attribute<QString> *attribute = dynamic_cast<Attribute<QString> *>(attr);
                     if(attribute)
                     {
-                        attribute->Set(asset_id.toStdString(), AttributeChange::Local);
+                        attribute->Set(QString::fromStdString(asset_id.toStdString()), AttributeChange::Local);
                         compWeak.lock()->ComponentChanged(AttributeChange::Local);
                     }
                 }
                 else if(attr->TypenameToString() == "qvariant")
                 {
-                    Foundation::Attribute<QVariant> *attribute = dynamic_cast<Foundation::Attribute<QVariant> *>(attr);
+                    Attribute<QVariant> *attribute = dynamic_cast<Attribute<QVariant> *>(attr);
                     if(attribute)
                     {
                         if(attribute->Get().type() == QVariant::String)
@@ -222,11 +222,11 @@ namespace ECEditor
                 }
                 else if(attr->TypenameToString() == "qvariantarray")
                 {
-                    Foundation::Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Foundation::Attribute<std::vector<QVariant> > *>(attr);
+                    Attribute<std::vector<QVariant> > *attribute = dynamic_cast<Attribute<std::vector<QVariant> > *>(attr);
                     if(attribute)
                     {
-                        //Get changed attribute value index.
-                        //int childIndex = item->parent()->indexOfChild(item);
+                        // We asume that item's name is form of "[0]","[1]" etc. We need to cut down those first and last characters
+                        // to able to get real index number of that item that is cause sorting can make the item order a bit odd.
                         QString indexText = "";
                         QString itemText = item->text(0);
                         for(uint i = 1; i < itemText.size() - 1; i++)
@@ -703,7 +703,7 @@ namespace ECEditor
             newItem = (*changeList.begin());
         else
         {
-            ECEditorModule::LogError("Added a new component editor, but for some reason the editor's widget was not added to browser widget."
+            ECEditorModule::LogError("Failed to add a new component to ECEditor, for some reason the QTreeWidgetItem was not created."
                                      " Make sure that ECComponentEditor was intialized properly.");
             return;
         }
@@ -723,6 +723,9 @@ namespace ECEditor
         ComponentGroup *compGroup = new ComponentGroup(comp, componentEditor, newItem, dynamic);
         if(compGroup)
             componentGroups_.push_back(compGroup);
+
+        if(treeWidget_)
+            treeWidget_->collapseItem(newItem);
     }
 
     void ECBrowser::RemoveComponentFromGroup(Foundation::ComponentInterface *comp)

@@ -33,11 +33,11 @@ class AnimationSync(circuits.BaseComponent):
     GUINAME = "Animation Sync"
 
     def __init__(self, entity, comp, changetype):
-        comp.connect("OnChanged()", self.onChanged)
         self.comp = comp
         circuits.BaseComponent.__init__(self)
         self.inworld_inited = False #a cheap hackish substitute for some initin
         self.initgui()
+        comp.connect("OnChanged()", self.onChanged)
 
     def initgui(self):
         self.widget = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -61,7 +61,7 @@ class AnimationSync(circuits.BaseComponent):
             now = time.time()
             if self.prev_sync + INTERVAL < now:
                 comp.SetAttribute("timepos", guival / 100)
-                comp.OnChanged() #XXX change to OnAttributeChanged when possible
+                comp.ComponentChanged("Local")
                 self.prev_sync = now
 
     def onChanged(self):
