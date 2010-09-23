@@ -912,6 +912,13 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>Ether::Logic::EtherSceneController</name>
+    <message>
+        <source>Naali&apos;s help system is still under development, sorry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>EtherActionWidget</name>
     <message>
         <source>EtherActionWidget</source>
@@ -2089,6 +2096,14 @@ Pituus: %1 sec</translation>
         <source>Local ID</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Components</source>
+        <translation type="unfinished">Komponentit</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ObjectManipulationsWidget</name>
@@ -2140,6 +2155,10 @@ Pituus: %1 sec</translation>
         <source>Z</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>OgreScriptEditor</name>
@@ -2174,7 +2193,7 @@ Pituus: %1 sec</translation>
     <name>PostProcessWidget</name>
     <message>
         <source>Post-processing</source>
-        <translation>Jälkikäsittely</translation>
+        <translation type="obsolete">Jälkikäsittely</translation>
     </message>
 </context>
 <context>
@@ -2448,17 +2467,72 @@ QLabel {
     </message>
 </context>
 <context>
+    <name>StereoUI</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Eye spacing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Convergence length</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pixel shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>( if &lt;= 0, will use default)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(Only  valid for anaglyphic)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Technique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Anaglyph</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Passive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable stereo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable stereo</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TTSChatWidgetClass</name>
     <message>
         <source>Text To Speech Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Own Voice</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2478,20 +2552,40 @@ QLabel {
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Male</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Female</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Others Voice</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save</source>
-        <translation type="unfinished">Tallenna</translation>
+        <translation type="obsolete">Tallenna</translation>
+    </message>
+    <message>
+        <source>Own voice configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Catalan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finnish</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Demo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chat Synthesis Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable others voice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable own voice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2514,6 +2608,21 @@ QLabel {
     </message>
     <message>
         <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Toolbar</name>
+    <message>
+        <source>Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom Lights</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Building</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2576,7 +2685,7 @@ QLabel {
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You are now using realXtend&apos;s virtual world viewer called Naali. The Next step is to get you into a world and for this we provide three types of login methods. 
+        <source>You are now using realXtend&apos;s virtual world viewer called Naali. The next step is to get you into a world and for this we provide three types of login methods. 
 
 OpenSim login requires you to have an existing account for the server you are joining. Just insert your first and last name to the Username field, both password and world address to the respective fields, and click Connect.
 
@@ -2677,6 +2786,39 @@ Third option is to login into realXtend Taiga and ScienceSim servers that are ba
     </message>
     <message>
         <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VoiceControl</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Transmission mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Transmission mode desription...t
+...
+...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Participants</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0 participants</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mute all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show List</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
