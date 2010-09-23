@@ -535,8 +535,8 @@ namespace CoreUi
                 if (!in_world_chat_session_)
                     return;
 
-                connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&)),
-                    SLOT(UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface&)) );
+                connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&,const QString&)),
+                    SLOT(UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface&,const QString&)) );
 			
             }
         }
@@ -686,7 +686,7 @@ namespace CoreUi
         }
     }
 
-    void CommunicationWidget::UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message)
+    void CommunicationWidget::UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message,const QString& uuid)
     {
         QString hour_str = QString::number(message.TimeStamp().time().hour());
         QString minute_str = QString::number(message.TimeStamp().time().minute());

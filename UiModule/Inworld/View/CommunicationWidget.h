@@ -99,7 +99,7 @@ namespace CoreUi
         void UpdateInWorldVoiceIndicator();
         void ShowVoiceControls();
         void HideVoiceControls();
-        void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message);
+        void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message, const QString& uuid);
         void ConnectParticipantVoiceAvticitySignals(Communications::InWorldVoice::ParticipantInterface* p);
 		//H2
 		void ToggleTTSChatWidget();
