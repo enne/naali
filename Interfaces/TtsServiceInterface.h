@@ -44,11 +44,12 @@ namespace TTS
 	    virtual ~TTSServiceInterface() {}
 
 		virtual void text2Speech(QString message, Voice voice) = 0;
-
-		//Ruta de almacenamiento?
         virtual void text2WAV(QString message, QString pathAndFileName, Voice voice) = 0;
 		virtual void text2PHO(QString message, QString pathAndFileName, Voice voice) = 0;
 
+		virtual void file2Speech(QString pathAndFileName, Voice voice) = 0;
+        virtual void file2WAV(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice) = 0;
+		virtual void file2PHO(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice) = 0;
 
 		//virtual const Voice getVoice() = 0;
 		//virtual void setVoice(Voice voice) = 0;

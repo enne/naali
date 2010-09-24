@@ -85,6 +85,67 @@ namespace TTS
 
 	}
 	
+	void TTSService::file2Speech(QString pathAndFileName, Voice voice)
+	{
+		std::stringstream commandoss;
+		std::string commandos,file;
+		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+
+		
+		commandoss << voice;
+
+		commandoss << " -A -F \"";
+
+		file=pathAndFileName.toStdString();
+
+		commandoss << file;
+		commandoss << "\"";
+		commandos = commandoss.str();
+
+		system(commandos.c_str());	
+	}
+	void TTSService::file2WAV(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice)
+	{
+		std::string fileIn;
+		fileIn=pathAndFileNameIn.toStdString();
+
+		std::stringstream commandoss;
+		std::string commandos;
+		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+		commandoss << voice;
+		commandoss << " -W ";
+		commandoss << pathAndFileNameOut.toStdString();
+		commandoss << " -F \"";
+
+		commandoss << fileIn;
+		commandoss << "\"";
+		commandos = commandoss.str();
+
+		system(commandos.c_str());	
+
+	}
+	void TTSService::file2PHO(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice)
+	{
+		std::string fileIn;
+		fileIn=pathAndFileNameIn.toStdString();
+
+		std::stringstream commandoss;
+		std::string commandos;
+		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
+		commandoss << voice;
+		commandoss << " -P ";
+		commandoss << pathAndFileNameOut.toStdString();
+		commandoss << " -F \"";
+
+		commandoss << fileIn;
+		commandoss << "\"";
+		commandos = commandoss.str();
+
+		system(commandos.c_str());	
+	}
+
+
+
 	/*const Voice TTSService::getVoice()
 	{
 		return voice_;

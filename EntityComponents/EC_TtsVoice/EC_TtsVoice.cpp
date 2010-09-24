@@ -61,4 +61,10 @@ void EC_TtsVoice::SpeakMessage()
 		ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
 
 	ttsService_->text2Speech(message_.Get(),voice_.Get().toStdString());
+	/*ttsService_->text2PHO(message_.Get(),"nombrepho", voice_.Get().toStdString());
+	ttsService_->text2WAV(message_.Get(),"nombrewav", voice_.Get().toStdString());*/
+
+	//ttsService_->file2Speech("ejemplo.txt",voice_.Get().toStdString());
+	//ttsService_->file2PHO("ejemplo.txt","nombrephoejemplo",voice_.Get().toStdString());
+	//ttsService_->file2WAV("ejemplo.txt","nombrewavejemplo",voice_.Get().toStdString());
 }

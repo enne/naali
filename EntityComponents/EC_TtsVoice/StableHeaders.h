@@ -14,7 +14,7 @@
 
 #include "Framework.h"
 
-#include <Ogre.h>
+//#include <Ogre.h>
 
 #endif
 
