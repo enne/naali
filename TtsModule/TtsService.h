@@ -1,52 +1,46 @@
 // For conditions of distribution and use, see copyright notice in license.txt
 
-#ifndef incl_TTS_TTSService_h
-#define incl_TTS_TTSService_h
+#ifndef incl_Tts_TtsService_h
+#define incl_Tts_TtsService_h
 
-#include "TTSServiceInterface.h"
 #include "Framework.h"
 
-namespace TTS
+#include "TtsServiceInterface.h"
+
+
+namespace Tts
 {
 	
-	class TTSService : public TTSServiceInterface
+	class TtsService : public TtsServiceInterface
 	{
 		Q_OBJECT
 
     public:
 
 		// Constructor
-		TTSService(Foundation::Framework* framework_);
+		TtsService(Foundation::Framework* framework_);
 
         //! Destructor
-        virtual ~TTSService();
+        virtual ~TtsService();
         
-		// Plays the message using the Festival TTS with the current configuration if the voice is active
-		virtual void text2Speech(QString message, TTS::Voice voice);
-     	virtual void text2WAV(QString message, QString pathAndFileName, TTS::Voice voice);
-		virtual void text2PHO(QString message,QString pathAndFileName, TTS::Voice voice);
+		virtual void Text2Speech(QString message, Tts::Voice voice);
+     	virtual void Text2WAV(QString message, QString pathAndFileName, Tts::Voice voice);
+		virtual void Text2PHO(QString message,QString pathAndFileName, Tts::Voice voice);
 
 
-		virtual void file2Speech(QString pathAndFileName, Voice voice);
-        virtual void file2WAV(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice);
-		virtual void file2PHO(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice);
-
-		// Return the voice
-		//virtual const Voice getVoice();
-		// Set the voice
-		//irtual void setVoice(Voice voice);
+		virtual void File2Speech(QString pathAndFileName, Voice voice);
+        virtual void File2WAV(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice);
+		virtual void File2PHO(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice);
 
 
-		//??
-        void Update(f64 frametime);
+		//virtual const Voice GetVoice();
+		//virtual void SetVoice(Voice voice);
 
     private:
         
         //! Framework we belong to
         Foundation::Framework* framework_;
 
-		// Flag of voices (active or not)
-		//Por defecto desactivado
 		//Voice voice_;
 		
     };

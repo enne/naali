@@ -2532,60 +2532,8 @@ QLabel {
 <context>
     <name>TTSChatWidgetClass</name>
     <message>
-        <source>Text To Speech Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Language: </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Spanish</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>English</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gender:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save</source>
         <translation type="obsolete">Tallenna</translation>
-    </message>
-    <message>
-        <source>Own voice configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Catalan</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Finnish</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Demo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Chat Synthesis Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable others voice</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable own voice</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2692,6 +2640,61 @@ OpenSim login requires you to have an existing account for the server you are jo
 RealXtend method brings you the ability to login to many worlds with the same avatar account. Again the account has to be created before doing a login. Next you need to know that the server supports realXtend login, in other words the OpenSim server must be running with the ModreX server component.
 
 Third option is to login into realXtend Taiga and ScienceSim servers that are based on CableBeach services. Select the WebLogin tab from the left top corner and you should see a wiki page that provides you a list of open Taiga servers from the realXtend project and the community. Naturally you can just type the login URL of the server to the Naali web browser manually. Web-based authentication gives you the possibility to login with your OpenID, Google and Yahoo accounts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TtsChatWidgetClass</name>
+    <message>
+        <source>Text To Speech Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Own voice configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Spanish</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Catalan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finnish</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gender:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Demo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chat Synthesis Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable others voice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable own voice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

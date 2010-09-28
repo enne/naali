@@ -122,7 +122,7 @@ namespace RexLogic
         }
 
 		// Add EC_TtsVoice component to Avatar
-		if(owner_->GetFramework()->GetService<TTS::TTSServiceInterface>())
+		if(owner_->GetFramework()->GetService<Tts::TtsServiceInterface>())
 		{
 			entity->AddComponent(owner_->GetFramework()->GetComponentManager()->CreateComponent(EC_TtsVoice::TypeNameStatic(),"voz"));
 		}

@@ -6,7 +6,6 @@
 #include "NotificationBaseWidget.h"
 #include "UiModuleApi.h"
 
-//H7
 namespace Foundation
 {
     class Framework;
@@ -21,10 +20,6 @@ namespace UiServices
         Q_OBJECT
     public:
         MessageNotification(const QString &message, int hide_in_msec = 5000);
-	//H7
-	/*private:
-		 Foundation::Framework* framework_;*/
-		 
     };
 }
 

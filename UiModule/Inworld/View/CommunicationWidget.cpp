@@ -24,10 +24,9 @@
 
 #include "DebugOperatorNew.h"
 
-//H2
-#include "TTSServiceInterface.h"
+#include "TtsServiceInterface.h"
 #include "UiServiceInterface.h"
-#include "TTSModule.h"
+#include "TtsModule.h"
 
 #include "Entity.h"
 #include "ServiceInterface.h"
@@ -100,7 +99,7 @@ namespace CoreUi
         in_world_chat_session_(0),
         voice_controller_proxy_widget_(0),
         voice_controller_widget_(0),
-		TTS_chat_widget(0)
+		Tts_chat_widget(0)
     {
         Initialise();
         ChangeView(viewmode_);
@@ -144,9 +143,8 @@ namespace CoreUi
         connect(chatLineEdit, SIGNAL( returnPressed() ), SLOT( SendMessageRequested() ));
 
         HideVoiceControls();
-		//H3
-		//Text To Speech Controls
-        HideTTSChatControls();
+
+        HideTtsChatControls();
 
         // Initialize In-World Voice
         if (framework_ &&  framework_->GetServiceManager())
@@ -157,9 +155,8 @@ namespace CoreUi
                 connect(comm, SIGNAL(InWorldVoiceAvailable()), SLOT(InitializeInWorldVoice()) );
                 connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldChat()) );
                 connect(comm, SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
-				
-				//La sesion de chat ha sido activada, puede conectarse el slot de SpeakIncomingMessage
-				connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldTTS()));
+
+				connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldTts()));
             }
         }
 
@@ -185,20 +182,17 @@ namespace CoreUi
             voice_users_info_widget_->hide();
     }
 
-	//H3
-	void CommunicationWidget::ShowTTSChatControls()
+	void CommunicationWidget::ShowTtsChatControls()
     {
 		this->ttsContentWidget->show();
 		this->ttsButton->show();
-		//setStyleSheet("QPushButton#viewModeButton { background-image: url('./data/ui/images/chat/uibutton_HISTORY_normal.png'); }");
     }
-    void CommunicationWidget::HideTTSChatControls()
+
+    void CommunicationWidget::HideTtsChatControls()
     {
 		this->ttsContentWidget->hide();
 		this->ttsButton->hide();
     }
-	
-	//
 
     void CommunicationWidget::ChangeViewPressed()
     {
@@ -230,10 +224,10 @@ namespace CoreUi
                 break;
         }
     }
-	//H2
-	void CommunicationWidget::ToggleTTSChatWidget()
+
+	void CommunicationWidget::ToggleTtsChatWidget()
     {
-		if(TTS_chat_widget)
+		if(Tts_chat_widget)
 		{
 		   if(!tts_proxy_->isVisible())
 			   tts_proxy_->show();
@@ -241,7 +235,7 @@ namespace CoreUi
 			   tts_proxy_->AnimatedHide();
 		}
    }
-	//
+
     void CommunicationWidget::ToggleImWidget()
     {
         if (im_proxy_)
@@ -310,7 +304,6 @@ namespace CoreUi
             normal_view_widget_->ShowChatMessage(self_sent_message, QString("Me: %1").arg(message));
     }
 
-	//H3
     void CommunicationWidget::SendMessageRequested()
     {
         if (chatLineEdit->text().isEmpty())
@@ -319,21 +312,17 @@ namespace CoreUi
         QString message = chatLineEdit->text();
         chatLineEdit->clear();
 
-		
-		//H5 Aquí hay que añadir configuración de voz al mensaje
-		// Se mira si hay sesion de tts, y se coje la configuracion de tu voz
-
 		if (tts_service_)
 		{
 			//QString voice;
-			//TTS::Voice ownVoice_ = tts_config_->getOwnVoice();
+			//Tts::Voice ownVoice_ = tts_config_->getOwnVoice();
 			//QString oVoice_ = ownVoice_.c_str();
 
 			if(!avatar_voice_)
 				GetAvatarVoiceComponent();
 			
 			QString voice;
-			TTS::Voice ownVoice_ = avatar_voice_->GetMyVoice();
+			Tts::Voice ownVoice_ = avatar_voice_->GetMyVoice();
 
 			QTextStream(&voice) << "<voice>" << ownVoice_.c_str() << "</voice>";
 			message =voice+message;
@@ -343,22 +332,20 @@ namespace CoreUi
             in_world_chat_session_->SendTextMessage(message);
     }
 
-	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message,const QString& from_uuid)
+	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message, const QString& from_uuid)
 	{
-	
-		//Envia el mensaje al TTSChatSession si el flag está activo
 		if((message.IsOwnMessage() && tts_config_->isActiveOwnVoice()) || (!message.IsOwnMessage() && tts_config_->isActiveOthersVoice()))
 		{		
 			QString hour_str = QString::number(message.TimeStamp().time().hour());
 			QString minute_str = QString::number(message.TimeStamp().time().minute());
 			QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
 
-			//Aquí se obtiene la voz del mensaje y se actualiza en el servicio
+			//Splits voice and message
 			QString msg;
 			QRegExp rxlen("^<voice>(.*)</voice>(.*)$");
 			int pos = rxlen.indexIn(message.Text());
 			QString Qvoice;
-			TTS::Voice voice;
+			Tts::Voice voice;
 
 			if (pos > -1) 
 			{
@@ -417,7 +404,7 @@ namespace CoreUi
 			}
 	}
 
-	void CommunicationWidget::UpdateAvatarVoice(TTS::Voice voice)
+	void CommunicationWidget::UpdateAvatarVoice(Tts::Voice voice)
 	{
 		if(!avatar_voice_)
 				GetAvatarVoiceComponent();
@@ -605,9 +592,9 @@ namespace CoreUi
             }
         }
     }
-	void CommunicationWidget::InitializeInWorldTTS()
+	void CommunicationWidget::InitializeInWorldTts()
 	{
-		tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
+		tts_service_ = framework_->GetService<Tts::TtsServiceInterface>();
 		if (!tts_service_)
 			return;
 		connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&,const QString&)), SLOT(SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface&,const QString&)) );
@@ -615,24 +602,24 @@ namespace CoreUi
 		// Pick up the EC_TtsVoice of the avatar entity
 		GetAvatarVoiceComponent();
 
-		//Inicialización de la ventana gráfica del TTS
-		ShowTTSChatControls();
+		//Inicialización de la ventana gráfica del Tts
+		ShowTtsChatControls();
 
-		if (TTS_chat_widget)
-			SAFE_DELETE(TTS_chat_widget);
+		if (Tts_chat_widget)
+			SAFE_DELETE(Tts_chat_widget);
 		
-		TTS_chat_widget = new Communications::TTSChat::TTSChatWidget(); 
+		Tts_chat_widget = new Communications::TtsChat::TtsChatWidget(); 
 		
-		tts_config_ = new Communications::TTSChat::TTSChatConfig();
-		TTS_chat_widget->ConfigureInterface(tts_config_);
-		connect(ttsButton, SIGNAL(clicked()), SLOT(ToggleTTSChatWidget()));
-		connect(TTS_chat_widget, SIGNAL(TTSstateChanged()),SLOT(UpdateTTSChatControls()));
-		connect(TTS_chat_widget,SIGNAL(TTSVoiceChanged(TTS::Voice)),SLOT(UpdateAvatarVoice(TTS::Voice)));
+		tts_config_ = new Communications::TtsChat::TtsChatConfig();
+		Tts_chat_widget->ConfigureInterface(tts_config_);
+		connect(ttsButton, SIGNAL(clicked()), SLOT(ToggleTtsChatWidget()));
+		connect(Tts_chat_widget, SIGNAL(TtsstateChanged()),SLOT(UpdateTtsChatControls()));
+		connect(Tts_chat_widget,SIGNAL(TtsVoiceChanged(Tts::Voice)),SLOT(UpdateAvatarVoice(Tts::Voice)));
 
 		Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
 		if (ui)
 		{
-			tts_proxy_ = ui->AddWidgetToScene(TTS_chat_widget);
+			tts_proxy_ = ui->AddWidgetToScene(Tts_chat_widget);
 			tts_proxy_->AnimatedHide();
 		}
 	}
@@ -692,12 +679,11 @@ namespace CoreUi
         QString minute_str = QString::number(message.TimeStamp().time().minute());
         QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
       
-		//H5 Aquí hay que quitar la información de la voz.
 		if(!message.Text().contains("</voice>", Qt::CaseInsensitive))
 			ShowIncomingMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, message.Text());
 		else
 		{
-			//eliminar la voz
+			// Deletes voice info
 			QString	chatText_=message.Text();
 			const QString labelClose = "</voice>";
 			const int labelCloseSize = labelClose.size();
@@ -715,7 +701,7 @@ namespace CoreUi
     }
 	
 
-	void CommunicationWidget::UpdateTTSChatControls()
+	void CommunicationWidget::UpdateTtsChatControls()
     {
 		ownVoiceOn =tts_config_->isActiveOwnVoice();
 		othersVoiceOn =tts_config_->isActiveOthersVoice();;
@@ -727,12 +713,10 @@ namespace CoreUi
 		if (ownVoiceOn && othersVoiceOn)
 		{
 			this->ttsButton->setStyleSheet("QPushButton#ttsButton {border: 0px;background-color: transparent;background-image: url('./data/ui/images/chat/uibutton_TTS_total.png');background-position: top left;background-repeat: no-repeat;} QPushButton#ttsButton::hover {border: 0px;background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');} QPushButton#ttsButton::pressed {border: 0px; background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');}");
-	
 		}
 		if (!(ownVoiceOn || othersVoiceOn))
 		{
 			this->ttsButton->setStyleSheet("QPushButton#ttsButton {border: 0px;background-color: transparent;background-image: url('./data/ui/images/chat/uibutton_TTS_normal.png');background-position: top left;background-repeat: no-repeat;} QPushButton#ttsButton::hover {border: 0px;background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');} QPushButton#ttsButton::pressed {border: 0px; background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');}");
-
 		}
     }
 

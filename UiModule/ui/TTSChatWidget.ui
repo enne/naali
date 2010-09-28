@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>TTSChatWidgetClass</class>
- <widget class="QWidget" name="TTSChatWidgetClass">
+ <class>TtsChatWidgetClass</class>
+ <widget class="QWidget" name="TtsChatWidgetClass">
   <property name="geometry">
    <rect>
     <x>0</x>

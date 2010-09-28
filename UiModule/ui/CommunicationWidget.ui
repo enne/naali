@@ -41,16 +41,13 @@ background-position: top left;
 background-repeat: no-repeat;
 }
 
-/*HEMEN2 TTS*/
-
 QWidget#ttsContentWidget {
 background-color: transparent;
-background-image: url('./data/ui/images/chat/TTS_bground.png');
+background-image: url('./data/ui/images/chat/Tts_bground.png');
 background-position: top left;
 background-repeat: no-repeat;
 }
 
-/*//-----**/
 
 /* Buttons */
 
@@ -90,25 +87,26 @@ border: 0px;
 background-image: url('./data/ui/images/chat/uibutton_IM_click.png');
 }
 
-/*HEMEN2 TTS!!*/
+
 QPushButton#ttsButton {
 border: 0px;
 background-color: transparent;
-background-image: url('./data/ui/images/chat/uibutton_TTS_normal.png');
+background-image: url('./data/ui/images/chat/uibutton_Tts_normal.png');
 background-position: top left;
 background-repeat: no-repeat;
 }
 
 QPushButton#ttsButton::hover {
 border: 0px;
-background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');
+background-image: url('./data/ui/images/chat/uibutton_Tts_hover.png');
 }
 
 QPushButton#ttsButton::pressed {
 border: 0px;
-background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');
+background-image: url('./data/ui/images/chat/uibutton_Tts_click.png');
 }
-/***------!!!*/
+
+
 QLabel#chatLabel { border: 0px; background-color: transparent; background-position: top left; background-repeat: no-repeat; color: rgb(255,255,255); }
 
 /* Misc */
@@ -276,9 +274,9 @@ background-color: rgba(34,34,34,191);
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayoutTTS">
+      <layout class="QVBoxLayout" name="verticalLayoutTts">
        <item>
-        <spacer name="verticalSpacer_TTS">
+        <spacer name="verticalSpacer_Tts">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>

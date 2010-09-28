@@ -1,30 +1,29 @@
 #include "StableHeaders.h"
 
-#include "TTSService.h"
+#include "TtsService.h"
 
 
-namespace TTS
+namespace Tts
 {
-	TTSService::TTSService(Foundation::Framework* framework) : 
+	TtsService::TtsService(Foundation::Framework* framework) : 
         framework_(framework)
 			//voice_(Voices.ES1)
     {
 
     }
 		
-    TTSService::~TTSService()
+    TtsService::~TtsService()
     {
 
     }
     
 
-	void TTSService::text2Speech(QString message, Voice voice)
+	void TtsService::Text2Speech(QString message, Voice voice)
 	{
 
 		std::stringstream commandoss;
 		std::string commandos,msg;
 		commandoss << "start /B festival.exe --libdir \"festival/lib\" "; 
-
 		
 		commandoss << voice;
 
@@ -39,9 +38,8 @@ namespace TTS
 		system(commandos.c_str());	
 	}
 
-	void TTSService::text2WAV(QString message, QString pathAndFileName, Voice voice)
+	void TtsService::Text2WAV(QString message, QString pathAndFileName, Voice voice)
 	{
-
 		std::string msg;
 		msg=message.toStdString();
 
@@ -59,12 +57,10 @@ namespace TTS
 		commandos = commandoss.str();
 
 		system(commandos.c_str());	
-
 	}
 
-	void TTSService::text2PHO(QString message, QString pathAndFileName, Voice voice)
+	void TtsService::Text2PHO(QString message, QString pathAndFileName, Voice voice)
 	{
-
 		std::string msg;
 		msg=message.toStdString();
 
@@ -82,10 +78,9 @@ namespace TTS
 		commandos = commandoss.str();
 
 		system(commandos.c_str());	
-
 	}
 	
-	void TTSService::file2Speech(QString pathAndFileName, Voice voice)
+	void TtsService::File2Speech(QString pathAndFileName, Voice voice)
 	{
 		std::stringstream commandoss;
 		std::string commandos,file;
@@ -104,7 +99,7 @@ namespace TTS
 
 		system(commandos.c_str());	
 	}
-	void TTSService::file2WAV(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice)
+	void TtsService::File2WAV(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice)
 	{
 		std::string fileIn;
 		fileIn=pathAndFileNameIn.toStdString();
@@ -122,9 +117,9 @@ namespace TTS
 		commandos = commandoss.str();
 
 		system(commandos.c_str());	
-
 	}
-	void TTSService::file2PHO(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice)
+
+	void TtsService::File2PHO(QString pathAndFileNameIn, QString pathAndFileNameOut, Voice voice)
 	{
 		std::string fileIn;
 		fileIn=pathAndFileNameIn.toStdString();
@@ -146,21 +141,14 @@ namespace TTS
 
 
 
-	/*const Voice TTSService::getVoice()
+	/*const Voice TtsService::GetVoice()
 	{
 		return voice_;
 	}
 
-	void TTSService::setVoice(Voice voice)
+	void TtsService::SetVoice(Voice voice)
 	{
 		voice_=voice;
 	}*/
-
-
-
-    void TTSService::Update(f64 frametime)
-    {
-    }
-
 
 }

@@ -1,87 +1,70 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
- *  @file   TTSModule.cpp
- *  @brief  Simple OpenSim TTS module. receives the chat message and plays it 
- *			using the Festival TTS wuth the configuration established in the current session.
+ *  @file   TtsModule.cpp
+ *  @brief  TTS Module registers a TTS Service, integrating Festival Speech Synthesis
+ *			System with realXtend.
  */
 
 #include "StableHeaders.h"
-
-#include "TTSModule.h"
-#include "EC_TtsVoice.h"
 
 #include "EventManager.h"
 #include "ModuleManager.h"
 #include "CoreStringUtils.h"
 #include "MemoryLeakCheck.h"
 
-
 #include <QColor>
 
 
-namespace TTS
+#include "TtsModule.h"
+#include "EC_TtsVoice.h"
+
+namespace Tts
 {
+	const std::string TtsModule::module_name_ = std::string("TtsModule");
 
-	const std::string TTSModule::moduleName_ = std::string("TTSModule");
-
-	TTSModule::TTSModule() :
-		ModuleInterface(moduleName_),
-		networkStateEventCategory_(0),
-		networkInEventCategory_(0),
-		frameworkEventCategory_(0)
+	TtsModule::TtsModule() :
+		ModuleInterface(module_name_)
 	{
 
 	}
 
-	TTSModule::~TTSModule()
+	TtsModule::~TtsModule()
 	{
 	}
 
-	void TTSModule::Load()
+	void TtsModule::Load()
 	{
-		//Si hay algún componente, cargar aquí.
 		DECLARE_MODULE_EC(EC_TtsVoice);
+
+		if (QDir("tmp").exists())
+			boost::filesystem::remove_all("tmp");
+
+		QDir().mkdir("tmp");
 	}
 
-	void TTSModule::UnLoad()
+	void TtsModule::UnLoad()
+	{
+		if (QDir("tmp").exists())
+			boost::filesystem::remove_all("tmp");
+	}
+
+	void TtsModule::Initialize()
+	{
+		tts_service_ = TtsServicePtr(new TtsService(framework_));
+		framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_Tts, tts_service_);
+	}
+	void TtsModule::PostInitialize()
 	{
 	}
 
-	void TTSModule::Initialize()
+
+	void TtsModule::Uninitialize()
 	{
-		//Registra el servicio
-		tts_service_ = TTSServicePtr(new TTSService(framework_));
-		framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_TTS, tts_service_);
-
-		// Recoge los eventos del framework
-		//?
-		frameworkEventCategory_ = framework_->GetEventManager()->QueryEventCategory("Framework");
-
-	}
-	void TTSModule::PostInitialize()
-	{
-	}
-
-
-	void TTSModule::Uninitialize()
-	{
-
 		framework_->GetServiceManager()->UnregisterService(tts_service_);
 		tts_service_.reset();
 	}
-
-	void TTSModule::Update(f64 frametime)
-	{
-
-	}
-
-	bool TTSModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, Foundation::EventDataInterface *data)
-	{
-		return false;
-	}
-
-} // end of namespace: TTS
+} // end of namespace: Tts
 
 
 extern "C" void POCO_LIBRARY_API SetProfiler(Foundation::Profiler *profiler);
@@ -91,8 +74,8 @@ void SetProfiler(Foundation::Profiler *profiler)
 }
 
 
-using namespace TTS;
+using namespace Tts;
 
 POCO_BEGIN_MANIFEST(Foundation::ModuleInterface)
-    POCO_EXPORT_CLASS(TTSModule)
+    POCO_EXPORT_CLASS(TtsModule)
 POCO_END_MANIFEST

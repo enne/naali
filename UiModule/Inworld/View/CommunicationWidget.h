@@ -7,12 +7,10 @@
 #include "ui_CommunicationWidget.h"
 #include "InputServiceInterface.h"
 
-//H2
-//Include TTSChat widget
-//Todo: Why is necessary? How to avoid this here?
-#include "TTSChatWidget.h"
+
+#include "TtsChatWidget.h"
 #include "EC_TtsVoice.h"
-//
+
 
 
 class QStackedLayout;
@@ -34,16 +32,13 @@ namespace Communications
         class SessionInterface;
         class TextMessageInterface;
     }
-	
-	//H2
-	//Namespace added
-	namespace TTSChat
+
+	namespace TtsChat
 	{
-		class TTSChatWidget;
-		class TTSChatConfig;
-		
+		class TtsChatWidget;
+		class TtsChatConfig;
 	}
-	//
+
 }
 
 namespace CommUI
@@ -92,6 +87,7 @@ namespace CoreUi
         void ToggleVoice();
 
         void ShowIncomingMessage(bool self_sent_message, QString sender, QString timestamp, QString message);
+		/// Takes the message from chat line and adds voice information if TTS available
         void SendMessageRequested();
         void InitializeInWorldVoice();
         void InitializeInWorldChat();
@@ -99,19 +95,28 @@ namespace CoreUi
         void UpdateInWorldVoiceIndicator();
         void ShowVoiceControls();
         void HideVoiceControls();
+		/// Updates chat view removing voice info first
         void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message, const QString& uuid);
         void ConnectParticipantVoiceAvticitySignals(Communications::InWorldVoice::ParticipantInterface* p);
-		//H2
-		void ToggleTTSChatWidget();
-		//Muestran u ocultan el boton TTS
-		void ShowTTSChatControls();
-        void HideTTSChatControls();
-		void UpdateTTSChatControls();
-		void InitializeInWorldTTS();
-		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message,const QString& from_uuid);
+
+		/// Shows or hides TTSCHatWidget configuration window
+		void ToggleTtsChatWidget();
+		/// Shows TTS Button in the communication widget
+		void ShowTtsChatControls();
+		/// Hides TTS Button in the communication widget
+        void HideTtsChatControls();
+	    /// Update TTS Button color to yellow or green changing style sheet
+		void UpdateTtsChatControls();
+		/// Initializes all TTS system showing buttons, creating widgets and with default configuration
+		void InitializeInWorldTts();
+		/** Message parser (voice+msg) calls TTS Service
+		\param message Message directly from network with time stamp and so on.
+		\param from_uuid
+		\todo Redefine with components. */
+		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message, const QString& from_uuid);
 		void GetAvatarVoiceComponent();
-		void UpdateAvatarVoice(TTS::Voice voice);
-		//
+		void UpdateAvatarVoice(Tts::Voice voice);
+	
 
 
     private:
@@ -141,12 +146,10 @@ namespace CoreUi
 
         InputContextPtr input_context_;
 
-		
-		//H2
-		//TTSChat Widget
-		Communications::TTSChat::TTSChatWidget* TTS_chat_widget;
-		TTS::TTSServiceInterface* tts_service_;
-		Communications::TTSChat::TTSChatConfig* tts_config_;
+
+		Communications::TtsChat::TtsChatWidget* Tts_chat_widget;
+		Tts::TtsServiceInterface* tts_service_;
+		Communications::TtsChat::TtsChatConfig* tts_config_;
 		bool ownVoiceOn,othersVoiceOn;
 		boost::shared_ptr<EC_TtsVoice> avatar_voice_;
 

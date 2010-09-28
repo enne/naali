@@ -314,15 +314,11 @@ void InWorldChatModule::HandleChatFromSimulatorMessage(ProtocolUtilities::NetInM
     std::string message = msg.ReadString();
     if (message.size() < 1)
         return;
-
 	
-	//H5 eliminar la voz del logging y burbuja
-	// Se da por hecho que la info va ANTES del mensaje. 
-
-
+	/// Removes voice info if any
 	const QString labelClose = "</voice>";
 	const int labelCloseSize = labelClose.size();
-	int closePosition = message.find(">",7); //busca > a partir de la 7 posicion (salta <voice>)
+	int closePosition = message.find(">",7); //finds > (last from <voice> tag)
 
 	message.erase(0, closePosition+1);
 

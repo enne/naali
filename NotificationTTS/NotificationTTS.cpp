@@ -1,32 +1,14 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
- *  @file   NotificationTTS.cpp
- *  @brief  Uses TTSModule for the notification messages
+ *  @file   NotificationTts.cpp
+ *  @brief  Synthetizes notifications using TTS Service
  *			
  */
 
 #include "StableHeaders.h"
 
-#include "NotificationTTS.h"
-//
-//#include "ConsoleCommandServiceInterface.h"
-//#include "WorldStream.h"
-//#include "WorldLogicInterface.h"
-//#include "Entity.h"
-//#include "SceneManager.h"
-//#include "EventManager.h"
-//#include "ModuleManager.h"
-//#include "RealXtend/RexProtocolMsgIDs.h"
-//#include "NetworkMessages/NetInMessage.h"
-//#include "CoreStringUtils.h"
-//#include "GenericMessageUtils.h"
-//#include "ConfigurationManager.h"
-//#include "EC_OpenSimPresence.h"
-//#include "EC_OpenSimPrim.h"
-//#include "EC_OgrePlaceable.h"
-//#include "MemoryLeakCheck.h"
-//#include "SceneEvents.h"
+#include "NotificationTts.h"
 
 #include "TtsServiceInterface.h"
 #include "UiServiceInterface.h" 
@@ -35,31 +17,30 @@
 #include <QColor>
 
 
-namespace NotifiTTS
+namespace NotifiTts
 {
 
-	const std::string NotificationTTS::moduleName_ = std::string("NotificationTTS");
+	const std::string NotificationTts::module_name_ = std::string("NotificationTts");
 
-	NotificationTTS::NotificationTTS() :
-		ModuleInterface(moduleName_)
+	NotificationTts::NotificationTts() :
+		ModuleInterface(module_name_)
 	{
 
 	}
 
-	NotificationTTS::~NotificationTTS()
+	NotificationTts::~NotificationTts()
 	{
 	}
 
-	void NotificationTTS::Load()
-	{
-		//Si hay algún componente, cargar aquí.
-	}
-
-	void NotificationTTS::UnLoad()
+	void NotificationTts::Load()
 	{
 	}
 
-	void NotificationTTS::Initialize()
+	void NotificationTts::UnLoad()
+	{
+	}
+
+	void NotificationTts::Initialize()
 	{
 		if (framework_ &&  framework_->GetServiceManager())
         {
@@ -69,26 +50,23 @@ namespace NotifiTTS
 		}
 
 	}
-	void NotificationTTS::PostInitialize()
+	void NotificationTts::PostInitialize()
 	{
 	}
 
-
-	void NotificationTTS::Uninitialize()
+	void NotificationTts::Uninitialize()
 	{
-
 	}
 	
-	void NotificationTTS::Notification2Speech(const QString &message)
+	void NotificationTts::Notification2Speech(const QString &message)
 	{
-		tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
+		tts_service_ = framework_->GetService<Tts::TtsServiceInterface>();
 		if (!tts_service_)
 			return;
-		tts_service_->text2Speech(message, TTS::Voices.EN4);
+		tts_service_->Text2Speech(message, Tts::Voices.EN4);
 	}
 	
-} // end of namespace: Namespace
-
+} // end of namespace
 
 extern "C" void POCO_LIBRARY_API SetProfiler(Foundation::Profiler *profiler);
 void SetProfiler(Foundation::Profiler *profiler)
@@ -97,8 +75,8 @@ void SetProfiler(Foundation::Profiler *profiler)
 }
 
 
-using namespace NotifiTTS;
+using namespace NotifiTts;
 
 POCO_BEGIN_MANIFEST(Foundation::ModuleInterface)
-    POCO_EXPORT_CLASS(NotificationTTS)
+    POCO_EXPORT_CLASS(NotificationTts)
 POCO_END_MANIFEST

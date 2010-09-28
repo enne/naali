@@ -1,10 +1,10 @@
 /********************************************************************
-/*********                  TTSChatWidget                ************
+/*********                  TtsChatWidget                ************
 /*																    *
-/*  This QWidget is used to configure InWorldChat TTSChat translation   *
+/*  This QWidget is used to configure InWorldChat TtsChat translation   *
 /*																    *
-/*		It's necessary to use Communications:TTSChat namespace.			*										
-/*		The class is TTSChatWidget (QWidget)							*
+/*		It's necessary to use Communications:TtsChat namespace.			*										
+/*		The class is TtsChatWidget (QWidget)							*
 /********************************************************************/
 
 
@@ -12,22 +12,22 @@
 #define TTSCHATWIDGET_H
 
 #include <QtGui/QMainWindow>
-#include "ui_TTSChatWidget.h"
-#include "TTSServiceInterface.h"
+#include "ui_TtsChatWidget.h"
+#include "TtsServiceInterface.h"
 
 #include <phonon>
 
 
 namespace Communications //added
 {
-	namespace TTSChat //added
+	namespace TtsChat //added
 	{
-		class TTSChatConfig
+		class TtsChatConfig
 		{
 		public:
-			TTSChatConfig();
-			virtual const TTS::Voice getOwnVoice();
-			virtual void setOwnVoice(TTS::Voice voice);
+			TtsChatConfig();
+			virtual const Tts::Voice getOwnVoice();
+			virtual void setOwnVoice(Tts::Voice voice);
 			// Set the voice of the others
 			virtual void setActiveOwnVoice(bool active);
 			// return true if the own voce is active
@@ -38,42 +38,42 @@ namespace Communications //added
 			virtual bool isActiveOthersVoice();	
 
 		private:
-			TTS::Voice OwnVoice_;
+			Tts::Voice OwnVoice_;
 			bool activeOwnVoice_,activeOthersVoice_;
 		};
 
-		class TTSChatWidget : public QWidget
+		class TtsChatWidget : public QWidget
 		{
 			Q_OBJECT //macro
 
 		public:
-			TTSChatWidget(QWidget *parent = 0, Qt::WFlags flags = 0); //constructor
-			~TTSChatWidget(); //destructor
+			TtsChatWidget(QWidget *parent = 0, Qt::WFlags flags = 0); //constructor
+			~TtsChatWidget(); //destructor
 			
 
 
 		public slots:
-				//Initializes enable values (ownTTSVoiceStatus,othersTTSVoiceStatus) and voices (ownTTSVoice,othersTTSVoice)
+				//Initializes enable values (ownTtsVoiceStatus,othersTtsVoiceStatus) and voices (ownTtsVoice,othersTtsVoice)
 				//Configures and connects SIGNALS with SLOTS
-				void ConfigureInterface(Communications::TTSChat::TTSChatConfig* tts_config);
+				void ConfigureInterface(Communications::TtsChat::TtsChatConfig* tts_config);
 				void reloadItems();
 		
 		private:
 
-			Ui::TTSChatWidgetClass ui;
+			Ui::TtsChatWidgetClass ui;
 
-			//Variables to drag and move TTSChatWidget QWindow
+			//Variables to drag and move TtsChatWidget QWindow
 			QPoint mouse_last_pos_;
 			bool mouse_dragging_;
-			Communications::TTSChat::TTSChatConfig* tts_config_;
+			Communications::TtsChat::TtsChatConfig* tts_config_;
 			Phonon::MediaObject *media_object_;
 			Phonon::AudioOutput *audio_output_;
 
 			QString fileName;
 
 		 signals:
-				void TTSstateChanged();
-				void TTSVoiceChanged(TTS::Voice voice);
+				void TtsstateChanged();
+				void TtsVoiceChanged(Tts::Voice voice);
 
 		protected:
 			//Methods to move the window
@@ -86,10 +86,10 @@ namespace Communications //added
 			// After that, stored information can be obtained with the get channels above.
 			void saveChanges();
 		    void demoButtonPressed();
-			void sendTTSStateChanged();
+			void sendTtsStateChanged();
 
 		};
-	}//End TTSChat namespace
+	}//End TtsChat namespace
 
 } //End Communications namespace
 
@@ -99,5 +99,5 @@ namespace Phonon
 	class AudioOutput;
 }
 
-#endif // TTSCHATWIDGET_H
+#endif // TtsCHATWIDGET_H
 

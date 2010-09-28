@@ -9,8 +9,6 @@
 
 #include "MemoryLeakCheck.h"
 
-//H7
-#include "TTSServiceInterface.h"
 
 namespace UiServices
 {
@@ -35,17 +33,6 @@ namespace UiServices
 
         content_widget->setLayout(v_layout);
         SetCentralWidget(content_widget);
-		/*
-		//H7
-		//TTS the message
-		Foundation::Framework *framework_ = GetFramework();
-		//Foundation::Framework *framework_ = Foundation::ModuleInterface::GetFramework();
-		TTS::TTSServiceInterface* tts_service_ = framework_->GetService<TTS::TTSServiceInterface>();
-		if (tts_service_)
-		{
-			tts_service_->setVoice(TTS::Voices.ES1);
-			tts_service_->text2Speech(message);
-		}
-		*/
+
     }
 }

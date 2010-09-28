@@ -65,7 +65,7 @@ use_package (POCO)
 use_package (CURL)
 use_package (XMLRPC)
 use_package (OGRE)
-use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule TTSModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)
+use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule TtsModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)
 
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS} ${RESOURCE_SRCS})
 

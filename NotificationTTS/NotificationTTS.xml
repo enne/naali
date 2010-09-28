@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config>
-    <entry>NotificationTTS</entry>
+    <entry>NotificationTts</entry>
 	<dependency>UiModule</dependency>
-	<dependency>TTSModule</dependency>
+	<dependency>TtsModule</dependency>
 </config>

@@ -1,16 +1,16 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
- *  @file   NotificationTTS.h
- *  @brief  Esto es un módulo vacío que sirve como basa para desarrollar cualquier módulo.
+ *  @file   NotificationTts.h
+ *  @brief  Synthetizes notifications using TTS Service
  *			
  */
 
-#ifndef incl_NotificationTTS_h
-#define incl_NotificationTTS_h
+#ifndef incl_NotificationTts_h
+#define incl_NotificationTts_h
 
 
-#include "NotificationTTSApi.h"
+#include "NotificationTtsApi.h"
 #include "ModuleInterface.h"
 #include "ModuleLoggingFunctions.h"
 #include "Core.h"
@@ -32,52 +32,56 @@ namespace ProtocolUtilities
     typedef boost::weak_ptr<ProtocolModuleInterface> ProtocolWeakPtr;
 }
 
-namespace TTS
+namespace Tts
 {
-	class TTSServiceInterface;
-	
+	class TtsServiceInterface;
 }
 
-namespace NotifiTTS
+namespace NotifiTts
 {
 
-    class NOTIFICATIONTTS_API NotificationTTS :  public QObject, public Foundation::ModuleInterface
+    class NOTIFICATIONTTS_API NotificationTts :  public QObject, public Foundation::ModuleInterface
     {
         Q_OBJECT
 
     public:
-        // Constructor.
-        NotificationTTS();
-        // Destructor 
-        virtual ~NotificationTTS();
-        // Función de carga. Si hay componentes se cargan aquí.
+        /// Constructor.
+        NotificationTts();
+        /// Destructor 
+        virtual ~NotificationTts();
+        /// Load function
         void Load();
-		// Funcioón de descarga
+		/// Unload funcion
 		void UnLoad();
-		// Inicializa y registra el servicio/interfaz
+		/// Connects notification signals with Notification2Speech slot
         void Initialize();
-		// Función de postinicialización
+		/// Postinitialize
         void PostInitialize();
-		// Elimina el servicio del registro
+		/// Uninitialize
         void Uninitialize();
     
-        // Devuelve el nombre del módulo, utilizado para logging
-        static const std::string &NameStatic() { return moduleName_; } 
+         /// Returns name of this module. Needed for logging.
+        static const std::string &NameStatic() { return module_name_; } 
 
 		//! Logging
         MODULE_LOGGING_FUNCTIONS
 
 	
     private:
-        Q_DISABLE_COPY(NotificationTTS);
+        Q_DISABLE_COPY(NotificationTts);
 
-        // Nombre del módulo
-        static const std::string moduleName_;
-		TTS::TTSServiceInterface* tts_service_;
+        /// Module name
+        static const std::string module_name_;
+
+		///TTS Service
+		Tts::TtsServiceInterface* tts_service_;
 	
 	private slots:
+		/** The message is synthetized using a default voice using TTS Service
+		\param message Text to synthetize. */
+
 		void Notification2Speech(const QString &message);
     };
-}  // end of namespace: Namespace
+}  // end of namespace
 
-#endif // incl_NotificationTTS_h
+#endif // incl_NotificationTts_h

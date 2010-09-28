@@ -14,19 +14,19 @@
 
 EC_TtsVoice::EC_TtsVoice(Foundation::ModuleInterface *module) :
 	Foundation::ComponentInterface(module->GetFramework()),
-		voice_(this, "voice", TTS::Voices.ES1.c_str()),
+		voice_(this, "voice", Tts::Voices.ES1.c_str()),
     message_(this, "message", "")
 {
 	// Get TTS service
-	ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
-	//voice_=TTS::Voices.ES1;
+	ttsService_ = framework_->GetService<Tts::TtsServiceInterface>();
+	//voice_=Tts::Voices.ES1;
 }
 
 EC_TtsVoice::~EC_TtsVoice()
 {
 }
 
-void EC_TtsVoice::SetMyVoice(const TTS::Voice voice)
+void EC_TtsVoice::SetMyVoice(const Tts::Voice voice)
 {
 	voice_.Set(voice.c_str(),AttributeChange::Local);
 	//AttributeChanged(voice_,AttributeChange::Local);
@@ -34,35 +34,35 @@ void EC_TtsVoice::SetMyVoice(const TTS::Voice voice)
 	//voice_=voice;
 }
 
-TTS::Voice EC_TtsVoice::GetMyVoice() const
+Tts::Voice EC_TtsVoice::GetMyVoice() const
 {
 	return voice_.Get().toStdString();
 }
 
-void EC_TtsVoice::SpeakMessage(const QString msg, TTS::Voice voice)
+void EC_TtsVoice::SpeakMessage(const QString msg, Tts::Voice voice)
 {
 	if(!ttsService_)
-		ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
+		ttsService_ = framework_->GetService<Tts::TtsServiceInterface>();
 	
-	ttsService_->text2Speech(msg,voice);
+	ttsService_->Text2Speech(msg,voice);
 }
 
 void EC_TtsVoice::SpeakMessage(const QString msg)
 {
 	if(!ttsService_)
-		ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
+		ttsService_ = framework_->GetService<Tts::TtsServiceInterface>();
 	
-	ttsService_->text2Speech(msg,voice_.Get().toStdString());
+	ttsService_->Text2Speech(msg,voice_.Get().toStdString());
 }
 
 void EC_TtsVoice::SpeakMessage()
 {
 	if(!ttsService_)
-		ttsService_ = framework_->GetService<TTS::TTSServiceInterface>();
+		ttsService_ = framework_->GetService<Tts::TtsServiceInterface>();
 
-	ttsService_->text2Speech(message_.Get(),voice_.Get().toStdString());
-	/*ttsService_->text2PHO(message_.Get(),"nombrepho", voice_.Get().toStdString());
-	ttsService_->text2WAV(message_.Get(),"nombrewav", voice_.Get().toStdString());*/
+	ttsService_->Text2Speech(message_.Get(),voice_.Get().toStdString());
+	//ttsService_->text2PHO(message_.Get(),"nombrepho", voice_.Get().toStdString());
+	//ttsService_->text2WAV(message_.Get(),"nombrewav", voice_.Get().toStdString());
 
 	//ttsService_->file2Speech("ejemplo.txt",voice_.Get().toStdString());
 	//ttsService_->file2PHO("ejemplo.txt","nombrephoejemplo",voice_.Get().toStdString());

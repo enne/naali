@@ -38,7 +38,7 @@ configure_mumbleclient ()
 configure_celt ()
 
 # Define target name and output directory
-init_target (NotificationTTS OUTPUT modules/core)
+init_target (NotificationTts OUTPUT modules/core)
 
 # Define source files
 file (GLOB CPP_FILES *.cpp)

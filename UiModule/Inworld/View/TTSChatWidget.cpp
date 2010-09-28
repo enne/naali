@@ -1,23 +1,23 @@
 #include "StableHeaders.h"
-#include "TTSChatWidget.h"
+#include "TtsChatWidget.h"
 
 #include <Phonon/MediaObject>
 #include <Phonon/MediaSource>
 
 namespace Communications //Needed
 {
-	namespace TTSChat
+	namespace TtsChat
 	{
-		TTSChatWidget::TTSChatWidget(QWidget *parent, Qt::WFlags flags)	: QWidget(parent, flags)
+		TtsChatWidget::TtsChatWidget(QWidget *parent, Qt::WFlags flags)	: QWidget(parent, flags)
 		{
 			ui.setupUi(this);
 		}
 
-		TTSChatWidget::~TTSChatWidget()
+		TtsChatWidget::~TtsChatWidget()
 		{
 		}
 
-		void TTSChatWidget::ConfigureInterface(Communications::TTSChat::TTSChatConfig* tts_config)
+		void TtsChatWidget::ConfigureInterface(Communications::TtsChat::TtsChatConfig* tts_config)
 		{
 			tts_config_=tts_config;
 			
@@ -33,8 +33,8 @@ namespace Communications //Needed
 		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(saveChanges()));
 		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(saveChanges()));
 		   
-		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(sendTTSStateChanged()));
-		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(sendTTSStateChanged()));
+		   QObject::connect(ui.ownEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(sendTtsStateChanged()));
+		   QObject::connect(ui.othersEnableCheckBox, SIGNAL(stateChanged(int)),SLOT(sendTtsStateChanged()));
 			
 		    
 			//Load itemes depending on language
@@ -47,7 +47,7 @@ namespace Communications //Needed
 
 
 		//Save button is pressed, so information must be stored
-		void TTSChatWidget::saveChanges()
+		void TtsChatWidget::saveChanges()
 		{
 			QString currentLanguage,currentGender;
      		currentLanguage=ui.ownLangComboBox->currentText();
@@ -57,12 +57,12 @@ namespace Communications //Needed
 			{
 				if (currentGender=="Male")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.ES1);
+					tts_config_->setOwnVoice(Tts::Voices.ES1);
 					fileName ="./festival/demo/DemoES1.wav";
 				}
 				if (currentGender=="Female")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.ES2);
+					tts_config_->setOwnVoice(Tts::Voices.ES2);
 					fileName ="./festival/demo/DemoES2.wav";
 				}
 			}
@@ -70,32 +70,32 @@ namespace Communications //Needed
 			{
 				if (currentGender=="Male 1")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.EN1);
+					tts_config_->setOwnVoice(Tts::Voices.EN1);
 					fileName ="./festival/demo/DemoEN1.wav";
 				}
 				if (currentGender=="Female 1")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.EN2);
+					tts_config_->setOwnVoice(Tts::Voices.EN2);
 					fileName ="./festival/demo/DemoEN2.wav";
 				}
 				if (currentGender=="Male 2")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.EN3);
+					tts_config_->setOwnVoice(Tts::Voices.EN3);
 					fileName ="./festival/demo/DemoEN3.wav";
 				}
 				if (currentGender=="Female 2")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.EN4);
+					tts_config_->setOwnVoice(Tts::Voices.EN4);
 					fileName ="./festival/demo/DemoEN4.wav";
 				}
 				if (currentGender=="Male 3")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.EN5);
+					tts_config_->setOwnVoice(Tts::Voices.EN5);
 					fileName ="./festival/demo/DemoEN5.wav";
 				}
 				if (currentGender=="Male 4")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.EN6);
+					tts_config_->setOwnVoice(Tts::Voices.EN6);
 					fileName ="./festival/demo/DemoEN6.wav";
 				}
 			}
@@ -103,12 +103,12 @@ namespace Communications //Needed
 			{
 				if (currentGender=="Male")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.CAT1);
+					tts_config_->setOwnVoice(Tts::Voices.CAT1);
 					fileName ="./festival/demo/DemoCAT1.wav";
 				}
 				if (currentGender=="Female")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.CAT2);
+					tts_config_->setOwnVoice(Tts::Voices.CAT2);
 					fileName ="./festival/demo/DemoCAT2.wav";
 				}
 			}			
@@ -116,7 +116,7 @@ namespace Communications //Needed
 			{
 				if (currentGender=="Male")
 				{
-					tts_config_->setOwnVoice(TTS::Voices.FI);
+					tts_config_->setOwnVoice(Tts::Voices.FI);
 					fileName ="./festival/demo/DemoFI.wav";
 				}
 			}	
@@ -134,9 +134,9 @@ namespace Communications //Needed
 			else
 				tts_config_->setActiveOthersVoice(false);
 
-			emit TTSVoiceChanged(tts_config_->getOwnVoice());
+			emit TtsVoiceChanged(tts_config_->getOwnVoice());
 		}
-		void TTSChatWidget::reloadItems()
+		void TtsChatWidget::reloadItems()
 		{
 			QString currentLanguage;
 			currentLanguage=ui.ownLangComboBox->currentText();
@@ -172,7 +172,7 @@ namespace Communications //Needed
 			}
 		}
 
-		void TTSChatWidget::demoButtonPressed()
+		void TtsChatWidget::demoButtonPressed()
 		{
 			media_object_ = new Phonon::MediaObject(this);
 			audio_output_ = new Phonon::AudioOutput(Phonon::MusicCategory, this);
@@ -185,12 +185,12 @@ namespace Communications //Needed
 			media_object_->play();
 
 		}
-		void TTSChatWidget::sendTTSStateChanged()
+		void TtsChatWidget::sendTtsStateChanged()
 		{
-			emit TTSstateChanged();
+			emit TtsstateChanged();
 		}
 		//Move window
-		void TTSChatWidget::mouseMoveEvent(QMouseEvent *e)
+		void TtsChatWidget::mouseMoveEvent(QMouseEvent *e)
 		{
 			QPoint pos = e->globalPos();
 			QPoint move = pos - mouse_last_pos_;
@@ -199,49 +199,49 @@ namespace Communications //Needed
 			QWidget::mouseMoveEvent(e);
 		}
 
-		void TTSChatWidget::mousePressEvent(QMouseEvent *e)
+		void TtsChatWidget::mousePressEvent(QMouseEvent *e)
 		{
 			mouse_last_pos_ = e->globalPos();
 			mouse_dragging_ = true;
 		}
 
-		void TTSChatWidget::mouseReleaseEvent(QMouseEvent *e)
+		void TtsChatWidget::mouseReleaseEvent(QMouseEvent *e)
 		{
 			mouse_dragging_ = false;
 		}
 
-		TTSChatConfig::TTSChatConfig():
-			OwnVoice_(TTS::Voices.ES1),
+		TtsChatConfig::TtsChatConfig():
+			OwnVoice_(Tts::Voices.ES1),
 			activeOwnVoice_(0),
 			activeOthersVoice_(0)
 		{
 		}
 
-		const TTS::Voice TTSChatConfig::getOwnVoice()
+		const Tts::Voice TtsChatConfig::getOwnVoice()
 		{
 			return OwnVoice_;
 		}
 
-		void TTSChatConfig::setOwnVoice(TTS::Voice voice)
+		void TtsChatConfig::setOwnVoice(Tts::Voice voice)
 		{
 			OwnVoice_=voice;
 		}
 
-		void TTSChatConfig::setActiveOwnVoice(bool active)
+		void TtsChatConfig::setActiveOwnVoice(bool active)
 		{
 			activeOwnVoice_=active;
 		}
 
-		bool TTSChatConfig::isActiveOwnVoice()
+		bool TtsChatConfig::isActiveOwnVoice()
 		{
 			return activeOwnVoice_;
 		}
-		void TTSChatConfig::setActiveOthersVoice(bool active)
+		void TtsChatConfig::setActiveOthersVoice(bool active)
 		{
 			activeOthersVoice_=active;
 		}
 
-		bool TTSChatConfig::isActiveOthersVoice()
+		bool TtsChatConfig::isActiveOthersVoice()
 		{
 			return activeOthersVoice_;
 		}

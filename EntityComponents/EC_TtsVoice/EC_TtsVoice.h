@@ -25,10 +25,10 @@ public:
 
     /// Sets voice for the entity.
     /// @param voice Voice.
-	void SetMyVoice(const TTS::Voice voice);
+	void SetMyVoice(const Tts::Voice voice);
 
 	/// Gets the voice of entity.
-	TTS::Voice GetMyVoice() const;
+	Tts::Voice GetMyVoice() const;
 
 	/// Return true if the component is serializable in XML
 	virtual bool IsSerializable() const { return true; }
@@ -37,7 +37,7 @@ public:
     /// @param msg Message to be shown.
 	/// @param voice The Voice to play
     /// @note If there is not param voice, plays the own voice.
-	void SpeakMessage(const QString msg, TTS::Voice voice);
+	void SpeakMessage(const QString msg, Tts::Voice voice);
 	void SpeakMessage(const QString msg);
 	void SpeakMessage();
 
@@ -52,7 +52,7 @@ private:
     explicit EC_TtsVoice(Foundation::ModuleInterface *module);
 
     /// Tts pointer.
-	TTS::TTSServiceInterface* ttsService_;
+	Tts::TtsServiceInterface* ttsService_;
 };
 
 #endif
