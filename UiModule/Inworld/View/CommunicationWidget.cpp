@@ -620,7 +620,7 @@ namespace CoreUi
 		if (ui)
 		{
 			tts_proxy_ = ui->AddWidgetToScene(Tts_chat_widget);
-			tts_proxy_->AnimatedHide();
+			tts_proxy_->hide();
 		}
 	}
     void CommunicationWidget::ConnectParticipantVoiceAvticitySignals(Communications::InWorldVoice::ParticipantInterface* p)
