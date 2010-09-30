@@ -159,8 +159,10 @@ add_subdirectory (EntityComponents/EC_Mesh)
 add_subdirectory (EntityComponents/EC_InputMapper)
 add_subdirectory (EntityComponents/EC_Movable)
 
+
 # Add EC's declared by other modules here:
-# ...
+
+add_subdirectory (EntityComponents/EC_TtsVoice) 
 
 # If the custom optional modules configuration file does not yet
 # exist, create it from a template.
