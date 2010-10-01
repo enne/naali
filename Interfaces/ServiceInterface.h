@@ -1,3 +1,4 @@
+//$HEADER_MOD_FILE$
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #ifndef incl_Interfaces_ServiceInterface_h
@@ -53,7 +54,9 @@ namespace Foundation
             ST_WorldBuilding,
             ST_Login,
             ST_Unknown,
+//$BEGIN_MOD$
 			ST_Tts
+//$END_MOD$
         };
     }
 }

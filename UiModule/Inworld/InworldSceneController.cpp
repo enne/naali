@@ -1,3 +1,4 @@
+//$HEADER_MOD_FILE$
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include "StableHeaders.h"
@@ -81,7 +82,7 @@ namespace UiServices
             return 0;
         }
         
-
+//$BEGIN_MOD$//$MOD_DESCRIPTION Code moved. reX community commit$//$END_MOD$
 
         // If the widget has WA_DeleteOnClose on, connect its proxy's visibleChanged()
         // signal to a slot which handles the deletion. This must be done because closing
@@ -108,14 +109,15 @@ namespace UiServices
         // Add to internal control list
         if (!all_proxy_widgets_in_scene_.contains(widget))
             all_proxy_widgets_in_scene_.append(widget);
-
+//$BEGIN_MOD$
+//$MOD_DESCRIPTION Moved here$
         // \todo Find a proper solution to the problem
         // Proxy widget doesn't get input without main frame resisizing for unknow reason.
         // HACK begin
         widget->moveBy(1, 1);
         widget->moveBy(-1,-1);
         // HACK end
-
+//$END_MOD$
 
         connect(widget, SIGNAL(BringProxyToFrontRequest(QGraphicsProxyWidget*)), SLOT(BringProxyToFront(QGraphicsProxyWidget*)));
         //connect(widget, SIGNAL(ProxyMoved(QGraphicsProxyWidget*, const QPointF &)), SLOT(ProxyWidgetMoved(QGraphicsProxyWidget*, const QPointF &)));

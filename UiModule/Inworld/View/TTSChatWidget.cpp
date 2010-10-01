@@ -1,3 +1,4 @@
+//$HEADER_NEW_FILE$ 
 #include "StableHeaders.h"
 #include "TtsChatWidget.h"
 

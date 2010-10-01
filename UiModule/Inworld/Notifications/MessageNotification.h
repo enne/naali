@@ -6,13 +6,6 @@
 #include "NotificationBaseWidget.h"
 #include "UiModuleApi.h"
 
-namespace Foundation
-{
-    class Framework;
-	class ModuleInterface;
-}
-
-
 namespace UiServices
 {
     class UI_MODULE_API MessageNotification : public CoreUi::NotificationBaseWidget

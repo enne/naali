@@ -1,3 +1,4 @@
+//$HEADER_NEW_FILE$ 
 #include "StableHeaders.h"
 
 #include "TtsService.h"
@@ -51,7 +52,7 @@ namespace Tts
 		commandoss << pathAndFileName.toStdString();
 		commandoss << " -T \"";
 
-		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("\""),', ');
+		std::replace_if(msg.begin(),msg.end(),boost::is_any_of("{}\""),', ');
 		commandoss << msg;
 		commandoss << "\"";
 		commandos = commandoss.str();

@@ -1,3 +1,4 @@
+#$HEADER_MOD_FILE$
 macro (AddSourceFolder folder_name)
     file (GLOB H_FILES_IN_FOLDER_${folder_name} ${folder_name}/*.h)
     file (GLOB CPP_FILES_IN_FOLDER_${folder_name} ${folder_name}/*.cpp)
@@ -65,11 +66,16 @@ use_package (POCO)
 use_package (CURL)
 use_package (XMLRPC)
 use_package (OGRE)
+#$BEGIN_MOD$
+#$MOD_DESCRIPTION TtsModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence added$ 
 use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule TtsModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)
-
+#$END_MOD$
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS} ${RESOURCE_SRCS})
 
+#$BEGIN_MOD$
+#$MOD_DESCRIPTION EC_TtsVoice EC_OpenSimPresence added$
 link_modules (Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule EC_TtsVoice EC_OpenSimPresence)
+#$END_MOD$
 link_package (BOOST)
 link_package (QT4)
 link_package (POCO)
