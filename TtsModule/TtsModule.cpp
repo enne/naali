@@ -1,6 +1,8 @@
 //$HEADER_NEW_FILE$ 
 /**
- *  For conditions of distribution and use, see copyright notice in license.txt
+ *  TTS Module
+ *
+ *
  *
  *  @file   TtsModule.cpp
  *  @brief  TTS Module registers a TTS Service, integrating Festival Speech Synthesis

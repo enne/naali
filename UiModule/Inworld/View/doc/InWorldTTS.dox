@@ -1,0 +1,18 @@
+/**
+
+\page InWorldTTS In World TTS Chat Application
+
+
+
+If TTS Module is loaded, the \ref Tts::TtsService " TTS Service" is registered so the communication widget loads a TTS button. This button shows a In-World TTS configuration widget.
+Own voice database can be selected here, listening first a demo and using the checkboxes both own and others synthesis can be enabled/disabled.
+
+Button color also helps to know synthesis status:
+
+- White: All off
+- Yellow: Own OR Others voice active.
+- Green: Both active.
+
+Go to \ref TtsModule "TTS Module page" to know more about TTS.
+
+*/

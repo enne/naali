@@ -2,6 +2,9 @@
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
+ *  - Implementes and register TTSServiceInterface.
+ *  - You must not use this module directly. All functionality must be used through service interface
+ *
  *  @file   TtsModule.h
  *  @brief  TTS Module registers a TTS Service, integrating Festival Speech Synthesis
  *			System with realXtend.

@@ -1,5 +1,19 @@
 //$HEADER_NEW_FILE$ 
-// For conditions of distribution and use, see copyright notice in license.txt
+/**
+*  TTS Service
+*    
+*   This service can be used for synthesis purposes being possible inputs both raw text and file texts.
+*	Output can be audio, WAV or PHO (phonetic information) and available methods are:
+*
+*  - Text2Speech
+*  - Text2WAV
+*  - Text2PHO
+*  - File2Speech
+*  - File2WAV
+*  - File2PHO
+*
+*
+*/
 
 #ifndef incl_Interfaces_TtsServiceInterface_h
 #define incl_Interfaces_TtsServiceInterface_h
