@@ -100,7 +100,8 @@ namespace Communications //Needed
 					fileName ="./festival/demo/DemoEN6.wav";
 				}
 			}
-			if (currentLanguage=="Catalan")
+			// \todo FIX Catalan voices
+			/*if (currentLanguage=="Catalan")
 			{
 				if (currentGender=="Male")
 				{
@@ -112,7 +113,7 @@ namespace Communications //Needed
 					tts_config_->setOwnVoice(Tts::Voices.CAT2);
 					fileName ="./festival/demo/DemoCAT2.wav";
 				}
-			}			
+			}*/			
 			if (currentLanguage=="Finnish")
 			{
 				if (currentGender=="Male")
