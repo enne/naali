@@ -1,4 +1,5 @@
-//$HEADER_MOD_FILE$
+//$ HEADER_MOD_FILE $
+//$ HEADER_MOD_FILE $
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
@@ -90,9 +91,9 @@
 #include "EC_Mesh.h"
 #include "EC_InputMapper.h"
 #include "EC_Movable.h"
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 #include "EC_TtsVoice.h"
-//$END_MOD$
+//$ END_MOD $
 #include <OgreManualObject.h>
 #include <OgreSceneManager.h>
 #include <OgreViewport.h>
@@ -968,11 +969,12 @@ void RexLogicModule::EntityClicked(Scene::Entity* entity)
     boost::shared_ptr<EC_3DCanvasSource> canvas_source = entity->GetComponent<EC_3DCanvasSource>();
     if (canvas_source)
         canvas_source->Clicked();
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
+//$ MOD_DESCRIPTION if an entity has the ec_ttsvoice, when the user clicks on it, the entity play the message $
 	boost::shared_ptr<EC_TtsVoice> tts_voice = entity->GetComponent<EC_TtsVoice>();
     if (tts_voice)
         tts_voice->SpeakMessage();
-//$END_MOD$
+//$ END_MOD $
 }
 
 InWorldChatProviderPtr RexLogicModule::GetInWorldChatProvider() const

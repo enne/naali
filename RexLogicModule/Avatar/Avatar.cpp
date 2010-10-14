@@ -1,4 +1,4 @@
-//$HEADER_MOD_FILE$
+//$ HEADER_MOD_FILE $
 /**
  *  For conditions of distribution and use, see copyright notice in license.txt
  *
@@ -31,9 +31,9 @@
 #include "EC_HoveringText.h"
 #include "EC_OpenSimPresence.h"
 #include "EC_SoundListener.h"
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 #include "EC_TtsVoice.h"
-//$END_MOD$
+//$ END_MOD $
 #include <QPushButton>
 
 namespace RexLogic
@@ -124,13 +124,13 @@ namespace RexLogic
             CreateAvatarMesh(entityid);
         }
 
-//$BEGIN_MOD$
-		// Add EC_TtsVoice component to Avatar
+//$ BEGIN_MOD $
+//MOD_DESCRIPTION Add EC_TtsVoice component to Avatar
 		if(owner_->GetFramework()->GetService<Tts::TtsServiceInterface>())
 		{
 			entity->AddComponent(owner_->GetFramework()->GetComponentManager()->CreateComponent(EC_TtsVoice::TypeNameStatic(),"voz"));
 		}
-//$END_MOD$
+//$ END_MOD $
         return entity;
     }
 

@@ -1,4 +1,4 @@
-//$HEADER_MOD_FILE$
+//$ HEADER_MOD_FILE $
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #ifndef incl_UiModule_CommunicationWidget_h
@@ -8,10 +8,10 @@
 #include "ui_CommunicationWidget.h"
 #include "InputServiceInterface.h"
 
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 #include "TtsChatWidget.h"
 #include "EC_TtsVoice.h"
-//$END_MOD$
+//$ END_MOD $
 
 class QStackedLayout;
 class QTextBrowser;
@@ -33,13 +33,13 @@ namespace Communications
         class TextMessageInterface;
     }
 	
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 	namespace TtsChat
 	{
 		class TtsChatWidget;
 		class TtsChatConfig;
 	}
-//$END_MOD$
+//$ END_MOD $
 }
 
 namespace CommUI
@@ -97,10 +97,13 @@ namespace CoreUi
         void ShowVoiceControls();
         void HideVoiceControls();
 		/// Updates chat view removing voice info first
+//$ BEGIN_MOD $
+//$ MOD_DESCRIPTION param uuid added $
         void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message, const QString& uuid);
+//$ END_MOD $
         void ConnectParticipantVoiceAvticitySignals(Communications::InWorldVoice::ParticipantInterface* p);
 
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 		/// Shows or hides TTSCHatWidget configuration window
 		void ToggleTtsChatWidget();
 		/// Shows TTS Button in the communication widget
@@ -118,7 +121,7 @@ namespace CoreUi
 		void SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message, const QString& from_uuid);
 		void GetAvatarVoiceComponent();
 		void UpdateAvatarVoice(Tts::Voice voice);
-//$END_MOD$
+//$ END_MOD $
 
 
     private:
@@ -129,10 +132,10 @@ namespace CoreUi
         QStackedLayout *stacked_layout_;
         QTextBrowser *history_view_text_edit_;
         NormalChatViewWidget *normal_view_widget_;
-//$BEGIN_MOD$
-//$MOD_DESCRIPTION TTS added$
+//$ BEGIN_MOD $
+//$ MOD_DESCRIPTION TTS added $
         UiProxyWidget *im_proxy_,*tts_proxy_;
-//$END_MOD$
+//$ END_MOD $
         Communications::InWorldVoice::SessionInterface* in_world_voice_session_;
         Communications::InWorldChat::SessionInterface* in_world_chat_session_;
 
@@ -151,13 +154,13 @@ namespace CoreUi
 
         InputContextPtr input_context_;
 
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 		Communications::TtsChat::TtsChatWidget* Tts_chat_widget;
 		Tts::TtsServiceInterface* tts_service_;
 		Communications::TtsChat::TtsChatConfig* tts_config_;
 		bool ownVoiceOn,othersVoiceOn;
 		boost::shared_ptr<EC_TtsVoice> avatar_voice_;
-//$END_MOD$
+//$ END_MOD $
 
     signals:
         void SendMessageToServer(const QString &message);

@@ -1,4 +1,4 @@
-//$HEADER_MOD_FILE$
+//$ HEADER_MOD_FILE $
 // For conditions of distribution and use, see copyright notice in license.txt
 
 #include "StableHeaders.h"
@@ -26,7 +26,7 @@
 #include "DebugOperatorNew.h"
 
 
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 #include "TtsServiceInterface.h"
 #include "UiServiceInterface.h"
 #include "TtsModule.h"
@@ -40,7 +40,7 @@
 #include "SceneManager.h"
 #include "EC_OpenSimPresence.h"
 
-//$END_MOD$
+//$ END_MOD $
 namespace
 {
     /// HTTP schema indentifier
@@ -104,9 +104,9 @@ namespace CoreUi
         in_world_chat_session_(0),
         voice_controller_proxy_widget_(0),
         voice_controller_widget_(0),
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 		Tts_chat_widget(0)
-//$END_MOD$
+//$ END_MOD $
     {
         Initialise();
         ChangeView(viewmode_);
@@ -150,9 +150,9 @@ namespace CoreUi
         connect(chatLineEdit, SIGNAL( returnPressed() ), SLOT( SendMessageRequested() ));
 
         HideVoiceControls();
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
         HideTtsChatControls();
-//$END_MOD$
+//$ END_MOD $
         // Initialize In-World Voice
         if (framework_ &&  framework_->GetServiceManager())
         {
@@ -162,9 +162,9 @@ namespace CoreUi
                 connect(comm, SIGNAL(InWorldVoiceAvailable()), SLOT(InitializeInWorldVoice()) );
                 connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldChat()) );
                 connect(comm, SIGNAL(InWorldChatUnavailable()), SLOT(InitializeInWorldChat()) );
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 				connect(comm, SIGNAL(InWorldChatAvailable()), SLOT(InitializeInWorldTts()));
-//$END_MOD$
+//$ END_MOD $
 			}
         }
 
@@ -189,7 +189,7 @@ namespace CoreUi
         if (voice_users_info_widget_)
             voice_users_info_widget_->hide();
     }
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 	void CommunicationWidget::ShowTtsChatControls()
     {
 		this->ttsContentWidget->show();
@@ -201,7 +201,7 @@ namespace CoreUi
 		this->ttsContentWidget->hide();
 		this->ttsButton->hide();
     }
-//$END_MOD$
+//$ END_MOD $
     void CommunicationWidget::ChangeViewPressed()
     {
         switch (viewmode_)
@@ -232,7 +232,7 @@ namespace CoreUi
                 break;
         }
     }
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 	void CommunicationWidget::ToggleTtsChatWidget()
     {
 		if(Tts_chat_widget)
@@ -243,7 +243,7 @@ namespace CoreUi
 			   tts_proxy_->AnimatedHide();
 		}
    }
-//$END_MOD$
+//$ END_MOD $
     void CommunicationWidget::ToggleImWidget()
     {
         if (im_proxy_)
@@ -319,7 +319,7 @@ namespace CoreUi
 
         QString message = chatLineEdit->text();
         chatLineEdit->clear();
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 		if (tts_service_)
 		{
 			//QString voice;
@@ -335,11 +335,11 @@ namespace CoreUi
 			QTextStream(&voice) << "<voice>" << ownVoice_.c_str() << "</voice>";
 			message =voice+message;
 		}
-//$END_MOD$		
+//$ END_MOD $		
         if (in_world_chat_session_)
             in_world_chat_session_->SendTextMessage(message);
     }
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 	void CommunicationWidget::SpeakIncomingMessage(const Communications::InWorldChat::TextMessageInterface &message, const QString& from_uuid)
 	{
 		if((message.IsOwnMessage() && tts_config_->isActiveOwnVoice()) || (!message.IsOwnMessage() && tts_config_->isActiveOthersVoice()))
@@ -418,7 +418,7 @@ namespace CoreUi
 				GetAvatarVoiceComponent();
 		avatar_voice_->SetMyVoice(voice);
 	}
-//$END_MOD$
+//$ END_MOD $
     void CommunicationWidget::hoverMoveEvent(QGraphicsSceneHoverEvent *mouse_hover_move_event)
     {
         if (stacked_layout_->currentWidget() == history_view_text_edit_)
@@ -529,10 +529,10 @@ namespace CoreUi
 				in_world_chat_session_ = comm->InWorldChatSession();
                 if (!in_world_chat_session_)
                     return;
-
+//$ BEGIN_MOD $
                 connect(in_world_chat_session_, SIGNAL(TextMessageReceived(const Communications::InWorldChat::TextMessageInterface&,const QString&)),
                     SLOT(UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface&,const QString&)) );
-			
+//$ END_MOD $			
             }
         }
     }
@@ -600,7 +600,7 @@ namespace CoreUi
             }
         }
     }
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 	void CommunicationWidget::InitializeInWorldTts()
 	{
 		tts_service_ = framework_->GetService<Tts::TtsServiceInterface>();
@@ -632,7 +632,7 @@ namespace CoreUi
 			tts_proxy_->hide();
 		}
 	}
-//$END_MOD$
+//$ END_MOD $
     void CommunicationWidget::ConnectParticipantVoiceAvticitySignals(Communications::InWorldVoice::ParticipantInterface* p)
     {
         /// @todo Move all voice control widget related code to separate class
@@ -688,7 +688,7 @@ namespace CoreUi
         QString hour_str = QString::number(message.TimeStamp().time().hour());
         QString minute_str = QString::number(message.TimeStamp().time().minute());
         QString time_stamp_str = QString("%1:%2").arg(hour_str, 2, QChar('0')).arg(minute_str, 2, QChar('0'));
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 		if(!message.Text().contains("</voice>", Qt::CaseInsensitive))
 			ShowIncomingMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, message.Text());
 		else
@@ -703,14 +703,14 @@ namespace CoreUi
 			ShowIncomingMessage(message.IsOwnMessage(), message.Author(), time_stamp_str, chatText_);
 		}
     }
-//$END_MOD$
+//$ END_MOD $
     void CommunicationWidget::UninitializeInWorldVoice()
     {
         //! \todo: set indicator status -> disabled (hide voice controls)
         in_world_voice_session_ = 0;
     }
 	
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 	void CommunicationWidget::UpdateTtsChatControls()
     {
 		ownVoiceOn =tts_config_->isActiveOwnVoice();
@@ -729,7 +729,7 @@ namespace CoreUi
 			this->ttsButton->setStyleSheet("QPushButton#ttsButton {border: 0px;background-color: transparent;background-image: url('./data/ui/images/chat/uibutton_TTS_normal.png');background-position: top left;background-repeat: no-repeat;} QPushButton#ttsButton::hover {border: 0px;background-image: url('./data/ui/images/chat/uibutton_TTS_hover.png');} QPushButton#ttsButton::pressed {border: 0px; background-image: url('./data/ui/images/chat/uibutton_TTS_click.png');}");
 		}
     }
-//$END_MOD$
+//$ END_MOD $
     // NormalChatViewWidget : QWidget
 
     NormalChatViewWidget::NormalChatViewWidget(QWidget *parent) :

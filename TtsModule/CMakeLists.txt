@@ -1,4 +1,4 @@
-#$HEADER_NEW_FILE$
+#$ HEADER_NEW_FILE $
 # Add header and source files from given subfolder
 # to H_FILES and CPP_FILES variables
 #

@@ -1,4 +1,4 @@
-#$HEADER_MOD_FILE$
+#$ HEADER_MOD_FILE $
 # Qt4 Moc files to subgroup "CMake Moc"
 macro (MocFolder)
     file (GLOB MOCS_TO_SOURCE_GROUP *.cxx */*.cxx)
@@ -13,10 +13,10 @@ file (GLOB CPP_FILES *.cpp)
 file (GLOB H_FILES *.h)
 file (GLOB MOC_FILES ComponentInterface.h CommunicationsService.h UiSettingsServiceInterface.h
     AttributeChangeType.h MediaPlayerService.h AttributeChangeType.h WorldBuildingServiceInterface.h
-#$BEGIN_MOD$
-#$MOD_DESCRIPTION TtsServiceInterface added$
+#$ BEGIN_MOD $
+#$ MOD_DESCRIPTION TtsServiceInterface added $
     UiServiceInterface.h UiWidgetProperties.h UiProxyWidget.h LoginServiceInterface.h WorldLogicInterface.h TtsServiceInterface.h)
-#$END_MOD$
+#$ END_MOD $
 set (SOURCE_FILES ${CPP_FILES} ${H_FILES})
 
 MocFolder ()

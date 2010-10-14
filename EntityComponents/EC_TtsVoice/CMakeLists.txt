@@ -1,4 +1,4 @@
-#$HEADER_NEW_FILE$
+#$ HEADER_NEW_FILE $
 # Define target name and output directory
 init_target (EC_TtsVoice)
 

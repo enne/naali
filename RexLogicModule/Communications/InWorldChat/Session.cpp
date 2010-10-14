@@ -1,9 +1,9 @@
-//$HEADER_MOD_FILE$
+//$ HEADER_MOD_FILE $
 #include "StableHeaders.h"
 #include "Session.h"
-//$BEGIN_MOD$
+//$ BEGIN_MOD $
 #include "RexUUID.h"
-//$END_MOD$
+//$ END_MOD $
 namespace RexLogic
 {
     namespace InWorldChat
@@ -52,10 +52,10 @@ namespace RexLogic
             //TextMessage message(AvatarName(from_uuid), text, IsSelfAvatarUUID(from_uuid));
             TextMessage* message = new TextMessage(from_name, text, IsSelfAvatarUUID(from_uuid));
             messages_.append(message);
-//$BEGIN_MOD$
-//$MOD_DESCRIPTION uuid argument added$
+//$ BEGIN_MOD $
+//$ MOD_DESCRIPTION uuid argument added $
             emit Communications::InWorldChat::SessionInterface::TextMessageReceived(*message,from_uuid);
-//$END_MOD$
+//$ END_MOD $
         }
 
         bool Session::IsSelfAvatarUUID(QString uuid)

@@ -1,4 +1,4 @@
-#$HEADER_MOD_FILE#
+#$ HEADER_MOD_FILE $
 # In CMakeOptionalModules.txt you can configure which additional modules
 # are added to the build. Do not commit CMakeOptionalModules.txt into the 
 # SVN repository! The idea is that everyone can customize the set of 
@@ -29,10 +29,10 @@ add_subdirectory (InWorldChatModule)
 add_subdirectory (EntityComponents/EC_ChatBubble)   # declared by InWorldChatModule
 add_subdirectory (EntityComponents/EC_Billboard)    # declared by InWorldChatModule
 #add_subdirectory (EntityComponents/EC_NoteCard)    # declared by NoteCardModule
-#$BEGIN_MOD$
+#$ BEGIN_MOD $
 add_subdirectory (TtsModule)
 add_subdirectory (NotificationTts)
-#$END_MOD$
+#$ END_MOD $
 
 #add_subdirectory (LegacyAvatarModule)
 

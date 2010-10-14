@@ -1,4 +1,4 @@
-//$HEADER_NEW_FILE$ 
+//$ HEADER_NEW_FILE $ 
 #include "StableHeaders.h"
 
 #include "TtsService.h"
