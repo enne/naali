@@ -43,8 +43,15 @@
 ;;; 2007, Barcelona, Spain                                              ;;;
 ;;; ------------------------------------------------------------------- ;;;
 
+
+;;; Ensure this version of festival has been compiled with clunits module
+;(require_module 'clunits)
+;(require 'clunits) ;; runtime scheme support
+
 ;;; Try to find the directory where the voice is, this may be from
 ;;; .../festival/lib/voices/ or from the current directory
+
+
 (if (assoc 'upc_ca_ona_hts voice-locations)
     (defvar upc_ca_ona::hts_dir 
       (cdr (assoc 'upc_ca_ona_hts voice-locations)))
@@ -63,7 +70,7 @@
      (error)))
 
 ;;;  Add the directory that contains catalan stuff (normalization, tagger, etc.) to load-path
-(set! catalan-path (path-append datadir "upc_catalan/"))
+(set! catalan-path (path-append libdir "upc_catalan/"))
 (if (not (member_string catalan-path load-path))
                       (set! load-path (cons catalan-path load-path)))
 
@@ -117,38 +124,27 @@ Reset global variables back to previous voice."
 
 (set! upc_ca_ona_hts::hts_engine_params
       (list
-       '("-version" 1)
-       (list "-dm1" (path-append hts_data_dir "mgc.win1"))
-       (list "-dm2" (path-append hts_data_dir "mgc.win2"))
-       (list "-dm3" (path-append hts_data_dir "mgc.win3"))
-       (list "-df1" (path-append hts_data_dir "lf0.win1"))
-       (list "-df2" (path-append hts_data_dir "lf0.win2"))
-       (list "-df3" (path-append hts_data_dir "lf0.win3"))
+       (list "-dm1" (path-append hts_data_dir "mcep_dyn.win"))
+       (list "-dm2" (path-append hts_data_dir "mcep_acc.win"))
+       (list "-df1" (path-append hts_data_dir "lf0_dyn.win"))
+       (list "-df2" (path-append hts_data_dir "lf0_acc.win"))
        (list "-td" (path-append hts_data_dir "tree-dur.inf"))
-       (list "-tm" (path-append hts_data_dir "tree-mgc.inf"))
+       (list "-tm" (path-append hts_data_dir "tree-mcp.inf"))
        (list "-tf" (path-append hts_data_dir "tree-lf0.inf"))
        (list "-md" (path-append hts_data_dir "dur.pdf"))
-       (list "-mm" (path-append hts_data_dir "mgc.pdf"))
+       (list "-mm" (path-append hts_data_dir "mcp.pdf"))
        (list "-mf" (path-append hts_data_dir "lf0.pdf"))
-       (list "-cm" (path-append hts_data_dir "gv-mgc.pdf"))
-       (list "-cf" (path-append hts_data_dir "gv-lf0.pdf"))
-       '("-s"    16000)
-       '("-p"    80)
-       '("-a"    0.42)
-       '("-g"    0.0)
-       '("-b"    0.0)
-       '("-u"    0.5)
-       '("-jf"    0.7)
-       '("-jm"    1.0)
-       '("-fs"    1.0)
-       '("-fm"    0.0)
-       '("-vp"    F)
-       '("-r"    1.0)
-       '("-l"    T)
+       '("-a"   0.420000)                 
+       '("-r"   0.0000000)   ; duration_stretch
+       '("-fs"  1.000000)             
+       '("-fm"  0.000000)            
+       '("-u"   0.500000)                 
+       '("-l"   0.000000) 
+       '("-b" 0.4)
        ))
 
 (define (voice_upc_ca_ona_hts)
-  "(voice_upc_ca_ona_hts)
+  "(voice_upc_ca_ona_clunits)
 Define voice for catalan."
   ;; *always* required
   (voice_reset)

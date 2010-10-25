@@ -32,7 +32,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                                      ;;
 ;;;  A generic voice definition file for a clunits synthesizer           ;;
-;;;  Customized for: upc_ca_pep                                         ;;
+;;;  Customized for: upc_ca_pep                                       ;;
 ;;;                                                                      ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -64,7 +64,7 @@
      (error)))
 
 ;;;  Add the directory that contains catalan stuff (normalization, tagger, etc.) to load-path
-(set! catalan-path (path-append datadir "upc_catalan/"))
+(set! catalan-path (path-append libdir "upc_catalan/"))
 (if (not (member_string catalan-path load-path))
                       (set! load-path (cons catalan-path load-path)))
 
@@ -100,6 +100,32 @@
 (defvar upc_ca_pep::clunits_prompting_stage nil)
 ;;; Flag to allow new lexical items to be added only once
 (defvar upc_ca_pep::clunits_added_extra_lex_items nil)
+
+;;; You may wish to change this (only used in building the voice)
+(set! upc_ca_pep::closest_voice 'voice_kal_diphone_ca)
+
+(set! ca_phone_maps
+      '(
+;        (M_t t)
+;        (M_dH d)
+        ))
+
+(define (voice_kal_diphone_ca_phone_maps utt)
+  (mapcar
+   (lambda (s) 
+     (let ((m (assoc_string (item.name s) ca_phone_maps)))
+       (if m
+           (item.set_feat s "us_diphone" (cadr m))
+           (item.set_feat s "us_diphone"))))
+   (utt.relation.items utt 'Segment))
+  utt)
+
+(define (voice_kal_diphone_ca)
+  (voice_kal_diphone)
+  (set! UniSyn_module_hooks (list voice_kal_diphone_ca_phone_maps ))
+
+  'kal_diphone_ca
+)
 
 ;;;  These are the parameters which are needed at run time
 ;;;  build time parameters are added to his list in upc_ca_pep_build.scm
@@ -276,6 +302,7 @@ Define voice for ca."
 ;          (utt.wave.rescale utt 2.1))))
 
   (set! current_voice_reset upc_ca_pep::voice_reset)
+
   (set! current-voice 'upc_ca_pep_clunits)
 )
 
@@ -283,16 +310,6 @@ Define voice for ca."
   (if (phone_is_silence (item.name i))
       "1"
       "0"))
-
-
-(proclaim_voice
- 'upc_ca_pep_clunits
- '((language catalan)
-   (gender male)
-   (dialect central)
-   (description
-    "Catalan speaker pep from the Festcat project.")))
-
 
 (provide 'upc_ca_pep_clunits)
 

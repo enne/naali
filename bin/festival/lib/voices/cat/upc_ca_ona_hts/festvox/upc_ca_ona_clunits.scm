@@ -32,7 +32,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                                      ;;
 ;;;  A generic voice definition file for a clunits synthesizer           ;;
-;;;  Customized for: upc_ca_ona                                         ;;
+;;;  Customized for: upc_LANG_ona_clunits.scm                                       ;;
 ;;;                                                                      ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -49,22 +49,22 @@
 
 ;;; Try to find the directory where the voice is, this may be from
 ;;; .../festival/lib/voices/ or from the current directory
-(if (assoc 'upc_ca_ona_clunits voice-locations)
-    (defvar upc_ca_ona::dir 
-      (cdr (assoc 'upc_ca_ona_clunits voice-locations)))
-    (defvar upc_ca_ona::dir (string-append (pwd) "/")))
+(if (assoc 'upc_LANG_ona_clunits.scm_clunits voice-locations)
+    (defvar upc_LANG_ona_clunits.scm::dir 
+      (cdr (assoc 'upc_LANG_ona_clunits.scm_clunits voice-locations)))
+    (defvar upc_LANG_ona_clunits.scm::dir (string-append (pwd) "/")))
 
 ;;; Did we succeed in finding it
-(if (not (probe_file (path-append upc_ca_ona::dir "festvox/")))
+(if (not (probe_file (path-append upc_LANG_ona_clunits.scm::dir "festvox/")))
     (begin
-     (format stderr "upc_ca_ona::clunits: Can't find voice scm files they are not in\n")
-     (format stderr "   %s\n" (path-append  upc_ca_ona::dir "festvox/"))
+     (format stderr "upc_LANG_ona_clunits.scm::clunits: Can't find voice scm files they are not in\n")
+     (format stderr "   %s\n" (path-append  upc_LANG_ona_clunits.scm::dir "festvox/"))
      (format stderr "   Either the voice isn't linked in Festival library\n")
      (format stderr "   or you are starting festival in the wrong directory\n")
      (error)))
 
 ;;;  Add the directory that contains catalan stuff (normalization, tagger, etc.) to load-path
-(set! catalan-path (path-append datadir "upc_catalan/"))
+(set! catalan-path (path-append libdir "upc_catalan/"))
 (if (not (member_string catalan-path load-path))
                       (set! load-path (cons catalan-path load-path)))
 
@@ -73,20 +73,20 @@
 
 
 ;;;  Add the directory contains general voice stuff to load-path
-(set! load-path (cons (path-append upc_ca_ona::dir "festvox/") 
+(set! load-path (cons (path-append upc_LANG_ona_clunits.scm::dir "festvox/") 
 		      load-path))
 
 ;;; Voice specific parameter are defined in each of the following
 ;;; files
-(require 'upc_ca_ona_phoneset)
-(require 'upc_ca_ona_tokenizer)
-(require 'upc_ca_ona_tagger)
-(require 'upc_ca_ona_lexicon)
-(require 'upc_ca_ona_phrasing)
-(require 'upc_ca_ona_intonation)
-(require 'upc_ca_ona_duration)
-(require 'upc_ca_ona_f0model)
-(require 'upc_ca_ona_other)
+(require 'upc_LANG_ona_clunits.scm_phoneset)
+(require 'upc_LANG_ona_clunits.scm_tokenizer)
+(require 'upc_LANG_ona_clunits.scm_tagger)
+(require 'upc_LANG_ona_clunits.scm_lexicon)
+(require 'upc_LANG_ona_clunits.scm_phrasing)
+(require 'upc_LANG_ona_clunits.scm_intonation)
+(require 'upc_LANG_ona_clunits.scm_duration)
+(require 'upc_LANG_ona_clunits.scm_f0model)
+(require 'upc_LANG_ona_clunits.scm_other)
 ;; ... and others as required
 
 ;;;
@@ -94,20 +94,20 @@
 ;;;
 
 ;;; Flag to save multiple loading of db
-(defvar upc_ca_ona::clunits_loaded nil)
+(defvar upc_LANG_ona_clunits.scm::clunits_loaded nil)
 ;;; When set to non-nil clunits voices *always* use their closest voice
 ;;; this is used when generating the prompts
-(defvar upc_ca_ona::clunits_prompting_stage nil)
+(defvar upc_LANG_ona_clunits.scm::clunits_prompting_stage nil)
 ;;; Flag to allow new lexical items to be added only once
-(defvar upc_ca_ona::clunits_added_extra_lex_items nil)
+(defvar upc_LANG_ona_clunits.scm::clunits_added_extra_lex_items nil)
 
 ;;;  These are the parameters which are needed at run time
-;;;  build time parameters are added to his list in upc_ca_ona_build.scm
-(set! upc_ca_ona::dt_params
+;;;  build time parameters are added to his list in upc_LANG_ona_clunits.scm_build.scm
+(set! upc_LANG_ona_clunits.scm::dt_params
       (list
-       (list 'db_dir upc_ca_ona::dir)
-       '(name upc_ca_ona)
-       '(index_name upc_ca_ona)
+       (list 'db_dir upc_LANG_ona_clunits.scm::dir)
+       '(name upc_LANG_ona_clunits.scm)
+       '(index_name upc_LANG_ona_clunits.scm)
        '(f0_join_weight 0.0)
        '(join_weights
          (0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 ))
@@ -115,7 +115,7 @@
        '(catalogue_dir "festival/clunits/")
        '(coeffs_dir "mcep/")
        '(coeffs_ext ".mcep")
-       '(clunit_name_feat lisp_upc_ca_ona::clunit_name)
+       '(clunit_name_feat lisp_upc_LANG_ona_clunits.scm::clunit_name)
        ;;  Run time parameters 
        '(join_method windowed)
        ;; if pitch mark extraction is bad this is better than the above
@@ -136,7 +136,7 @@
 ;       '(clunits_debug 1)
 ))
 
-(define (upc_ca_ona::nextvoicing i)
+(define (upc_LANG_ona_clunits.scm::nextvoicing i)
   (let ((nname (item.feat i "n.name")))
     (cond
 ;     ((string-equal nname "pau")
@@ -148,15 +148,15 @@
      (t
       "UV"))))
 
-(define (upc_ca_ona::clunit_name i)
-  "(upc_ca_ona::clunit_name i)
-Defines the unit name for unit selection for ca.  The can be modified
+(define (upc_LANG_ona_clunits.scm::clunit_name i)
+  "(upc_LANG_ona_clunits.scm::clunit_name i)
+Defines the unit name for unit selection for LANG.  The can be modified
 changes the basic classification of unit for the clustering.  By default
 this we just use the phone name, but you may want to make this, phone
 plus previous phone (or something else)."
   (let ((name (item.name i)))
     (cond
-     ((and (not upc_ca_ona::clunits_loaded)
+     ((and (not upc_LANG_ona_clunits.scm::clunits_loaded)
 	   (or (string-equal "h#" name) 
 	       (string-equal "1" (item.feat i "ignore"))
 	       (and (string-equal "pau" name)
@@ -164,11 +164,6 @@ plus previous phone (or something else)."
 			(string-equal "h#" (item.feat i "p.name")))
 		    (string-equal "pau" (item.feat i "n.name")))))
       "ignore")
-     ((string-equal name "ax")
-      (string-append
-       name
-       "_"
-       (upc_ca_ona::nextvoicing i)))
      ;; Comment out this if you want a more interesting unit name
      ((null nil)
       name)
@@ -180,48 +175,48 @@ plus previous phone (or something else)."
        "_"
        (item.feat i "R:SylStructure.parent.stress")
        "_"
-       (upc_ca_ona::nextvoicing i)))
+       (upc_LANG_ona_clunits.scm::nextvoicing i)))
      ((string-equal name "pau")
       (string-append
        name
        "_"
-       (upc_ca_ona::nextvoicing i)))
+       (upc_LANG_ona_clunits.scm::nextvoicing i)))
      (t
       (string-append
        name
        "_"
 ;       (item.feat i "seg_onsetcoda")
 ;       "_"
-       (upc_ca_ona::nextvoicing i))))))
+       (upc_LANG_ona_clunits.scm::nextvoicing i))))))
 
-(define (upc_ca_ona::clunits_load)
-  "(upc_ca_ona::clunits_load)
+(define (upc_LANG_ona_clunits.scm::clunits_load)
+  "(upc_LANG_ona_clunits.scm::clunits_load)
 Function that actual loads in the databases and selection trees.
 SHould only be called once per session."
-  (set! dt_params upc_ca_ona::dt_params)
-  (set! clunits_params upc_ca_ona::dt_params)
+  (set! dt_params upc_LANG_ona_clunits.scm::dt_params)
+  (set! clunits_params upc_LANG_ona_clunits.scm::dt_params)
   (clunits:load_db clunits_params)
   (load (string-append
 	 (string-append 
-	  upc_ca_ona::dir "/"
+	  upc_LANG_ona_clunits.scm::dir "/"
 	  (get_param 'trees_dir dt_params "trees/")
 	  (get_param 'index_name dt_params "all")
 	  ".tree")))
-  (set! upc_ca_ona::clunits_clunit_selection_trees clunits_selection_trees)
-  (set! upc_ca_ona::clunits_loaded t))
+  (set! upc_LANG_ona_clunits.scm::clunits_clunit_selection_trees clunits_selection_trees)
+  (set! upc_LANG_ona_clunits.scm::clunits_loaded t))
 
-(define (upc_ca_ona::voice_reset)
-  "(upc_ca_ona::voice_reset)
+(define (upc_LANG_ona_clunits.scm::voice_reset)
+  "(upc_LANG_ona_clunits.scm::voice_reset)
 Reset global variables back to previous voice."
-  (upc_ca_ona::reset_phoneset)
-  (upc_ca_ona::reset_tokenizer)
-  (upc_ca_ona::reset_tagger)
-  (upc_ca_ona::reset_lexicon)
-  (upc_ca_ona::reset_phrasing)
-  (upc_ca_ona::reset_intonation)
-  (upc_ca_ona::reset_duration)
-  (upc_ca_ona::reset_f0model)
-  (upc_ca_ona::reset_other)
+  (upc_LANG_ona_clunits.scm::reset_phoneset)
+  (upc_LANG_ona_clunits.scm::reset_tokenizer)
+  (upc_LANG_ona_clunits.scm::reset_tagger)
+  (upc_LANG_ona_clunits.scm::reset_lexicon)
+  (upc_LANG_ona_clunits.scm::reset_phrasing)
+  (upc_LANG_ona_clunits.scm::reset_intonation)
+  (upc_LANG_ona_clunits.scm::reset_duration)
+  (upc_LANG_ona_clunits.scm::reset_f0model)
+  (upc_LANG_ona_clunits.scm::reset_other)
 
   t
 )
@@ -232,45 +227,45 @@ Reset global variables back to previous voice."
 ;; these will be specific to this voice.
 ;; Feel free to add to this list if your language requires it
 
-(define (voice_upc_ca_ona_clunits)
-  "(voice_upc_ca_ona_clunits)
-Define voice for ca."
+(define (voice_upc_LANG_ona_clunits.scm_clunits)
+  "(voice_upc_LANG_ona_clunits.scm_clunits)
+Define voice for LANG."
   ;; *always* required
   (voice_reset)
 
   ;; Select appropriate phone set
-  (upc_ca_ona::select_phoneset)
+  (upc_LANG_ona_clunits.scm::select_phoneset)
 
   ;; Select appropriate tokenization
-  (upc_ca_ona::select_tokenizer)
+  (upc_LANG_ona_clunits.scm::select_tokenizer)
 
   ;; For part of speech tagging
-  (upc_ca_ona::select_tagger)
+  (upc_LANG_ona_clunits.scm::select_tagger)
 
-  (upc_ca_ona::select_lexicon)
+  (upc_LANG_ona_clunits.scm::select_lexicon)
   ;; For clunits selection you probably don't want vowel reduction
   ;; the unit selection will do that
   (if (string-equal "americanenglish" (Param.get 'Language))
       (set! postlex_vowel_reduce_cart_tree nil))
 
-  (upc_ca_ona::select_phrasing)
+  (upc_LANG_ona_clunits.scm::select_phrasing)
 
-  (upc_ca_ona::select_intonation)
+  (upc_LANG_ona_clunits.scm::select_intonation)
 
-  (upc_ca_ona::select_duration)
+  (upc_LANG_ona_clunits.scm::select_duration)
 
-  (upc_ca_ona::select_f0model)
+  (upc_LANG_ona_clunits.scm::select_f0model)
 
   ;; Waveform synthesis model: clunits
 
   ;; Load in the clunits databases (or select it if its already loaded)
-  (if (not upc_ca_ona::clunits_prompting_stage)
+  (if (not upc_LANG_ona_clunits.scm::clunits_prompting_stage)
       (begin
-	(if (not upc_ca_ona::clunits_loaded)
-	    (upc_ca_ona::clunits_load)
-	    (clunits:select 'upc_ca_ona))
+	(if (not upc_LANG_ona_clunits.scm::clunits_loaded)
+	    (upc_LANG_ona_clunits.scm::clunits_load)
+	    (clunits:select 'upc_LANG_ona_clunits.scm))
 	(set! clunits_selection_trees 
-	      upc_ca_ona::clunits_clunit_selection_trees)
+	      upc_LANG_ona_clunits.scm::clunits_clunit_selection_trees)
 	(Parameter.set 'Synth_Method 'Cluster)))
 
   ;; This is where you can modify power (and sampling rate) if desired
@@ -280,8 +275,8 @@ Define voice for ca."
 ;        (lambda (utt)
 ;          (utt.wave.rescale utt 2.1))))
 
-  (set! current_voice_reset upc_ca_ona::voice_reset)
-  (set! current-voice 'upc_ca_ona_clunits)
+  (set! current_voice_reset upc_LANG_ona_clunits.scm::voice_reset)
+  (set! current-voice 'upc_LANG_ona_clunits.scm_clunits)
 )
 
 (define (is_pau i)
@@ -291,13 +286,13 @@ Define voice for ca."
 
 
 (proclaim_voice
- 'upc_ca_ona_clunits
+ 'upc_ca_ona_clunits.scm_clunits
  '((language catalan)
    (gender female)
    (dialect central)
    (description
-    "Catalan speaker ona from the Festcat project.")))
+    "Catalan speaker ona_clunits.scm from the Festcat project.")))
 
 
-(provide 'upc_ca_ona_clunits)
+(provide 'upc_LANG_ona_clunits.scm_clunits)
 
