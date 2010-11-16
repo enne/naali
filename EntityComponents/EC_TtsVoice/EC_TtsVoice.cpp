@@ -9,13 +9,14 @@
 #include "StableHeaders.h"
 
 #include "EC_TtsVoice.h"
-#include "ModuleInterface.h"
+//#include "ModuleInterface.h"
+#include "IModule.h"
 #include "Entity.h"
 
 
-EC_TtsVoice::EC_TtsVoice(Foundation::ModuleInterface *module) :
-	Foundation::ComponentInterface(module->GetFramework()),
-		voice_(this, "voice", Tts::Voices.ES1.c_str()),
+EC_TtsVoice::EC_TtsVoice(IModule *module) :
+    IComponent(module->GetFramework()),
+	voice_(this, "voice", Tts::Voices.ES1.c_str()),
     message_(this, "message", "")
 {
 	// Get TTS service
@@ -29,9 +30,9 @@ EC_TtsVoice::~EC_TtsVoice()
 
 void EC_TtsVoice::SetMyVoice(const Tts::Voice voice)
 {
-	voice_.Set(voice.c_str(),AttributeChange::Local);
+	voice_.Set(voice.c_str(),AttributeChange::LocalOnly);
 	//AttributeChanged(voice_,AttributeChange::Local);
-	ComponentChanged(AttributeChange::Local);
+	ComponentChanged(AttributeChange::LocalOnly);
 	//voice_=voice;
 }
 

@@ -14,7 +14,8 @@
 #define incl_TtsModule_h
 
 
-#include "ModuleInterface.h"
+//#include "ModuleInterface.h"
+#include "IModule.h"
 #include "ModuleLoggingFunctions.h"
 #include "Core.h"
 
@@ -44,7 +45,7 @@ namespace ProtocolUtilities
 namespace Tts
 {
 
-    class TTS_MODULE_API TtsModule :  public QObject, public Foundation::ModuleInterface
+    class TTS_MODULE_API TtsModule :  public QObject, public IModule
     {
         Q_OBJECT
 

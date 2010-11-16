@@ -27,7 +27,8 @@ namespace Tts
 	const std::string TtsModule::module_name_ = std::string("TtsModule");
 
 	TtsModule::TtsModule() :
-		ModuleInterface(module_name_)
+	    QObject(),
+        IModule(module_name_)
 	{
 
 	}
@@ -79,6 +80,6 @@ void SetProfiler(Foundation::Profiler *profiler)
 
 using namespace Tts;
 
-POCO_BEGIN_MANIFEST(Foundation::ModuleInterface)
+POCO_BEGIN_MANIFEST(IModule)
     POCO_EXPORT_CLASS(TtsModule)
 POCO_END_MANIFEST

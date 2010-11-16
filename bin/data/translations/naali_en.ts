@@ -2,6 +2,38 @@
 <!DOCTYPE TS>
 <TS version="2.0" language="en_EN">
 <context>
+    <name>AudioPreviewEditor</name>
+    <message>
+        <source>Frequency: %1Hz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Bits: %1 bit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Format: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+Duration: %1 sec</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio: </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AvatarEditor</name>
     <message>
         <source>Avatar Editor</source>
@@ -16,23 +48,41 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New Avatar</source>
+        <source>Add New Attachement</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New Attach</source>
+        <source>Create New Avatar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Revert</source>
+        <source>Revert All Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save</source>
+        <source>Save To Server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save Local Copy</source>
+        <source>Save To Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AvatarInfoWidget</name>
+    <message>
+        <source>AvatarInfoWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AvatarToolbar</name>
+    <message>
+        <source>AvatarToolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Avatar Editing</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -201,6 +251,53 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>CAVESettings</name>
+    <message>
+        <source>CAVESettings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CAVE Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable CAVE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add new view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add new view (Advanced)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Presets:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BNAVE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>V-CAVE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MiniCave</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom setup:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Views:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CacheSettingsWidget</name>
     <message>
         <source>CacheSettingsWidget</source>
@@ -244,6 +341,179 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>CameraControl</name>
+    <message>
+        <source>Camera Controls</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>tripod</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>avatar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LeftFrame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ZoomFrame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>plus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>minus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RightFrame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>st_left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>st_right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CaveViewSettingsDialog</name>
+    <message>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Projection settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Horizontal Angle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Vertical Angle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Distance To View Plane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FOV Vertical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FOV Horizontal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Top Left Corner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Eye Position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Z</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Y</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CaveViewSettingsDialogAdvanced</name>
+    <message>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Projection settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Bottom left Corner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Z</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Y</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Bottom Right Corner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Top Left Corner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Eye Position</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ChangeTheme</name>
     <message>
         <source>Sound Settings</source>
@@ -251,6 +521,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Change theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ChatSessionWidget</name>
+    <message>
+        <source>ChatSessionWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -369,6 +650,21 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Connecting to %1 with %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid format for user name field: The rexauth user name must be in the form &apos;account@server.com&apos;, and contain no spaces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid format for user name field: The OpenSim user name must be in the form &apos;firstname lastname&apos;, and contain exactly one space in between.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DetachedWidget</name>
+    <message>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1224,14 +1520,6 @@ QLabel {
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>OK</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Apply</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1321,6 +1609,61 @@ QLabel {
     </message>
     <message>
         <source>More info</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FrienListWidget</name>
+    <message>
+        <source>Friends List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QPushButton {
+	border: 0px;
+	background-color: rgba(255, 255, 255, 0);
+}
+
+QPushButton:hover {
+	border: 0px;
+	background-color: rgba(255, 255, 255, 0);
+	color: rgb(51, 98, 255);
+}
+
+QPushButton::pressed {
+	border: 0px;
+	background-color: rgba(255, 255, 255, 0);
+	color: rgb(74, 122, 255);
+}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>x new friend request</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QListView::item {
+     min-height: 30px;
+ }
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HoveringButtonsWidget</name>
+    <message>
+        <source>HoveringButtonsWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HoveringName</name>
+    <message>
+        <source>HoveringWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>John Doe</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1472,6 +1815,17 @@ QLabel {
     </message>
 </context>
 <context>
+    <name>LoadingWidget</name>
+    <message>
+        <source>Connecting...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LoginControllerWidget</name>
     <message>
         <source>Login Controller</source>
@@ -1495,6 +1849,49 @@ QLabel {
     </message>
     <message>
         <source>temp</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LoginWidget</name>
+    <message>
+        <source>IM Login</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Provide your IM credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Presets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last stored credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Google account</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Facebook account</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1602,88 +1999,9 @@ alpha layer of the diffuse map</source>
     </message>
 </context>
 <context>
-    <name>Naali::AudioPreviewEditor</name>
-    <message>
-        <source>Audio: </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Play</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Frequency: %1Hz</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> Bits: %1 bit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> Format: </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>
-Duration: %1 sec</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Naali::MaterialWizard</name>
-    <message>
-        <source>Material Wizard</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Naali::MeshPreviewEditor</name>
+    <name>MeshPreviewEditor</name>
     <message>
         <source>Mesh: </source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Naali::OgreAssetEditorModule</name>
-    <message>
-        <source>Material Wizard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>World Tools</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Naali::OgreScriptEditor</name>
-    <message>
-        <source>OGRE Script Editor</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Naali::PropertyTableWidget</name>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Naali::TexturePreviewEditor</name>
-    <message>
-        <source>Texture: </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1884,6 +2202,17 @@ Duration: %1 sec</source>
     </message>
 </context>
 <context>
+    <name>OgreAssetEditorModule</name>
+    <message>
+        <source>Material Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>World Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OgreScriptEditor</name>
     <message>
         <source>Name</source>
@@ -1897,11 +2226,37 @@ Duration: %1 sec</source>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>OGRE Script Editor</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OpenSimChatWidget</name>
+    <message>
+        <source>OpenSimChatWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PersonalWidget</name>
     <message>
         <source>PersonalWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PropertyTableWidget</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1956,9 +2311,9 @@ Duration: %1 sec</source>
     </message>
 </context>
 <context>
-    <name>RexLogic::AvatarEditor</name>
+    <name>RequestManagerWidget</name>
     <message>
-        <source>Avatar Editor</source>
+        <source>Pending Friend Requests</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1996,6 +2351,63 @@ Duration: %1 sec</source>
     </message>
     <message>
         <source>Toggle postprocessing effects</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SessionManagerWidget</name>
+    <message>
+        <source>IM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Question label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>username@server.com</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>status message</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QWidget {
+	background-color: #f4f4f4;
+}
+
+QLabel {
+	color: rgb(0, 0, 0);
+}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>color: rgb(69, 159, 255);</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hello and Welcome to Naali Communications Widget!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can find all important functionality from the menu that is located at the top of this window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start click the Show Friend List button. There you can start chat,  video or audio sessions with your friends.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>  Connected</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2074,6 +2486,92 @@ Duration: %1 sec</source>
     </message>
 </context>
 <context>
+    <name>SpatialVoiceConfigureWidget</name>
+    <message>
+        <source>3D Voice Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select avatar and start tracking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Avatar List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start Tracking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop Tracking</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>StereoUI</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Eye spacing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Convergence length</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pixel shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>( if &lt;= 0, will use default)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(Only  valid for anaglyphic)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Technique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Anaglyph</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Passive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable stereo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable stereo</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TeleportWidget</name>
     <message>
         <source>Settings Widget</source>
@@ -2093,6 +2591,13 @@ Duration: %1 sec</source>
     </message>
     <message>
         <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TexturePreviewEditor</name>
+    <message>
+        <source>Texture: </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2284,6 +2789,52 @@ Third option is to login into realXtend Taiga and ScienceSim servers that are ba
     </message>
 </context>
 <context>
+    <name>VideoSessionControlsWidget</name>
+    <message>
+        <source>VideoSessionControlsWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VideoSessionWidget</name>
+    <message>
+        <source>VideoSessionWidget</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>color: rgb(0,0,0);</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VoiceControl</name>
     <message>
         <source>Form</source>
@@ -2408,6 +2959,31 @@ Third option is to login into realXtend Taiga and ScienceSim servers that are ba
     </message>
     <message>
         <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>toolContainerWidget</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>name</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>toolManagerWidget</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>voiceToolWidget</name>
+    <message>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

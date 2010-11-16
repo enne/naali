@@ -81,10 +81,7 @@ namespace UiServices
             SAFE_DELETE(proxy);
             return 0;
         }
-        
-//$ BEGIN_MOD $
-//$ MOD_DESCRIPTION Code moved. reX community commit $
-//$ END_MOD $
+
 
         // If the widget has WA_DeleteOnClose on, connect its proxy's visibleChanged()
         // signal to a slot which handles the deletion. This must be done because closing
@@ -111,15 +108,14 @@ namespace UiServices
         // Add to internal control list
         if (!all_proxy_widgets_in_scene_.contains(widget))
             all_proxy_widgets_in_scene_.append(widget);
-//$ BEGIN_MOD $
-//$ MOD_DESCRIPTION Moved here $
+
+
         // \todo Find a proper solution to the problem
         // Proxy widget doesn't get input without main frame resisizing for unknow reason.
         // HACK begin
         widget->moveBy(1, 1);
         widget->moveBy(-1,-1);
         // HACK end
-//$ END_MOD $
 
         connect(widget, SIGNAL(BringProxyToFrontRequest(QGraphicsProxyWidget*)), SLOT(BringProxyToFront(QGraphicsProxyWidget*)));
         //connect(widget, SIGNAL(ProxyMoved(QGraphicsProxyWidget*, const QPointF &)), SLOT(ProxyWidgetMoved(QGraphicsProxyWidget*, const QPointF &)));
@@ -133,17 +129,10 @@ namespace UiServices
     void InworldSceneController::AddWidgetToMenu(QWidget *widget, const QString &name, const QString &menu, const QString &icon)
     {
         ///\todo This string comparison is awful, get rid of this.
-        //if (name == "Inventory")
         if ( name.contains("inv", Qt::CaseInsensitive))
         {
             UiProxyWidget *uiproxy = dynamic_cast<UiProxyWidget *>(widget->graphicsProxyWidget());
             control_panel_manager_->GetPersonalWidget()->SetInventoryWidget(uiproxy);
-        }
-        //else if (name == "Avatar Editor")
-        else if ( name.contains("avatar", Qt::CaseInsensitive) )
-        {
-            UiProxyWidget *uiproxy = dynamic_cast<UiProxyWidget *>(widget->graphicsProxyWidget());
-            control_panel_manager_->GetPersonalWidget()->SetAvatarWidget(uiproxy);
         }
         else
             menu_manager_->AddMenuItem(widget->graphicsProxyWidget(), name, menu, icon);
@@ -431,6 +420,11 @@ namespace UiServices
             return;
         if (widget->scene() == inworld_scene_)
             return;
+        if (name == "Console")
+        {
+            inworld_scene_->addItem(widget);
+            return;
+        }
 
         inworld_scene_->addItem(widget);
         widget->setPos(50,250);

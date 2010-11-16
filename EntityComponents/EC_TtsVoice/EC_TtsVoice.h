@@ -9,15 +9,22 @@
 #ifndef incl_TTS_EC_TtsVoice_h
 #define incl_TTS_EC_TtsVoice_h
 
-#include "ComponentInterface.h"
+//#include "ComponentInterface.h"
+//#include "AttributeInterface.h"
+
+#include "IComponent.h"
+#include "IAttribute.h"
+
+
 #include "Declare_EC.h"
 #include "TtsServiceInterface.h"
-#include "AttributeInterface.h"
+
 
 #include <QString>
 
-class EC_TtsVoice : public Foundation::ComponentInterface
+class EC_TtsVoice : public IComponent
 {
+	Q_OBJECT
 	DECLARE_EC(EC_TtsVoice);
 
 public:
@@ -50,7 +57,7 @@ private:
 
     /// Constuctor.
     /// @param module Owner module.
-    explicit EC_TtsVoice(Foundation::ModuleInterface *module);
+    explicit EC_TtsVoice(IModule *module);
 
     /// Tts pointer.
 	Tts::TtsServiceInterface* ttsService_;

@@ -21,12 +21,6 @@ class UiProxyWidget;
 
 namespace Communications
 {
-    namespace InWorldVoice
-    {
-        class SessionInterface;
-        class ParticipantInterface;
-    }
-
     namespace InWorldChat
     {
         class SessionInterface;
@@ -44,9 +38,7 @@ namespace Communications
 
 namespace CommUI
 {
-    class VoiceUsersInfoWidget;
-    class VoiceStateWidget;
-    class VoiceControllerWidget;
+    class VoiceToolWidget;
 }
 
 namespace Foundation
@@ -58,6 +50,7 @@ namespace CoreUi
 {
     class NormalChatViewWidget;
     class ChatLabel;
+    class ToolManagerWidget;
 
     //! Provide communications functionalities to end user
     //! CommunicationWidget is located to bottom left corner view.
@@ -85,7 +78,6 @@ namespace CoreUi
         void ChangeViewPressed();
         void ChangeView(ViewMode new_mode);
         void ToggleImWidget();
-        void ToggleVoice();
 
         void ShowIncomingMessage(bool self_sent_message, QString sender, QString timestamp, QString message);
 		/// Takes the message from chat line and adds voice information if TTS available
@@ -93,15 +85,11 @@ namespace CoreUi
         void InitializeInWorldVoice();
         void InitializeInWorldChat();
         void UninitializeInWorldVoice();
-        void UpdateInWorldVoiceIndicator();
-        void ShowVoiceControls();
-        void HideVoiceControls();
 		/// Updates chat view removing voice info first
 //$ BEGIN_MOD $
 //$ MOD_DESCRIPTION param uuid added $
         void UpdateInWorldChatView(const Communications::InWorldChat::TextMessageInterface &message, const QString& uuid);
 //$ END_MOD $
-        void ConnectParticipantVoiceAvticitySignals(Communications::InWorldVoice::ParticipantInterface* p);
 
 //$ BEGIN_MOD $
 		/// Shows or hides TTSCHatWidget configuration window
@@ -136,21 +124,15 @@ namespace CoreUi
 //$ MOD_DESCRIPTION TTS added $
         UiProxyWidget *im_proxy_,*tts_proxy_;
 //$ END_MOD $
-        Communications::InWorldVoice::SessionInterface* in_world_voice_session_;
-        Communications::InWorldChat::SessionInterface* in_world_chat_session_;
 
+        Communications::InWorldChat::SessionInterface* in_world_chat_session_;
+        CommUI::VoiceToolWidget* voice_tool_;
+        ToolManagerWidget* tool_manager_;
 
         QPointF press_pos_;
         QPointF release_pos_;
         bool resizing_vertical_;
         bool resizing_horizontal_;
-
-        // in-world voice
-        CommUI::VoiceStateWidget* voice_state_widget_;
-        CommUI::VoiceUsersInfoWidget* voice_users_info_widget_;
-        CommUI::VoiceControllerWidget* voice_controller_widget_;
-        UiProxyWidget* voice_users_proxy_widget_;
-        UiProxyWidget* voice_controller_proxy_widget_;
 
         InputContextPtr input_context_;
 
