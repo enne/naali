@@ -27,6 +27,14 @@ class EC_TtsVoice : public IComponent
 	Q_OBJECT
 	DECLARE_EC(EC_TtsVoice);
 
+	
+public slots:
+    void OnClick();
+
+private slots:
+    /// Registers the action this EC provides to the parent entity, when it's set.
+    void RegisterActions();
+
 public:
     /// Destructor.
     ~EC_TtsVoice();

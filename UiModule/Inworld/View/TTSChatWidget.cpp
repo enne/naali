@@ -66,9 +66,15 @@ namespace Communications //Needed
 					tts_config_->setOwnVoice(Tts::Voices.ES2);
 					fileName ="./festival/demo/DemoES2.wav";
 				}
+				
 			}
 			if (currentLanguage=="English")
 			{
+				if (currentGender=="Male")
+				{
+					tts_config_->setOwnVoice(Tts::Voices.EN1);
+					fileName ="./festival/demo/DemoEN1.wav";
+				}
 				if (currentGender=="Male 1")
 				{
 					tts_config_->setOwnVoice(Tts::Voices.EN1);
@@ -99,6 +105,7 @@ namespace Communications //Needed
 					tts_config_->setOwnVoice(Tts::Voices.EN6);
 					fileName ="./festival/demo/DemoEN6.wav";
 				}
+
 			}
 		
 			if (currentLanguage=="Catalan")
@@ -140,9 +147,9 @@ namespace Communications //Needed
 		}
 		void TtsChatWidget::reloadItems()
 		{
-			QString currentLanguage;
+			QString currentLanguage,currentGender;
 			currentLanguage=ui.ownLangComboBox->currentText();
-			
+
 			//Be carefull, if item text is translated
 			//Do it with index
 			if (currentLanguage=="Spanish")
@@ -150,6 +157,8 @@ namespace Communications //Needed
 				ui.ownGendComboBox->clear();
 				ui.ownGendComboBox->addItem("Male");
 				ui.ownGendComboBox->addItem("Female");
+				currentGender=ui.ownGendComboBox->currentText();
+				currentGender=ui.ownGendComboBox->itemText(1);
 			}
 			if (currentLanguage=="English")
 			{

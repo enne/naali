@@ -12,7 +12,8 @@
 
 
 #include "NotificationTtsApi.h"
-#include "ModuleInterface.h"
+//#include "ModuleInterface.h"
+#include "IModule.h"
 #include "ModuleLoggingFunctions.h"
 #include "Core.h"
 
@@ -41,7 +42,7 @@ namespace Tts
 namespace NotifiTts
 {
 
-    class NOTIFICATIONTTS_API NotificationTts :  public QObject, public Foundation::ModuleInterface
+    class NOTIFICATIONTTS_API NotificationTts :  public QObject, public IModule
     {
         Q_OBJECT
 

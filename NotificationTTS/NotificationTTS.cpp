@@ -24,7 +24,8 @@ namespace NotifiTts
 	const std::string NotificationTts::module_name_ = std::string("NotificationTts");
 
 	NotificationTts::NotificationTts() :
-		ModuleInterface(module_name_)
+		QObject(),
+        IModule(module_name_)
 	{
 
 	}
@@ -45,7 +46,7 @@ namespace NotifiTts
 	{
 		if (framework_ &&  framework_->GetServiceManager())
         {
-			Foundation::UiServiceInterface *ui = framework_->GetService<Foundation::UiServiceInterface>();
+			UiServiceInterface *ui = framework_->GetService<UiServiceInterface>();
             if (ui)
 				connect(ui, SIGNAL(Notification(const QString&)), SLOT(Notification2Speech(const QString&)));
 		}
@@ -78,6 +79,6 @@ void SetProfiler(Foundation::Profiler *profiler)
 
 using namespace NotifiTts;
 
-POCO_BEGIN_MANIFEST(Foundation::ModuleInterface)
+POCO_BEGIN_MANIFEST(IModule)
     POCO_EXPORT_CLASS(NotificationTts)
 POCO_END_MANIFEST

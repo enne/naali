@@ -21,6 +21,7 @@ EC_TtsVoice::EC_TtsVoice(IModule *module) :
 {
 	// Get TTS service
 	ttsService_ = framework_->GetService<Tts::TtsServiceInterface>();
+	connect(this, SIGNAL(ParentEntitySet()), this, SLOT(RegisterActions()));
 	//voice_=Tts::Voices.ES1;
 }
 
@@ -69,4 +70,17 @@ void EC_TtsVoice::SpeakMessage()
 	//ttsService_->file2Speech("ejemplo.txt",voice_.Get().toStdString());
 	//ttsService_->file2PHO("ejemplo.txt","nombrephoejemplo",voice_.Get().toStdString());
 	//ttsService_->file2WAV("ejemplo.txt","nombrewavejemplo",voice_.Get().toStdString());
+}
+
+void EC_TtsVoice::RegisterActions()
+{
+    Scene::Entity *entity = GetParentEntity();
+    assert(entity);
+    if (entity)
+        entity->ConnectAction("MousePress", this, SLOT(OnClick()));
+}
+
+void EC_TtsVoice::OnClick()
+{
+	EC_TtsVoice::SpeakMessage();
 }

@@ -217,7 +217,15 @@ namespace CoreUi
 		if(Tts_chat_widget)
 		{
 		   if(!tts_proxy_->isVisible())
+		   {
 			   tts_proxy_->show();
+		        // \todo Find a proper solution to the problem
+                // IM widget doesn't get input without main frame resisizing for unknow reason.
+                // HACK begin
+                tts_proxy_->moveBy(1,1);
+                tts_proxy_->moveBy(-1,-1);
+                // HACK end
+		   }
 		   else
 			   tts_proxy_->AnimatedHide();
 		}
@@ -534,7 +542,8 @@ namespace CoreUi
 		UiServiceInterface *ui = framework_->GetService<UiServiceInterface>();
 		if (ui)
 		{
-			tts_proxy_ = ui->AddWidgetToScene(Tts_chat_widget);
+			Tts_chat_widget->setWindowTitle("Text To Speech Configuration");
+     		tts_proxy_ = ui->AddWidgetToScene(Tts_chat_widget);
 			tts_proxy_->hide();
 		}
 	}

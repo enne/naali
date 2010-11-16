@@ -78,7 +78,7 @@ LinkEntityComponent(EntityComponents/EC_Light EC_Light)
 LinkEntityComponent(EntityComponents/EC_TtsVoice EC_TtsVoice)
 
 link_modules (Core Foundation Interfaces SceneManager OgreRenderingModule AssetModule AvatarModule RexCommon
-    HttpUtilities RpcUtilities ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EnvironmentModule EC_TtsVoice)
+    HttpUtilities RpcUtilities ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EnvironmentModule)
 
 if (NOT UISERVICE_TEST)
     link_modules (UiModule)
