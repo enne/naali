@@ -25,7 +25,7 @@ endif()
 
 # If WINDOWS_APP == 0, the console (output log) window is created and shown when Naali starts on Windows.
 # If WINDOWS_APP == 1, this window is not shown. This flag only affects when building on Windows.
-SET (WINDOWS_APP 0)
+SET (WINDOWS_APP 1)
 
 # Set login scene type: 1 = dynamic switchable ether + normal login, 0 = static classical login
 SET (DYNAMIC_LOGIN_SCENE 1)
@@ -122,6 +122,11 @@ add_subdirectory (CommunicationsModule)  # Enables communication capabilities.
 add_subdirectory (TelepathyIMModule)     # Telepathy Messaging support.
 add_subdirectory (InWorldChatModule)     # Implements in-world text communication.
 add_subdirectory (CAVEStereoModule)	 # Implements CAVE and Stereoscopy functionality
+add_subdirectory (TtsModule)
+add_subdirectory (NotificationTTS)
+#add_subdirectory (UiExternalModule)
+
+AddEntityComponent (EntityComponents/EC_TtsVoice EC_TtsVoice)
 
 AddEntityComponent(EntityComponents/EC_ChatBubble EC_ChatBubble)   # declared by InWorldChatModule 
 AddEntityComponent(EntityComponents/EC_Billboard EC_Billboard)     # declared by InWorldChatModule
