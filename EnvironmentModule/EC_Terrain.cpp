@@ -174,26 +174,16 @@ void EC_Terrain::AttributeUpdated(IAttribute *attribute)
     }
     else if (changedAttribute == nodeTransformation.GetNameString())
     {
-        if (!rootNode)
-            CreateRootNode();
-        if (!rootNode)
-            return;
-
-        const Transform &tm = nodeTransformation.Get();
-
-        Ogre::Matrix3 rot_new;
-        rot_new.FromEulerAnglesXYZ(Ogre::Degree(tm.rotation.x), Ogre::Degree(tm.rotation.y), Ogre::Degree(tm.rotation.z));
-        Ogre::Quaternion q_new(rot_new);
-        rootNode->setOrientation(Ogre::Quaternion(rot_new));
-
-        rootNode->setPosition(tm.position.x, tm.position.y, tm.position.z);
-
-        rootNode->setScale(tm.scale.x, tm.scale.y, tm.scale.z);
-
-        ///\todo support tm change.
+        UpdateRootNodeTransform();
     }
     else if (changedAttribute == material.GetNameString())
     {
+        SetTerrainMaterialTexture(0, texture0.Get().toStdString().c_str());
+        SetTerrainMaterialTexture(1, texture1.Get().toStdString().c_str());
+        SetTerrainMaterialTexture(2, texture2.Get().toStdString().c_str());
+        SetTerrainMaterialTexture(3, texture3.Get().toStdString().c_str());
+        SetTerrainMaterialTexture(4, texture4.Get().toStdString().c_str());
+
         for(int y = 0; y < patchHeight; ++y)
             for(int x = 0; x < patchWidth; ++x)
                 UpdateTerrainPatchMaterial(x, y);
@@ -359,7 +349,7 @@ Vector3df EC_Terrain::CalculateNormal(int x, int y, int xinside, int yinside)
 
 void EC_Terrain::SaveToFile(QString filename)
 {
-    if (patchWidth * patchHeight != patches.size())
+    if (patchWidth * patchHeight != (int)patches.size())
         return; ///\todo Log out error. The EC_Terrain is in inconsistent state. Cannot save.
 
     FILE *handle = fopen(filename.toStdString().c_str(), "wb");
@@ -439,9 +429,13 @@ void EC_Terrain::LoadFromFile(QString filename)
     RegenerateDirtyTerrainPatches();
 
     // Set the new number of patches this terrain has. These changes only need to be done locally, since the other
-    // peers have loaded the terrain from the same file, and they will also locally do this change.
-    this->xPatches.Set(patchWidth, AttributeChange::LocalOnly);
-    this->yPatches.Set(patchHeight, AttributeChange::LocalOnly);
+    // peers have loaded the terrain from the same file, and they will also locally do this change. This change is also
+    // performed in "batched" mode, i.e. first the values are set, and only after that the signals are emitted manually.
+    this->xPatches.Set(patchWidth, AttributeChange::Disconnected);
+    this->yPatches.Set(patchHeight, AttributeChange::Disconnected);
+
+    this->xPatches.Changed(AttributeChange::LocalOnly);
+    this->yPatches.Changed(AttributeChange::LocalOnly);
 }
 
 void EC_Terrain::SetTerrainMaterialTexture(int index, const char *textureName)
@@ -484,6 +478,22 @@ void EC_Terrain::UpdateTerrainPatchMaterial(int patchX, int patchY)
     }
 }
 
+void EC_Terrain::UpdateRootNodeTransform()
+{
+    if (!rootNode)
+        return;
+
+    const Transform &tm = nodeTransformation.Get();
+
+    Ogre::Matrix3 rot_new;
+    rot_new.FromEulerAnglesXYZ(Ogre::Degree(tm.rotation.x), Ogre::Degree(tm.rotation.y), Ogre::Degree(tm.rotation.z));
+    Ogre::Quaternion q_new(rot_new);
+
+    rootNode->setOrientation(Ogre::Quaternion(rot_new));
+    rootNode->setPosition(tm.position.x, tm.position.y, tm.position.z);
+    rootNode->setScale(tm.scale.x, tm.scale.y, tm.scale.z);
+}
+
 /// Creates Ogre geometry data for the single given patch, or updates the geometry for an existing
 /// patch if the associated Ogre resources already exist.
 void EC_Terrain::GenerateTerrainGeometryForOnePatch(int patchX, int patchY)
@@ -492,12 +502,13 @@ void EC_Terrain::GenerateTerrainGeometryForOnePatch(int patchX, int patchY)
 
     EC_Terrain::Patch &patch = GetPatch(patchX, patchY);
 
-    boost::shared_ptr<Renderer> renderer = framework_->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+    Renderer *renderer = framework_->GetService<Renderer>();
     if (!renderer)
         return;
 
     Ogre::SceneNode *node = patch.node;
     bool firstTimeFill = (node == 0);
+    UNREFERENCED_PARAM(firstTimeFill);
     if (!node)
     {
         CreateOgreTerrainPatchNode(node, patch.x, patch.y);
@@ -647,7 +658,7 @@ void EC_Terrain::CreateRootNode()
     if (rootNode)
         return;
 
-    OgreRenderer::RendererPtr renderer = framework_->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+    OgreRenderer::RendererPtr renderer = framework_->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
     if (!renderer)
         return;
 
@@ -657,11 +668,13 @@ void EC_Terrain::CreateRootNode()
 
     rootNode = sceneMgr->createSceneNode();
     sceneMgr->getRootSceneNode()->addChild(rootNode);
+
+    UpdateRootNodeTransform();
 }
 
 void EC_Terrain::CreateOgreTerrainPatchNode(Ogre::SceneNode *&node, int patchX, int patchY)
 {
-    OgreRenderer::RendererPtr renderer = framework_->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+    OgreRenderer::RendererPtr renderer = framework_->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
     if (!renderer)
         return;
 

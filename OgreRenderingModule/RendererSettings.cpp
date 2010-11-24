@@ -7,6 +7,7 @@
 #include "ServiceManager.h"
 #include "Framework.h"
 #include "UiServiceInterface.h"
+#include "../Input/Input.h"
 
 #include <QUiLoader>
 #include <QFile>
@@ -53,7 +54,7 @@ namespace OgreRenderer
         ui->AddSettingsWidget(settings_widget_, "Rendering");
 
         QDoubleSpinBox* spin = settings_widget_->findChild<QDoubleSpinBox*>("spinbox_viewdistance");
-        boost::shared_ptr<Renderer> renderer = framework_->GetServiceManager()->GetService<Renderer>(Foundation::Service::ST_Renderer).lock();
+        boost::shared_ptr<Renderer> renderer = framework_->GetServiceManager()->GetService<Renderer>(Service::ST_Renderer).lock();
         if (!spin || !renderer)
             return;
         spin->setValue(renderer->GetViewDistance());
@@ -80,7 +81,7 @@ namespace OgreRenderer
         }
         
         //fullscreen shortcut key
-        input_context_ = framework_->Input()->RegisterInputContext("Renderer", 90);
+        input_context_ = framework_->GetInput()->RegisterInputContext("Renderer", 90);
         if(input_context_.get())
             connect(input_context_.get(), SIGNAL(KeyPressed(KeyEvent*)), this, SLOT(KeyPressed(KeyEvent*)));
     }

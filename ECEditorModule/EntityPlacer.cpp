@@ -2,9 +2,9 @@
 #include "EntityPlacer.h"
 #include "SceneManager.h"
 
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "Renderer.h"
-#include "InputServiceInterface.h"
+#include "../Input/Input.h"
 #include "EC_Mesh.h"
 #include "OgreRenderingModule.h"
 #include <Ogre.h>
@@ -14,19 +14,19 @@ namespace ECEditor
 EntityPlacer::EntityPlacer(Foundation::Framework *framework, entity_id_t entityId, QObject *parent):
     framework_(framework),
     QObject(parent),
-    finnished_(false),
+    finished_(false),
     useCustomMesh_(false),
     meshEntity_(0),
     previousScrollValue_(0)
 {
     static const std::string customMeshName("Selection.mesh");
-    input_ = framework_->Input()->RegisterInputContext("EntityPlacement", 110);
+    input_ = framework_->GetInput()->RegisterInputContext("EntityPlacement", 110);
     
     entity_ = framework_->GetDefaultWorldScene()->GetEntity(entityId);
     if(!entity_.expired())
     {
         Scene::Entity *entity = entity_.lock().get();
-        placeable_ = entity->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+        placeable_ = entity->GetComponent<EC_Placeable>().get();
         if(!placeable_)
             return;
 
@@ -78,8 +78,8 @@ void EntityPlacer::OnMouseEvent(MouseEvent *mouse)
     if(mouse->eventType == MouseEvent::MousePressed && mouse->button == MouseEvent::LeftButton)
     {
         deleteLater();
-        emit Finnished(location_, orientation_);
-        finnished_ =  true;
+        emit Finished(location_, orientation_);
+        finished_ =  true;
     }
     else if(mouse->eventType == MouseEvent::MouseScroll)
     {
@@ -90,7 +90,7 @@ void EntityPlacer::OnMouseEvent(MouseEvent *mouse)
 void EntityPlacer::MouseMove(MouseEvent *mouse)
 {
     Vector3df result;
-    if(DoRayCast(mouse->x, mouse->y, result) && !finnished_)
+    if(DoRayCast(mouse->x, mouse->y, result) && !finished_)
     {
         location_ = result;
         if(placeable_)
@@ -101,16 +101,16 @@ void EntityPlacer::MouseMove(MouseEvent *mouse)
 bool EntityPlacer::DoRayCast(int x, int y, Vector3df &result)
 {
     // do raycast into the world when user is dragging the mouse while hes holding left button down.
-    boost::shared_ptr<OgreRenderer::Renderer> renderer = framework_->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+    boost::shared_ptr<OgreRenderer::Renderer> renderer = framework_->GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
     if (!renderer)
         return false;
 
-    Foundation::RaycastResult cast_result = renderer->Raycast(x, y);
-    Scene::Entity *entity = cast_result.entity_;
+    RaycastResult* cast_result = renderer->Raycast(x, y);
+    Scene::Entity *entity = cast_result->entity_;
     if (!entity) // User didn't click on terrain or other entities.
         return false;
 
-    result = cast_result.pos_;
+    result = cast_result->pos_;
     return true;
 }
 }

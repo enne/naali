@@ -6,7 +6,7 @@
 #include "IModule.h"
 #include "ModuleLoggingFunctions.h"
 #include "WorldBuildingModuleApi.h"
-#include "InputServiceInterface.h"
+#include "Input.h"
 
 #include <QObject>
 #include <QStringList>
@@ -15,7 +15,9 @@
 namespace WorldBuilding
 {
     class BuildSceneManager;
+    class OpenSimSceneService;
     typedef boost::shared_ptr<BuildSceneManager> BuildServicePtr;
+    typedef boost::shared_ptr<OpenSimSceneService> OpenSimSceneServicePtr;
 
     class WB_MODULE_API WorldBuildingModule : public QObject, public IModule
     {
@@ -55,6 +57,9 @@ namespace WorldBuilding
 
         //! WorldBuilding service
         BuildServicePtr build_scene_manager_;
+
+        //! OpenSim scene service
+        OpenSimSceneServicePtr opensim_scene_service_;
     };
 }
 #endif

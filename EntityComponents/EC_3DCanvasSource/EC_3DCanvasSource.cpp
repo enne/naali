@@ -23,23 +23,24 @@ DEFINE_POCO_LOGGING_FUNCTIONS("EC_3DCanvasSource")
 #include <QPushButton>
 #include <QUiLoader>
 #include <QVBoxLayout>
+#include <QGraphicsScene>
 
 #include "MemoryLeakCheck.h"
 
 EC_3DCanvasSource::EC_3DCanvasSource(IModule *module) :
     IComponent(module->GetFramework()),
-    source_(this, "source"),
-    position_(this, "position", 0),
-    submesh_(this, "submesh", 0),
-    show2d_(this, "show 2D", true),
+    source(this, "source", ""),
+    submesh(this, "submesh", 0),
+    refreshRate(this, "refresh per sec", 0),
+    show2d(this, "show 2D", true),
     widget_(0),
     content_widget_(0),
     placeholder_widget_(0),
     proxy_(0),
     source_edit_(0),
-    manipulate_ec_3dcanvas(true)
+    canvas_started_(false)
 {
-    connect(this, SIGNAL(OnAttributeChanged(IAttribute*, AttributeChange::Type)), this, SLOT(UpdateWidgetAndCanvas()));
+    connect(this, SIGNAL(OnAttributeChanged(IAttribute*, AttributeChange::Type)), this, SLOT(UpdateWidgetAndCanvas(IAttribute*, AttributeChange::Type)));
     connect(this, SIGNAL(ParentEntitySet()), this, SLOT(RegisterActions()));
     CreateWidget();
 }
@@ -53,8 +54,12 @@ EC_3DCanvasSource::~EC_3DCanvasSource()
 
 void EC_3DCanvasSource::OnClick()
 {
-    if ((show2d_.Get() == true) && (widget_) && (proxy_))
+    if ((getshow2d() == true) && (widget_) && (proxy_))
     {
+        if (!proxy_->scene())
+            return;
+        if (!proxy_->scene()->isActive())
+            return;
         if (proxy_->isVisible())
             proxy_->AnimatedHide();
         else
@@ -65,12 +70,9 @@ void EC_3DCanvasSource::OnClick()
 void EC_3DCanvasSource::SourceEdited()
 {
     QString new_source = source_edit_->text();
-    if (new_source != source_.Get())
+    if (new_source != getsource())
     {
-        // Replicate changed source to network
-        // std::cout << "Changed source to " << new_source << std::endl;
-        source_.Set(new_source, AttributeChange::Default);
-        ComponentChanged(AttributeChange::Default);
+        setsource(new_source);
     }
 }
 
@@ -90,10 +92,59 @@ void EC_3DCanvasSource::EndPressed()
 {
 }
 
-void EC_3DCanvasSource::UpdateWidgetAndCanvas()
+void EC_3DCanvasSource::UpdateWidgetAndCanvas(IAttribute *attribute, AttributeChange::Type type)
 {
-    UpdateWidget();
-    UpdateCanvas();
+    EC_3DCanvas *canvas = Get3DCanvas();
+    bool update = false;
+    if (attribute == &submesh)
+    {
+        if (canvas)
+        {
+            int my_submesh = getsubmesh();
+            if (my_submesh < 0)
+                my_submesh = 0;
+            if (!canvas->GetSubMeshes().contains(my_submesh))
+            {
+                canvas->SetSubmesh(my_submesh);
+                update = true;
+            }
+        }
+        else
+            UpdateWidget();
+    }
+    else if (attribute == &source)
+    {
+        if (last_source_ != getsource())
+        {
+            UpdateWidget();
+            if (!canvas_started_)
+                UpdateCanvas();
+            else
+                update = true;
+        }
+    }
+    else if (attribute == &refreshRate)
+    {
+        if (canvas)
+        {
+            int ref_rate_sec = getrefreshRate();
+            if (ref_rate_sec > 0)
+            {
+                int ref_rate_msec = 1000 / ref_rate_sec;
+                if (canvas->GetRefreshRate() != ref_rate_msec)
+                {
+                    canvas->SetRefreshRate(ref_rate_sec);
+                    canvas_started_ = false;
+                    UpdateCanvas();
+                }
+            }
+            else
+                canvas->SetRefreshRate(0);
+        }
+    }
+    
+    if (update && canvas)
+        UpdateCanvas();
 }
 
 void EC_3DCanvasSource::WebViewLinkClicked(const QUrl& url)
@@ -102,7 +153,7 @@ void EC_3DCanvasSource::WebViewLinkClicked(const QUrl& url)
     
     // If url is different than the source, update the lineedit & browser & replicate to network
     QString url_str = url.toString();
-    if (url_str != source_.Get())
+    if (url_str != getsource())
     {
         QWebView* webwidget = dynamic_cast<QWebView*>(content_widget_);
         if (!webwidget)
@@ -114,33 +165,32 @@ void EC_3DCanvasSource::WebViewLinkClicked(const QUrl& url)
         
         // Set last_source now so that we won't trigger reload of the page again when the source comes back from network
         last_source_ = url_str;
-        
-        // std::cout << "Changed source by click to " << url_str << std::endl;
-        source_.Set(url_str, AttributeChange::Default);
-        ComponentChanged(AttributeChange::Default);
+        setsource(url_str);
     }
 }
 
 void EC_3DCanvasSource::RepaintCanvas()
 {
-    if (!manipulate_ec_3dcanvas)
-        return;
+    EC_3DCanvas *canvas = Get3DCanvas();
+    if (canvas)
+        canvas->Update();
+}
 
+EC_3DCanvas *EC_3DCanvasSource::Get3DCanvas()
+{
     Scene::Entity* entity = GetParentEntity();
     if (!entity)
-        return;
-
+        return 0;
     ComponentPtr comp = entity->GetComponent(EC_3DCanvas::TypeNameStatic());
     if (!comp)
-        return;
-
+        return 0;
     EC_3DCanvas* canvas = checked_static_cast<EC_3DCanvas*>(comp.get());
-    canvas->Start();
+    return canvas;
 }
 
 void EC_3DCanvasSource::UpdateWidget()
 {
-    QString source = source_.Get();
+    QString source = getsource();
     if (source.isEmpty())
     {
         QTimer::singleShot(1000, this, SLOT(FetchWebViewUrl()));
@@ -151,8 +201,8 @@ void EC_3DCanvasSource::UpdateWidget()
     {
         if (source_edit_)
             source_edit_->setText(source);
-        
         last_source_ = source;
+
         if (!placeholder_widget_)
         {
             LogError("No placeholder widget, cannot create content widget");
@@ -177,19 +227,18 @@ void EC_3DCanvasSource::UpdateWidget()
                 if (layout)
                     layout->addWidget(webwidget);
 
-                webwidget->setUrl(QUrl(source));
+                webwidget->load(QUrl(source));
                 webwidget->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
                 content_widget_ = webwidget;
                 
-                connect(webwidget, SIGNAL(loadFinished( bool )), this, SLOT(RepaintCanvas()));
-                connect(webwidget, SIGNAL(loadProgress( int )), this, SLOT(RepaintCanvas()));
-                connect(webwidget, SIGNAL(linkClicked( const QUrl & )), this, SLOT(WebViewLinkClicked( const QUrl & )));
-                connect(webwidget->page(), SIGNAL(scrollRequested( int, int, const QRect & )), this, SLOT(RepaintCanvas()));
+                connect(webwidget, SIGNAL(loadFinished(bool)), this, SLOT(RepaintCanvas()), Qt::UniqueConnection);
+                connect(webwidget, SIGNAL(linkClicked(const QUrl&)), this, SLOT(WebViewLinkClicked(const QUrl &)), Qt::UniqueConnection);
+                connect(webwidget->page(), SIGNAL(scrollRequested(int, int, const QRect&)), this, SLOT(RepaintCanvas()), Qt::UniqueConnection);
             }
             else
             {
                 // If source changed, update the webview URL
-                webwidget->setUrl(QUrl(source));
+                webwidget->load(QUrl(source));
             }
         }
     }
@@ -197,7 +246,7 @@ void EC_3DCanvasSource::UpdateWidget()
 
 void EC_3DCanvasSource::UpdateCanvas()
 {
-    if (!content_widget_ || !manipulate_ec_3dcanvas)
+    if (!content_widget_)
         return;
     
     Scene::Entity* entity = GetParentEntity();
@@ -215,21 +264,53 @@ void EC_3DCanvasSource::UpdateCanvas()
     }
     
     // If entity has no valid mesh or prim yet, start a retry timer and try to set the canvas later
-    if ((!entity->GetComponent(OgreRenderer::EC_Mesh::TypeNameStatic())) && 
-        (!entity->GetComponent(OgreRenderer::EC_OgreCustomObject::TypeNameStatic())))
+    if ((!entity->GetComponent(EC_Mesh::TypeNameStatic())) && 
+        (!entity->GetComponent(EC_OgreCustomObject::TypeNameStatic())))
     {
         //LogInfo("Mesh or prim did not exist yet, retrying");
         QTimer::singleShot(1000, this, SLOT(UpdateCanvas()));
         return;
     }
     
+    // Set widget if different
     EC_3DCanvas* canvas = checked_static_cast<EC_3DCanvas*>(comp.get());
-    canvas->SetWidget(content_widget_);
-    int submesh = submesh_.Get();
-    if (submesh < 0)
-        submesh = 0;
-    canvas->SetSubmesh(submesh);
-    canvas->Start();
+    if (canvas->GetWidget() != content_widget_)
+    {
+        canvas->SetWidget(content_widget_);
+    }
+
+    // Set submesh if different
+    int my_submesh = getsubmesh();
+    if (my_submesh < 0)
+        my_submesh = 0;
+    if (!canvas->GetSubMeshes().contains(my_submesh))
+        canvas->SetSubmesh(my_submesh);
+
+    // Refresh rate
+    int ref_rate_sec = getrefreshRate();
+    if (ref_rate_sec > 0)
+    {
+        int ref_rate_msec = 1000 / ref_rate_sec;
+        if (canvas->GetRefreshRate() != ref_rate_msec)
+        {
+            canvas->SetRefreshRate(ref_rate_sec);
+            canvas_started_ = false;
+        }
+    }
+    else
+        canvas->SetRefreshRate(0);
+
+    // Start if first run
+    if (!canvas_started_)
+    {
+        canvas->Start();
+        canvas_started_ = true;
+    }
+    // Update otherwise
+    else
+    {
+        canvas->Update();
+    }
 }
 
 void EC_3DCanvasSource::FetchWebViewUrl()
@@ -260,10 +341,7 @@ void EC_3DCanvasSource::FetchWebViewUrl()
         return;
     QString url = canvas_webview->url().toString();
     if (!url.isEmpty())
-    {
-        source_.Set(url, AttributeChange::LocalOnly);
-        ComponentChanged(AttributeChange::LocalOnly);
-    }
+        setsource(url);
     else
         QTimer::singleShot(1000, this, SLOT(FetchWebViewUrl()));
 }

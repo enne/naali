@@ -5,8 +5,8 @@
 
 #include "ECEditorModule.h"
 #include "ECEditorWindow.h"
-#include "EC_SerializationTest.h"
 #include "EcXmlEditorWidget.h"
+#include "TreeWidgetItemExpandMemory.h"
 
 #include "EventManager.h"
 #include "SceneEvents.h"
@@ -41,12 +41,12 @@ namespace ECEditor
     
     void ECEditorModule::Load()
     {
-        DECLARE_MODULE_EC(EC_SerializationTest);
     }
 
     void ECEditorModule::Initialize()
     {
         event_manager_ = framework_->GetEventManager();
+        expandMemory = ExpandMemoryPtr(new TreeWidgetItemExpandMemory(name_static_.c_str(), framework_->GetDefaultConfig()));
     }
 
     void ECEditorModule::PostInitialize()
@@ -88,7 +88,7 @@ namespace ECEditor
 
     bool ECEditorModule::HandleEvent(event_category_id_t category_id, event_id_t event_id, IEventData* data)
     {
-        if (category_id == scene_event_category_)
+        /*if (category_id == scene_event_category_)
         {
             switch(event_id)
             {
@@ -118,7 +118,7 @@ namespace ECEditor
             default:
                 break;
             }
-        }
+        }*/
 
         if (category_id == network_state_event_category_ && event_id == ProtocolUtilities::Events::EVENT_SERVER_DISCONNECTED)
             if (editor_window_)
@@ -139,18 +139,18 @@ namespace ECEditor
         editor_window_ = new ECEditorWindow(GetFramework());
 
         UiProxyWidget *editor_proxy = ui->AddWidgetToScene(editor_window_);
-        ui->AddWidgetToMenu(editor_window_, tr("Entity-component Editor"), "", "./data/ui/images/menus/edbutton_OBJED_normal.png");
-        ui->RegisterUniversalWidget("Components", editor_proxy);
+        // We need to listen proxy widget's focus signal, because for some reason QWidget's focusInEvent wont get triggered when
+        // it's attached to QGraphicsProxyWidget.
+        connect(editor_proxy, SIGNAL(FocusChanged(QFocusEvent *)), editor_window_, SLOT(FocusChanged(QFocusEvent *)), Qt::UniqueConnection);
 
-        connect(editor_window_, SIGNAL(EditEntityXml(Scene::EntityPtr)), this, SLOT(CreateXmlEditor(Scene::EntityPtr)));
-        connect(editor_window_, SIGNAL(EditComponentXml(ComponentPtr)), this, SLOT(CreateXmlEditor(ComponentPtr)));
-        connect(editor_window_, SIGNAL(EditEntityXml(const QList<Scene::EntityPtr> &)), this, SLOT(CreateXmlEditor(const QList<Scene::EntityPtr> &)));
-        connect(editor_window_, SIGNAL(EditComponentXml(const QList<ComponentPtr> &)), this, SLOT(CreateXmlEditor(const QList<ComponentPtr> &)));
+        // We don't need to worry about attaching ECEditorWindow to ui scene, because ECEditorWindow's initialize operation will do it automaticly.
+        ui->AddWidgetToMenu(editor_window_, tr("Entity-component Editor"), "", "./data/ui/images/menus/edbutton_OBJED_normal.png");
+        ui->RegisterUniversalWidget("Components", editor_window_->graphicsProxyWidget());
     }
 
     Console::CommandResult ECEditorModule::ShowWindow(const StringVector &params)
     {
-        UiServicePtr ui = framework_->GetService<UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+        UiServicePtr ui = framework_->GetService<UiServiceInterface>(Service::ST_Gui).lock();
         if (!ui)
             return Console::ResultFailure("Failed to acquire UiModule pointer!");
 
@@ -226,7 +226,7 @@ namespace ECEditor
 
     void ECEditorModule::CreateXmlEditor(const QList<Scene::EntityPtr> &entities)
     {
-        UiServicePtr ui = framework_->GetService<UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+        UiServicePtr ui = framework_->GetService<UiServiceInterface>(Service::ST_Gui).lock();
         if (entities.empty() || !ui)
             return;
 
@@ -249,7 +249,7 @@ namespace ECEditor
 
     void ECEditorModule::CreateXmlEditor(const QList<ComponentPtr> &components)
     {
-        UiServicePtr ui = framework_->GetService<UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+        UiServicePtr ui = framework_->GetService<UiServiceInterface>(Service::ST_Gui).lock();
         if (components.empty() || !ui)
             return;
 

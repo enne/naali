@@ -11,7 +11,7 @@
 
 #include "Framework.h"
 #include "Frame.h"
-#include "InputServiceInterface.h"
+#include "Input.h"
 #include "RenderServiceInterface.h"
 #include "Entity.h"
 
@@ -22,9 +22,9 @@ SceneInteract::SceneInteract(Foundation::Framework *fw) :
     lastY_(-1),
     itemUnderMouse_(false)
 {
-    renderer_ = framework_->GetServiceManager()->GetService<Foundation::RenderServiceInterface>(Foundation::Service::ST_Renderer);
+    renderer_ = framework_->GetServiceManager()->GetService<Foundation::RenderServiceInterface>(Service::ST_Renderer);
 
-    input_ = framework_->Input()->RegisterInputContext("SceneInteract", 100);
+    input_ = framework_->GetInput()->RegisterInputContext("SceneInteract", 100);
     input_->SetTakeMouseEventsOverQt(true);
     connect(input_.get(), SIGNAL(OnKeyEvent(KeyEvent *)), SLOT(HandleKeyEvent(KeyEvent *)));
     connect(input_.get(), SIGNAL(OnMouseEvent(MouseEvent *)), SLOT(HandleMouseEvent(MouseEvent *)));
@@ -45,8 +45,8 @@ void SceneInteract::Raycast()
     if (renderer_.expired())
         return;
 
-    Foundation::RaycastResult result = renderer_.lock()->Raycast(lastX_, lastY_);
-    if (!result.entity_ || itemUnderMouse_)
+    RaycastResult* result = renderer_.lock()->Raycast(lastX_, lastY_);
+    if (!result->entity_ || itemUnderMouse_)
     {
         if (!lastHitEntity_.expired())
             lastHitEntity_.lock()->Exec("MouseHoverOut");
@@ -55,7 +55,7 @@ void SceneInteract::Raycast()
     }
 
     Scene::EntityPtr lastEntity = lastHitEntity_.lock();
-    Scene::EntityPtr entity = result.entity_->GetSharedPtr();
+    Scene::EntityPtr entity = result->entity_->GetSharedPtr();
     if (entity != lastEntity)
     {
         if (lastEntity)

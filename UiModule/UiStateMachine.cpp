@@ -188,8 +188,7 @@ namespace CoreUi
         }
         else
         {
-            disconnect(current_scene_, SIGNAL( changed(const QList<QRectF> &) ), view_, SLOT( SceneChange() ));
-
+            disconnect(current_scene_, SIGNAL( changed(const QList<QRectF> &) ), view_, SLOT( HandleSceneChanged(const QList<QRectF> &)));
             QString old_scene_name = current_scene_name_;
             current_scene_ = scene_map_[name];
             current_scene_name_ = name;
@@ -199,9 +198,12 @@ namespace CoreUi
 
             current_scene_->setSceneRect(view_->viewport()->rect());
             if (view_->scene() != current_scene_)
+            {
                 view_->setScene(current_scene_);
+                current_scene_->invalidate();
+            }
 
-            connect(current_scene_, SIGNAL( changed(const QList<QRectF> &) ), view_, SLOT( SceneChange() ));
+            connect(current_scene_, SIGNAL( changed(const QList<QRectF> &) ), view_, SLOT( HandleSceneChanged(const QList<QRectF> &)));
 
             if (animations_map_.contains(current_scene_))
             {

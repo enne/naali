@@ -4,7 +4,7 @@
 #include "EC_Light.h"
 #include "IModule.h"
 #include "Renderer.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "Entity.h"
 #include "OgreConversionUtils.h"
 #include "XMLUtilities.h"
@@ -48,7 +48,7 @@ EC_Light::EC_Light(IModule *module) :
     type.SetMetadata(&typeAttrData);
 
     boost::shared_ptr<Renderer> renderer = module->GetFramework()->GetServiceManager()->GetService
-        <Renderer>(Foundation::Service::ST_Renderer).lock();
+        <Renderer>(Service::ST_Renderer).lock();
     if (!renderer)
         return;
 
@@ -64,7 +64,7 @@ EC_Light::~EC_Light()
         return;
 
     boost::shared_ptr<Renderer> renderer = GetFramework()->GetServiceManager()->GetService
-        <Renderer>(Foundation::Service::ST_Renderer).lock();
+        <Renderer>(Service::ST_Renderer).lock();
     if (!renderer)
         return;
 
@@ -79,7 +79,7 @@ EC_Light::~EC_Light()
 
 void EC_Light::SetPlaceable(ComponentPtr placeable)
 {
-    if (dynamic_cast<EC_OgrePlaceable*>(placeable.get()) == 0)
+    if (dynamic_cast<EC_Placeable*>(placeable.get()) == 0)
     {
         LogError("Attempted to set a placeable which is not a placeable");
         return;
@@ -97,7 +97,7 @@ void EC_Light::AttachLight()
 {
     if ((placeable_) && (!attached_))
     {
-        EC_OgrePlaceable* placeable = checked_static_cast<EC_OgrePlaceable*>(placeable_.get());
+        EC_Placeable* placeable = checked_static_cast<EC_Placeable*>(placeable_.get());
         Ogre::SceneNode* node = placeable->GetSceneNode();
         node->attachObject(light_);
         attached_ = true;
@@ -108,7 +108,7 @@ void EC_Light::DetachLight()
 {
     if ((placeable_) && (attached_))
     {
-        EC_OgrePlaceable* placeable = checked_static_cast<EC_OgrePlaceable*>(placeable_.get());
+        EC_Placeable* placeable = checked_static_cast<EC_Placeable*>(placeable_.get());
         Ogre::SceneNode* node = placeable->GetSceneNode();
         node->detachObject(light_);
         attached_ = false;
@@ -123,7 +123,7 @@ void EC_Light::UpdateOgreLight()
         Scene::Entity* entity = GetParentEntity();
         if (entity)
         {
-            ComponentPtr placeable = entity->GetComponent(EC_OgrePlaceable::TypeNameStatic());
+            ComponentPtr placeable = entity->GetComponent(EC_Placeable::TypeNameStatic());
             if (placeable)
                 SetPlaceable(placeable);
         }

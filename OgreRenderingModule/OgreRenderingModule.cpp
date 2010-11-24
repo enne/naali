@@ -4,15 +4,14 @@
 #include "OgreRenderingModule.h"
 #include "Renderer.h"
 #include "ResourceHandler.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "EC_Mesh.h"
 #include "EC_OgreLight.h"
 #include "EC_OgreSky.h"
 #include "EC_OgreCustomObject.h"
-#include "EC_OgreConsoleOverlay.h"
 #include "EC_OgreMovableTextOverlay.h"
 #include "EC_OgreParticleSystem.h"
-#include "EC_OgreAnimationController.h"
+#include "EC_AnimationController.h"
 #include "EC_OgreEnvironment.h"
 #include "EC_OgreCamera.h"
 
@@ -46,15 +45,14 @@ namespace OgreRenderer
     // virtual
     void OgreRenderingModule::Load()
     {
-        DECLARE_MODULE_EC(EC_OgrePlaceable);
+        DECLARE_MODULE_EC(EC_Placeable);
         DECLARE_MODULE_EC(EC_Mesh);
         DECLARE_MODULE_EC(EC_OgreLight);
         DECLARE_MODULE_EC(EC_OgreSky);
         DECLARE_MODULE_EC(EC_OgreCustomObject);
-        DECLARE_MODULE_EC(EC_OgreConsoleOverlay);
         DECLARE_MODULE_EC(EC_OgreMovableTextOverlay);
         DECLARE_MODULE_EC(EC_OgreParticleSystem);
-        DECLARE_MODULE_EC(EC_OgreAnimationController);
+        DECLARE_MODULE_EC(EC_AnimationController);
         DECLARE_MODULE_EC(EC_OgreEnvironment);
         DECLARE_MODULE_EC(EC_OgreCamera);
     }
@@ -91,13 +89,15 @@ namespace OgreRenderer
         assert (!renderer_->IsInitialized());
         renderer_->Initialize();
 
-        framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_Renderer, renderer_);
+        framework_->GetServiceManager()->RegisterService(Service::ST_Renderer, renderer_);
+
+        framework_->RegisterDynamicObject("renderer", renderer_.get());
     }
 
     // virtual
     void OgreRenderingModule::PostInitialize()
     {
-        Foundation::EventManagerPtr event_manager = framework_->GetEventManager();
+        EventManagerPtr event_manager = framework_->GetEventManager();
 
         asset_event_category_ = event_manager->QueryEventCategory("Asset");
         resource_event_category_ = event_manager->QueryEventCategory("Resource");
@@ -130,18 +130,18 @@ namespace OgreRenderer
             return renderer_->GetResourceHandler()->HandleResourceEvent(event_id, data);
         }
 
-        if (category_id == input_event_category_ && event_id == Input::Events::INWORLD_CLICK)
+        if (category_id == input_event_category_ && event_id == InputEvents::INWORLD_CLICK)
         {
             // do raycast into the world when user clicks mouse button
-            Input::Events::Movement *movement = checked_static_cast<Input::Events::Movement*>(data);
+            InputEvents::Movement *movement = checked_static_cast<InputEvents::Movement*>(data);
             assert(movement);
-            Foundation::RaycastResult result = renderer_->Raycast(movement->x_.abs_, movement->y_.abs_);
+            RaycastResult* result = renderer_->Raycast(movement->x_.abs_, movement->y_.abs_);
 
-            Scene::Entity *entity = result.entity_;
+            Scene::Entity *entity = result->entity_;
             if (entity)
             {
                 Scene::Events::RaycastEventData event_data(entity->GetId());
-                event_data.pos = result.pos_, event_data.submesh = result.submesh_, event_data.u = result.u_, event_data.v = result.v_; 
+                event_data.pos = result->pos_, event_data.submesh = result->submesh_, event_data.u = result->u_, event_data.v = result->v_; 
                 framework_->GetEventManager()->SendEvent(scene_event_category_, Scene::Events::EVENT_ENTITY_GRAB, &event_data);
 
                 //Semantically same as above but sends the entity pointer

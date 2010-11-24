@@ -7,17 +7,19 @@ import PythonQt
 #the ones not listed here are added using the c++ name, e.g. ent.EC_NetworkPosition
 compshorthand = {
     'EC_OpenSimPrim': 'prim',
-    'EC_OgrePlaceable': 'placeable',
+    'EC_Placeable': 'placeable',
     'EC_NetworkPosition': 'network',
     'EC_Mesh':'mesh',
     'EC_OgreCamera': 'camera',
-    'EC_OgreAnimationController': 'animationcontroller',
+    'EC_AnimationController': 'animationcontroller',
     'EC_Highlight': 'highlight',
     'EC_Touchable': 'touchable',
     'EC_AttachedSound': 'sound',
     'EC_OpenSimPresence': 'opensimpresence',
     'EC_SoundRuler': 'soundruler',
-    'EC_Ruler': 'ruler'
+    'EC_Name': 'ecname',
+    'EC_Ruler': 'ruler',
+    'EC_3DGizmo': 'gizmo',
     }   
 
 class ComponentPropertyAdder(circuits.BaseComponent):
@@ -32,6 +34,10 @@ class ComponentPropertyAdder(circuits.BaseComponent):
         #s.connect("ComponentInitialized(Foundation::ComponentInterface*)", self.onComponentInitialized)
         s.connect("ComponentAdded(Scene::Entity*, IComponent*, AttributeChange::Type)", self.onComponentAdded)
         s.connect("ComponentRemoved(Scene::Entity*, IComponent*, AttributeChange::Type)", self.onComponentRemoved)
+
+    @circuits.handler("on_exit")
+    def on_exit(self):
+        r.logInfo("componentpropertyaddr exiting... done")
 
     def onComponentAdded(self, ent, comp, changetype):
         #print "Comp added:", ent, comp, comp.TypeName, comp.Name, changetype

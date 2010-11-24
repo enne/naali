@@ -1,10 +1,3 @@
-macro (MocFolder)
-    file (GLOB MOCS_TO_SOURCE_GROUP *.cxx */*.cxx)
-    source_group ("CMake Moc" FILES ${MOCS_TO_SOURCE_GROUP})
-endmacro (MocFolder)
-
-##############
-
 # Define target name and output directory
 init_target (UiServiceModule OUTPUT modules/core)
 
@@ -31,7 +24,7 @@ use_modules (Core Foundation Interfaces)
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS})
 
 link_modules (Core Foundation Interfaces)
-link_package (OGRE)
+link_ogre()
 link_package (BOOST)
 link_package (POCO)
 link_package (QT4)

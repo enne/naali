@@ -1,10 +1,3 @@
-macro (MocFolder)
-    file (GLOB MOCS_TO_SOURCE_GROUP *.cxx */*.cxx)
-    source_group ("CMake Moc" FILES ${MOCS_TO_SOURCE_GROUP})
-endmacro (MocFolder)
-
-#############################################################################################
-
 # Define target name and output directory
 init_target (OgreAssetEditorModule OUTPUT modules/core)
 
@@ -17,6 +10,8 @@ file (GLOB MOC_FILES OgreAssetEditorModule.h EditorManager.h OgreScriptEditor.h 
     MeshPreviewEditor.h)
 file (GLOB RESOURCE_FILES resource/*.qrc)
 set (SOURCE_FILES ${CPP_FILES} ${H_FILES})
+
+add_definitions (-DASSET_EDITOR_MODULE_EXPORTS)
 
 # Qt4 Moc files to subgroup "CMake Moc"
 MocFolder ()
@@ -32,14 +27,14 @@ use_package (BOOST)
 use_package (POCO)
 use_package (OGRE)
 use_package (QT4)
-use_modules (Core Foundation Interfaces RexCommon ProtocolUtilities AssetModule OgreRenderingModule)
+use_modules (Core Foundation Interfaces RexCommon ProtocolUtilities AssetModule OgreRenderingModule Input)
 
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${RESOURCE_SRCS})
 
-link_modules (Core Foundation Interfaces RexCommon OgreRenderingModule Interfaces)
+link_modules (Core Foundation Interfaces RexCommon OgreRenderingModule Interfaces Input)
 link_package (BOOST)
 link_package (POCO)
-link_package (OGRE)
+link_ogre()
 link_package (QT4)
 
 SetupCompileFlagsWithPCH()

@@ -14,6 +14,7 @@
 #include "ResourceInterface.h"
 #include "CoreMath.h"
 #include "OgreRenderingModule.h"
+#include "NaaliRenderWindow.h"
 
 #include <QUiLoader>
 #include <QFile>
@@ -172,8 +173,10 @@ void MeshPreviewEditor::Update()
         CreateRenderTexture();
         
     }
-    // Hide ui
-    renderer_->HideCurrentWorldView();
+
+    // Hide the main UI Overlay, because otherwise Ogre will paint the Overlay onto the Mesh preview screen as well,
+    // which is not desired.
+    renderer_->GetRenderWindow()->ShowOverlay(false);
 
     AdjustScene();
 
@@ -206,8 +209,8 @@ void MeshPreviewEditor::Update()
 
     delete[] pixelData;
     
-    // Show ui
-    renderer_->ShowCurrentWorldView();  
+    // Remember to re-enable the main UI now we're finished with the Ogre render.
+    renderer_->GetRenderWindow()->ShowOverlay(true);
 }
 
 void MeshPreviewEditor::AdjustScene()
@@ -313,10 +316,8 @@ void MeshPreviewEditor::CreateRenderTexture()
          Ogre::Vector3 pos(x,y,z);
          camera_->setPosition(pos);
          camera_->lookAt(boxCenterPos);
-      
+
          newLight_ = manager_->createLight("light");
-        
-      
 
          newLight_->setDirection(Ogre::Vector3(-x,-y,-z));
          newLight_->setType(Ogre::Light::LT_DIRECTIONAL);
@@ -331,11 +332,6 @@ void MeshPreviewEditor::CreateRenderTexture()
 
         render_texture_ = tex->getBuffer()->getRenderTarget();
         render_texture_->setAutoUpdated(false);
-        
-        Ogre::Viewport* vieport = render_texture_->addViewport(camera_);
-     
-      
-
 }
 
 void MeshPreviewEditor::Closed()
@@ -396,7 +392,6 @@ void MeshPreviewEditor::MouseWheelEvent(QWheelEvent* ev)
     int delta = ev->delta();
     mouseDelta_ += delta;
     Update();
-    
 }
 
 void MeshPreviewEditor::MouseEvent(QMouseEvent* event)
@@ -454,7 +449,7 @@ void MeshPreviewEditor::MouseEvent(QMouseEvent* event)
     
     }
 
-   lastPos_ = pos;    
+   lastPos_ = pos;
 }
 
 QImage MeshPreviewEditor::ConvertToQImage(const u8 *raw_image_data, int width, int height, int channels)

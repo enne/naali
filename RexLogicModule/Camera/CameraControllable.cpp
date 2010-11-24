@@ -13,12 +13,12 @@
 
 #include "Renderer.h"
 #include "EC_OgreCamera.h"
-#include "EC_OgrePlaceable.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
+#include "EC_Placeable.h"
 #include "EC_Mesh.h"
 
 #include "InputEvents.h"
-#include "InputServiceInterface.h"
+#include "Input.h"
 #include "EnvironmentModule.h"
 #include "Terrain.h"
 #include "EC_Terrain.h"
@@ -39,9 +39,10 @@ namespace RA = RexTypes::Actions;
 
 namespace RexLogic
 {
-    CameraControllable::CameraControllable(Foundation::Framework *fw) :
-        framework_(fw),
-        action_event_category_(fw->GetEventManager()->QueryEventCategory("Action")),
+    CameraControllable::CameraControllable(RexLogicModule *rex_logic) :
+        rex_logic_(rex_logic),
+        framework_(rex_logic->GetFramework()),
+        action_event_category_(rex_logic->GetFramework()->GetEventManager()->QueryEventCategory("Action")),
         current_state_(ThirdPerson),
         firstperson_pitch_(0),
         firstperson_yaw_(0),
@@ -86,19 +87,9 @@ namespace RexLogic
         action_trans_[RexTypes::Actions::MoveRight] = Vector3df::UNIT_X;
         action_trans_[RexTypes::Actions::MoveUp] = Vector3df::UNIT_Y;
         action_trans_[RexTypes::Actions::MoveDown] = Vector3df::NEGATIVE_UNIT_Y;
-
+    
         movement_.x_.rel_ = 0;
         movement_.y_.rel_ = 0;
-
-		camera_control_widget_ = new CameraControl();
-        /*
-		Foundation::UiServiceInterface *ui_service = framework_->GetService<Foundation::UiServiceInterface>();
-        if (ui_service)
-		{
-			ui_service->AddWidgetToScene(camera_control_widget_);
-			ui_service->AddWidgetToMenu(camera_control_widget_);
-		}
-        */
     }
 
     void CameraControllable::SetCameraEntity(Scene::EntityPtr camera)
@@ -118,44 +109,42 @@ namespace RexLogic
 
     bool CameraControllable::HandleInputEvent(event_id_t event_id, IEventData* data)
     {
-        camera_control_widget_->HandleInputEvent(event_id, data);
-
-        if (event_id == Input::Events::INPUTSTATE_THIRDPERSON && current_state_ != ThirdPerson)
+        if (event_id == InputEvents::INPUTSTATE_THIRDPERSON && current_state_ != ThirdPerson)
         {
             current_state_ = ThirdPerson;
             firstperson_pitch_ = 0.0f;
         }
 
-        if (event_id == Input::Events::INPUTSTATE_FIRSTPERSON && current_state_ != FirstPerson)
+        if (event_id == InputEvents::INPUTSTATE_FIRSTPERSON && current_state_ != FirstPerson)
         {
             current_state_ = FirstPerson;
             firstperson_pitch_ = 0.0f;
         }
 
-        if (event_id == Input::Events::INPUTSTATE_FREECAMERA && current_state_ != FreeLook)
+        if (event_id == InputEvents::INPUTSTATE_FREECAMERA && current_state_ != FreeLook)
         {
             current_state_ = FreeLook;
             firstperson_pitch_ = 0.0f;
         }
 
-        if (event_id == Input::Events::SCROLL || 
-            event_id == Input::Events::ZOOM_IN_PRESSED || 
-            event_id == Input::Events::ZOOM_OUT_PRESSED)
+        if (event_id == InputEvents::SCROLL || 
+            event_id == InputEvents::ZOOM_IN_PRESSED || 
+            event_id == InputEvents::ZOOM_OUT_PRESSED)
         {
             CameraZoomEvent event_data;
             event_data.entity = camera_entity_.lock();
 
             switch (event_id)
             {
-                case Input::Events::SCROLL:
-                    event_data.amount = checked_static_cast<Input::Events::SingleAxisMovement*>(data)->z_.rel_;
+                case InputEvents::SCROLL:
+                    event_data.amount = checked_static_cast<InputEvents::SingleAxisMovement*>(data)->z_.rel_;
                     break;
 
-                case Input::Events::ZOOM_IN_PRESSED:
+                case InputEvents::ZOOM_IN_PRESSED:
                     event_data.amount = 100;
                     break;
 
-                case Input::Events::ZOOM_OUT_PRESSED:
+                case InputEvents::ZOOM_OUT_PRESSED:
                     event_data.amount = -100;
                     break;
             }
@@ -164,16 +153,16 @@ namespace RexLogic
                 framework_->GetEventManager()->SendEvent(action_event_category_, RexTypes::Actions::Zoom, &event_data);
         }
 
-        if (event_id == Input::Events::MOUSELOOK)
+        if (event_id == InputEvents::MOUSELOOK)
         {
-            Input::Events::Movement *m = checked_static_cast <Input::Events::Movement *> (data);
+            InputEvents::Movement *m = checked_static_cast <InputEvents::Movement *> (data);
             movement_.x_.rel_ += m->x_.rel_;
             movement_.y_.rel_ += m->y_.rel_;
             movement_.x_.abs_ = m->x_.abs_;
             movement_.y_.abs_ = m->y_.abs_;
         }
 
-        if (event_id == Input::Events::INPUTSTATE_CAMERATRIPOD)
+        if (event_id == InputEvents::INPUTSTATE_CAMERATRIPOD)
         {
             current_state_ = Tripod;
             firstperson_pitch_ = 0.0f;
@@ -186,7 +175,7 @@ namespace RexLogic
     {
         if (event_id == RexTypes::Actions::Zoom)
         {
-            OgreRenderer::EC_OgreCamera *cam_comp = camera_entity_.lock()->GetComponent<OgreRenderer::EC_OgreCamera>().get();
+            EC_OgreCamera *cam_comp = camera_entity_.lock()->GetComponent<EC_OgreCamera>().get();
             if (!cam_comp)     
                 return false;
             if (cam_comp->IsActive())
@@ -237,11 +226,11 @@ namespace RexLogic
         
         if (renderer && target && camera)
         {
-            OgreRenderer::EC_OgrePlaceable *camera_placeable = camera->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+            EC_Placeable *camera_placeable = camera->GetComponent<EC_Placeable>().get();
 
             // for smoothness, we apparently need to get rotation from network position and position from placeable. Go figure. -cm
             EC_NetworkPosition *netpos = target->GetComponent<EC_NetworkPosition>().get();
-            OgreRenderer::EC_OgrePlaceable *placeable = target->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+            EC_Placeable *placeable = target->GetComponent<EC_Placeable>().get();
             if (netpos && placeable)
             {
                 Vector3df avatar_pos = placeable->GetPosition();
@@ -264,7 +253,7 @@ namespace RexLogic
                     bool fallback = true;
 
                     // Try to use head bone from target entity to get the first person camera position
-                    OgreRenderer::EC_Mesh *mesh = target->GetComponent<OgreRenderer::EC_Mesh>().get();
+                    EC_Mesh *mesh = target->GetComponent<EC_Mesh>().get();
                     EC_AvatarAppearance *appearance = target->GetComponent<EC_AvatarAppearance>().get();
                     if (mesh && appearance)
                     {
@@ -331,7 +320,6 @@ namespace RexLogic
                     pos += camera_placeable->GetOrientation() * normalized_free_translation_ * trans_dt;
                     ClampPosition(pos);
                     camera_placeable->SetPosition(pos);
-
                     camera_placeable->SetPitch(drag_pitch_ * firstperson_sensitivity_);
                     camera_placeable->SetYaw(drag_yaw_ * firstperson_sensitivity_);
                 }
@@ -359,7 +347,7 @@ namespace RexLogic
             {
                 current_state_ = ThirdPerson;
                 event_category_id_t event_category = framework_->GetEventManager()->QueryEventCategory("Input");
-                framework_->GetEventManager()->SendEvent(event_category, Input::Events::INPUTSTATE_THIRDPERSON, 0);
+                framework_->GetEventManager()->SendEvent(event_category, InputEvents::INPUTSTATE_THIRDPERSON, 0);
                 
                 firstperson_pitch_ = 0.0f;
             }
@@ -368,7 +356,7 @@ namespace RexLogic
             if (camera_distance_ == camera_min_distance_)
             {
                 event_category_id_t event_category = framework_->GetEventManager()->QueryEventCategory("Input");
-                framework_->GetEventManager()->SendEvent(event_category, Input::Events::INPUTSTATE_FIRSTPERSON, 0);
+                framework_->GetEventManager()->SendEvent(event_category, InputEvents::INPUTSTATE_FIRSTPERSON, 0);
                 current_state_ = FirstPerson;
                 
                 firstperson_pitch_ = 0.0f;

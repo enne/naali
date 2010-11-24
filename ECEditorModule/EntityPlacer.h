@@ -5,13 +5,16 @@
 
 #include "ForwardDefines.h"
 #include "CoreTypes.h"
-#include "InputContext.h"
+#include "../Input/InputFwd.h"
 #include "Vector3D.h"
 #include "Quaternion.h"
 
+#include <QObject>
+
+class EC_Placeable;
+
 namespace OgreRenderer
 {
-    class EC_OgrePlaceable;
     class Renderer;
     typedef boost::weak_ptr<Renderer> RendererWeakPtr;
 }
@@ -24,7 +27,7 @@ namespace Ogre
 
 namespace ECEditor
 {
-    class EntityPlacer: public QObject
+    class EntityPlacer : public QObject
     {
         Q_OBJECT
     public:
@@ -40,7 +43,7 @@ namespace ECEditor
         void MouseMove(MouseEvent *mouse);
 
     signals:
-        void Finnished(Vector3df location, Quaternion orientation);
+        void Finished(Vector3df location, Quaternion orientation);
         void LocationChanged(Vector3df location);
         void OrientationChanged(Quaternion orientation);
 
@@ -51,7 +54,7 @@ namespace ECEditor
         Vector3df location_;
         Quaternion orientation_;
         InputContextPtr input_;
-        OgreRenderer::EC_OgrePlaceable *placeable_;
+        EC_Placeable *placeable_;
         Foundation::Framework *framework_;
         
         Scene::EntityWeakPtr entity_;
@@ -59,7 +62,7 @@ namespace ECEditor
         OgreRenderer::RendererWeakPtr renderer_;
         int previousScrollValue_;
 
-        bool finnished_;
+        bool finished_;
         bool useCustomMesh_;
     };
 }

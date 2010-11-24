@@ -11,7 +11,7 @@
 #include "TerrainDecoder.h"
 #include "EnvironmentModule.h"
 
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "Renderer.h"
 #include "OgreTextureResource.h"
 #include "OgreMaterialUtils.h"
@@ -147,7 +147,7 @@ namespace Environment
     /// patch if the associated Ogre resources already exist.
     void Terrain::GenerateTerrainGeometryForOnePatch(Scene::Entity &entity, EC_Terrain &terrain, EC_Terrain::Patch &patch)
     {
-        OgreRenderer::RendererPtr renderer = owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+        OgreRenderer::RendererPtr renderer = owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
         if (!renderer)
             return;
 
@@ -291,7 +291,7 @@ namespace Environment
 
     void Terrain::CreateOgreTerrainPatchNode(Ogre::SceneNode *&node, int patchX, int patchY)
     {
-        OgreRenderer::RendererPtr renderer = owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+        OgreRenderer::RendererPtr renderer = owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
         if (renderer)
         {
             Ogre::SceneManager *sceneMgr = renderer->GetSceneManager();
@@ -407,7 +407,7 @@ namespace Environment
 */
     void Terrain::RequestTerrainTextures()
     {
-        OgreRenderer::RendererPtr renderer = owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+        OgreRenderer::RendererPtr renderer = owner_->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
         if (renderer)
             for(int i = 0; i < num_terrain_textures; ++i)
                 terrain_texture_requests_[i] = renderer->RequestResource(terrain_textures_[i], OgreRenderer::OgreTextureResource::GetTypeStatic());
@@ -489,6 +489,7 @@ namespace Environment
 
         ProtocolUtilities::NetInMessage &msg = *data->message;
         u8 layerID = msg.ReadU8();
+        UNREFERENCED_PARAM(layerID);
         size_t sizeBytes = 0;
         const uint8_t *packedData = msg.ReadBuffer(&sizeBytes);
         if (!packedData)
@@ -515,6 +516,7 @@ namespace Environment
             // Now that we have updated all the height map data for each patch, see if
             // we have enough of the patches loaded in to regenerate the GPU-side resources as well.
             terrainComponent->RegenerateDirtyTerrainPatches();
+            emit HeightmapGeometryUpdated();
             break;
         }
         case TPLayerWater:
@@ -618,7 +620,7 @@ namespace Environment
         Scene::ScenePtr scene = owner_->GetFramework()->GetDefaultWorldScene();
         for(Scene::SceneManager::iterator iter = scene->begin(); iter != scene->end(); ++iter)
         {
-            Scene::Entity &entity = **iter;
+            Scene::Entity &entity = *iter->second;
             EC_Terrain *terrainComponent = entity.GetComponent<EC_Terrain>().get();
             if (terrainComponent)
                 cachedTerrainEntity_ = scene->GetEntity(entity.GetId());

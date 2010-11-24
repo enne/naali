@@ -18,7 +18,7 @@ namespace Foundation
 
 namespace RexLogic
 {
-	class CameraControl;
+	class RexLogicModule;
 
     class CameraZoomEvent : public IEventData
     {
@@ -48,7 +48,7 @@ namespace RexLogic
 
         //! default constructor
         //! \param fw Framework pointer
-        CameraControllable(Foundation::Framework *fw);
+        CameraControllable(RexLogicModule *rex_logic);
 
         //! destructor
         ~CameraControllable() {}
@@ -174,7 +174,7 @@ namespace RexLogic
         Foundation::Framework *framework_;
 
         //! Mouse-look movement
-        Input::Events::Movement movement_;
+        InputEvents::Movement movement_;
 
         //! Do we use terrain height as a camera Z-axis constraint.
         bool useTerrainConstraint_;
@@ -191,7 +191,7 @@ namespace RexLogic
         //! Boundary box maximum corner point.
         Vector3df boundaryBoxMax_;
 
-		CameraControl *camera_control_widget_;
+        RexLogicModule* rex_logic_;
     };
 }
 

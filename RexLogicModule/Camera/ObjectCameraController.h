@@ -7,15 +7,14 @@
 #include "ForwardDefines.h"
 #include "Foundation.h"
 #include "CameraControllable.h"
-#include "InputServiceInterface.h"
+#include "Input.h"
 #include "IModule.h"
 #include "IEventData.h"
 #include "Renderer.h"
 #include "RexLogicModule.h"
 
-#include <EC_OgrePlaceable.h>
+#include <EC_Placeable.h>
 #include <EC_OgreCamera.h>
-
 
 #include <QObject>
 #include <QStringList>
@@ -90,6 +89,9 @@ namespace RexLogic
 
         void Update(float);
 
+    signals:
+        void FocusOnObject();
+
     private:
         //! Current subscribed category events
         QMap<QString, event_category_id_t> service_category_identifiers_;
@@ -117,8 +119,8 @@ namespace RexLogic
         Vector3df last_dir_;
 
         Scene::EntityPtr camera_entity_;
-        OgreRenderer::EC_OgreCamera *ec_camera_;
-        OgreRenderer::EC_OgrePlaceable *cam_ec_placable_;
+        EC_OgreCamera *ec_camera_;
+        EC_Placeable *cam_ec_placable_;
 
         QTimeLine* timeline_;
         QTimeLine* timeline_zoom_;

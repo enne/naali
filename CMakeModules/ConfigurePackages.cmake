@@ -146,19 +146,65 @@ macro (configure_python_qt)
 endmacro (configure_python_qt)
 
 macro (configure_ogre)
-    if (APPLE)
-	FIND_LIBRARY(OGRE_LIBRARY NAMES Ogre)
-	set (OGRE_INCLUDE_DIRS ${OGRE_LIBRARY}/Headers)
-	set (OGRE_LIBRARIES ${OGRE_LIBRARY})
-    else ()
-        sagase_configure_package (OGRE 
-          NAMES Ogre OgreSDK ogre OGRE
-          COMPONENTS Ogre ogre OGRE OgreMain 
-          PREFIXES ${ENV_NAALI_DEP_PATH} ${ENV_OGRE_HOME})
-    endif ()
+    if ("$ENV{OGRE_HOME}" STREQUAL "" OR NOT WIN32)
+        if (APPLE)
+    	FIND_LIBRARY(OGRE_LIBRARY NAMES Ogre)
+    	set (OGRE_INCLUDE_DIRS ${OGRE_LIBRARY}/Headers)
+    	set (OGRE_LIBRARIES ${OGRE_LIBRARY})
+        else ()
+            sagase_configure_package (OGRE 
+            NAMES Ogre OgreSDK ogre OGRE
+            COMPONENTS Ogre ogre OGRE OgreMain 
+            PREFIXES ${ENV_OGRE_HOME} ${ENV_NAALI_DEP_PATH})
+        endif ()
 
-    sagase_configure_report (OGRE)
+        sagase_configure_report (OGRE)
+    else()
+        # DX blitting define for naali
+        add_definitions(-DUSE_D3D9_SUBSURFACE_BLIT)
+        include_directories($ENV{OGRE_HOME})
+        # Ogre built from sources
+        include_directories($ENV{OGRE_HOME}/include) 
+        include_directories($ENV{OGRE_HOME}/include/RenderSystems/Direct3D9/include)
+        # Ogre official sdk
+        include_directories($ENV{OGRE_HOME}/include/OGRE) 
+        include_directories($ENV{OGRE_HOME}/include/OGRE/RenderSystems/Direct3D9)
+        link_directories($ENV{OGRE_HOME}/lib)
+        
+        # Print some fake sagase reporting as we cant fill 
+        # OGRE_INCLUDE_DIRS and OGRE_LIBRARIES lists due to link_ogre() logic
+        message (STATUS "** Configuring OGRE")
+        message (STATUS "-- Using OGRE_HOME environment variable")
+        message (STATUS "       " $ENV{OGRE_HOME})
+        message (STATUS "-- Include Directories:")
+        message (STATUS "       " $ENV{OGRE_HOME}/include)
+        message (STATUS "       " $ENV{OGRE_HOME}/include/OGRE)
+        message (STATUS "-- Library Directories:")
+        message (STATUS "       " $ENV{OGRE_HOME}/lib)
+        message (STATUS "-- Libraries:")
+        message (STATUS "        OgreMain.lib")
+        message (STATUS "        RenderSystem_Direct3D9.lib")
+        message (STATUS "-- Debug Libraries:")
+        message (STATUS "        OgreMain_d.lib")
+        message (STATUS "        RenderSystem_Direct3D9_d.lib")
+        message (STATUS "-- Defines:")
+        message (STATUS "        USE_D3D9_SUBSURFACE_BLIT")
+        message (STATUS "")
+    endif()    
 endmacro (configure_ogre)
+
+macro(link_ogre)
+    if (OGRE_LIBRARIES)
+        link_package(OGRE)
+    else()    
+        target_link_libraries(${TARGET_NAME} debug OgreMain_d.lib)
+        target_link_libraries(${TARGET_NAME} optimized OgreMain.lib)
+        if (WIN32)
+            target_link_libraries(${TARGET_NAME} debug RenderSystem_Direct3D9_d.lib)
+            target_link_libraries(${TARGET_NAME} optimized RenderSystem_Direct3D9.lib)
+        endif()
+    endif()
+endmacro()
 
 macro (configure_caelum)
     sagase_configure_package (CAELUM 

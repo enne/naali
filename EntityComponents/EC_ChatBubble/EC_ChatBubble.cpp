@@ -3,7 +3,7 @@
  *
  *  @file   EC_ChatBubble.cpp
  *  @brief  EC_ChatBubble Chat bubble component wich shows billboard with chat bubble and text on entity.
- *  @note   The entity must have EC_OgrePlaceable component available in advance.
+ *  @note   The entity must have EC_Placeable component available in advance.
  */
 
 #include "StableHeaders.h"
@@ -12,7 +12,7 @@
 #include "EC_ChatBubble.h"
 #include "IModule.h"
 #include "Renderer.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "Entity.h"
 #include "OgreMaterialUtils.h"
 #include "LoggingFunctions.h"
@@ -250,7 +250,7 @@ void EC_ChatBubble::Refresh()
         return;
 
     // Check texture size
-    if (texture->getWidth() != buffer.width() || texture->getHeight() != buffer.height())
+    if ((int)texture->getWidth() != buffer.width() || (int)texture->getHeight() != buffer.height())
     {
         texture->freeInternalResources();
         texture->setWidth(buffer.width());
@@ -280,7 +280,7 @@ void EC_ChatBubble::Update()
     if (!entity)
         return;
 
-    OgreRenderer::EC_OgrePlaceable *node = entity->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+    EC_Placeable *node = entity->GetComponent<EC_Placeable>().get();
     if (!node)
         return;
 

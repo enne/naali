@@ -10,7 +10,7 @@ file (GLOB XML_FILES *.xml)
 file (GLOB UI_FILES ui/*.ui)
 file (GLOB MOC_FILES RexLogicModule.h EventHandlers/LoginHandler.h RexMovementInput.h
     EventHandlers/MainPanelHandler.h EntityComponent/EC_*.h Environment/Primitive.h Communications/*.h
-    Communications/InWorldChat/*.h Camera/ObjectCameraController.h Camera/CameraControl.h SceneInteract.h)
+    Communications/InWorldChat/*.h Camera/ObjectCameraController.h Camera/CameraControl.h SceneInteract.h NotificationWidget.h)
 
 # SubFolders to project with filtering
 AddSourceFolder (Avatar)
@@ -47,7 +47,7 @@ use_package (OPENJPEG)
 use_package (XMLRPC)
 
 use_modules (RexLogicModule Core Foundation Interfaces SceneManager OgreRenderingModule AssetModule AvatarModule RexCommon
-    HttpUtilities RpcUtilities ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EnvironmentModule)
+    HttpUtilities RpcUtilities ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EnvironmentModule Input Asset)
 
 if (NOT UISERVICE_TEST)
     use_modules (UiModule)
@@ -62,6 +62,7 @@ LinkEntityComponent(EntityComponents/EC_OpenSimPrim EC_OpenSimPrim)
 LinkEntityComponent(EntityComponents/EC_ChatBubble EC_ChatBubble)
 LinkEntityComponent(EntityComponents/EC_Ruler EC_Ruler)
 LinkEntityComponent(EntityComponents/EC_SoundRuler EC_SoundRuler)
+LinkEntityComponent(EntityComponents/EC_Gizmo EC_Gizmo)
 LinkEntityComponent(EntityComponents/EC_SoundListener EC_SoundListener)
 LinkEntityComponent(EntityComponents/EC_HoveringWidget EC_HoveringWidget)
 LinkEntityComponent(EntityComponents/EC_NetworkPosition EC_NetworkPosition)
@@ -75,16 +76,18 @@ LinkEntityComponent(EntityComponents/EC_3DCanvas EC_3DCanvas)
 LinkEntityComponent(EntityComponents/EC_3DCanvasSource EC_3DCanvasSource)
 LinkEntityComponent(EntityComponents/EC_Touchable EC_Touchable)
 LinkEntityComponent(EntityComponents/EC_Light EC_Light)
+LinkEntityComponent(EntityComponents/EC_VideoSource EC_VideoSource)
 LinkEntityComponent(EntityComponents/EC_TtsVoice EC_TtsVoice)
+LinkEntityComponent(EntityComponents/EC_3DGizmo EC_3DGizmo)
 
 link_modules (Core Foundation Interfaces SceneManager OgreRenderingModule AssetModule AvatarModule RexCommon
-    HttpUtilities RpcUtilities ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EnvironmentModule)
+    HttpUtilities RpcUtilities ProtocolUtilities ProtocolModuleOpenSim ProtocolModuleTaiga EnvironmentModule Asset)
 
 if (NOT UISERVICE_TEST)
     link_modules (UiModule)
 endif ()
 
-link_package (OGRE)
+link_ogre()
 link_package (BOOST)
 link_package (POCO)
 link_package (QT4)

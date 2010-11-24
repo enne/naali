@@ -10,6 +10,7 @@
 #include "MultiEditPropertyFactory.h"
 #include "LineEditPropertyFactory.h"
 #include "Transform.h"
+#include "AssetReference.h"
 
 // QtPropertyBrowser headers.
 #include <qtvariantproperty.h>
@@ -17,15 +18,20 @@
 #include <qtpropertybrowser.h>
 #include <qteditorfactory.h>
 
+#include "LoggingFunctions.h"
+DEFINE_POCO_LOGGING_FUNCTIONS("ECAttributeEditor")
+
 #include "MemoryLeakCheck.h"
 
 namespace ECEditor
 {
     ECAttributeEditorBase::ECAttributeEditorBase(QtAbstractPropertyBrowser *owner,
-                                                 IAttribute *attribute,
+                                                 ComponentPtr component,
+                                                 const QString &name,
                                                  QObject *parent):
         QObject(parent),
         owner_(owner),
+        name_(name),
         rootProperty_(0),
         factory_(0),
         propertyMgr_(0),
@@ -34,8 +40,8 @@ namespace ECEditor
         editorState_(Uninitialized),
         metaDataFlag_(0)
     {
-        attributeName_ = attribute->GetName();
-        attributes_.push_back(attribute);
+        if(FindAttribute(component))
+            components_.push_back(ComponentWeakPtr(component));
     }
 
     ECAttributeEditorBase::~ECAttributeEditorBase()
@@ -54,7 +60,7 @@ namespace ECEditor
 
     void ECAttributeEditorBase::UpdateEditorUI()
     {
-        if(attributes_.size() == 1)
+        if(components_.size() == 1)
         {
             if(!useMultiEditor_ && editorState_ != Uninitialized)
             {
@@ -67,9 +73,8 @@ namespace ECEditor
                 useMultiEditor_ = false;
                 Initialize();
             }
-            //emit AttributeChanged(attributeName_.toStdString());
         }
-        else if(attributes_.size() > 1)
+        else if(components_.size() > 1)
         {
             if(!IsIdentical())
             {
@@ -96,52 +101,66 @@ namespace ECEditor
                 Update(); 
                 listenEditorChangedSignal_ = true;
             }
-            //emit AttributeChanged(attributeName_.toStdString()); 
         }
     }
 
-    void ECAttributeEditorBase::AddNewAttribute(IAttribute *attribute)
+    void ECAttributeEditorBase::AddComponent(ComponentPtr component)
     {
-        AttributeList::iterator iter = attributes_.begin();
-        for(;iter != attributes_.end(); iter++)
-        {
-            if(*iter == attribute)
-                return;
-        }
-        attributes_.push_back(attribute);
+        // Before we add new component we make sure that it's not already added
+        // and it contains right attribute.
+        if(!HasComponent(component) && component->GetAttribute(name_))
+            components_.push_back(ComponentWeakPtr(component));
         UpdateEditorUI();
     }
 
-    void ECAttributeEditorBase::RemoveAttribute(IAttribute *attribute)
+    void ECAttributeEditorBase::RemoveComponent(ComponentPtr component)
     {
-        AttributeList::iterator iter = attributes_.begin();
-        for(;iter != attributes_.end(); iter++)
-        {
-            if(*iter == attribute)
-            {
-                attributes_.erase(iter);
-                UpdateEditorUI();
-                return;
-            }
-        }
+        ComponentWeakPtrList::iterator iter = FindComponent(component);
+        if(iter != components_.end())
+            components_.erase(iter);
+        if(!components_.size())
+            deleteLater();
+        UpdateEditorUI();
+    }
+
+    bool ECAttributeEditorBase::HasComponent(ComponentPtr component)
+    {
+        ComponentWeakPtrList::iterator iter = FindComponent(component);
+        if(iter != components_.end())
+            return true;
+        return false;
     }
 
     bool ECAttributeEditorBase::IsIdentical() const
     {
-        if(attributes_.size() > 1)
-        {
-            AttributeList::const_iterator iter = attributes_.begin();
-            if ((*iter) == 0)
-                return false;
-            std::string value = (*iter)->ToString();
-            while(iter != attributes_.end())
-            {
-                if(value != (*iter)->ToString())
+        //No point to continue if there is only single component added.
+        if(components_.size() <= 1)
+            return true;
+
+        for(uint i = 0; i < (components_.size() - 1); i++)
+            for(uint j = 1; j < components_.size(); j++)
+                if (!components_[i].expired() &&
+                    !components_[j].expired() &&
+                    components_[i].lock()->GetAttribute(name_)->ToString() != components_[j].lock()->GetAttribute(name_)->ToString())
                     return false;
-                iter++;
-            }
-        }
         return true;
+    }
+
+    IAttribute *ECAttributeEditorBase::FindAttribute(ComponentPtr component)
+    {
+        if(component)
+            return component->GetAttribute(name_);
+        LogError("Component has expired.");
+        return 0;
+    }
+
+    QList<ComponentWeakPtr>::iterator ECAttributeEditorBase::FindComponent(ComponentPtr component)
+    {
+        ComponentWeakPtrList::iterator iter = components_.begin();
+        for(; iter != components_.end(); iter++)
+            if(!(*iter).expired() && component.get() == (*iter).lock().get())
+                return iter;
+        return components_.end();
     }
 
     void ECAttributeEditorBase::PreInitialize()
@@ -193,9 +212,17 @@ namespace ECEditor
             QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory(this);
             propertyMgr_ = realPropertyManager;
             factory_ = variantFactory;
-            rootProperty_ = realPropertyManager->addProperty(QVariant::Double, attributeName_);
+            rootProperty_ = realPropertyManager->addProperty(QVariant::Double, name_);
 
-            AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
+            ComponentPtr comp = components_[0].lock();
+            IAttribute *attribute = FindAttribute(comp);
+            if(!attribute) 
+            {
+                //! @todo add log error.
+                return;
+            }
+
+            AttributeMetadata *metaData = attribute->GetMetadata();
             if(metaData)
             {
                 if(!metaData->min.isEmpty())
@@ -215,7 +242,7 @@ namespace ECEditor
             if(rootProperty_)
             {
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(realPropertyManager, variantFactory);
         }
@@ -223,6 +250,7 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
 
@@ -230,19 +258,16 @@ namespace ECEditor
     {
         if(!useMultiEditor_)
         {
-            AttributeList::iterator iter = attributes_.begin();
+            //AttributeList::iterator iter = attributes_.begin();
             QtVariantPropertyManager *realPropertyManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
             assert(realPropertyManager);
             if(!realPropertyManager)
                 return;
 
-            if(iter != attributes_.end())
+            if(rootProperty_)
             {
-                if(rootProperty_)
-                {
-                    Attribute<float> *attribute = dynamic_cast<Attribute<float>*>(*iter);
-                    realPropertyManager->setValue(rootProperty_, attribute->Get());
-                }
+                Attribute<float> *attribute = dynamic_cast<Attribute<float>*>(FindAttribute(components_[0].lock()));
+                realPropertyManager->setValue(rootProperty_, attribute->Get());
             }
         }
         else
@@ -265,18 +290,14 @@ namespace ECEditor
         if(!useMultiEditor_)
         {
             QtVariantPropertyManager *intPropertyManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
-            AttributeList::iterator iter = attributes_.begin();
             assert(intPropertyManager);
             if(!intPropertyManager)
                 return;
 
-            if(iter != attributes_.end())
+            if(rootProperty_)
             {
-                if(rootProperty_)
-                {
-                    Attribute<int> *attribute = dynamic_cast<Attribute<int>*>(*iter);
-                    intPropertyManager->setValue(rootProperty_, attribute->Get());
-                }
+                Attribute<int> *attribute = dynamic_cast<Attribute<int>*>(FindAttribute(components_[0].lock()));
+                intPropertyManager->setValue(rootProperty_, attribute->Get());
             }
         }
         else
@@ -288,8 +309,16 @@ namespace ECEditor
         ECAttributeEditorBase::PreInitialize();
         if(!useMultiEditor_)
         {
+            ComponentPtr comp = components_[0].lock();
+            IAttribute *attribute = FindAttribute(comp);
+            if(!attribute)
+            {
+                //! @todo add log error 
+                return;
+            }
+
             //Check if int need to have min and max value set and also enum types are presented as a int value.
-            AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
+            AttributeMetadata *metaData = attribute->GetMetadata();
             if(metaData)
             {
                 if(!metaData->enums.empty())
@@ -313,7 +342,7 @@ namespace ECEditor
             if((metaDataFlag_ & UsingEnums) != 0)
             {
                 QtVariantProperty *prop = 0;
-                prop = intPropertyManager->addProperty(QtVariantPropertyManager::enumTypeId(), attributeName_);
+                prop = intPropertyManager->addProperty(QtVariantPropertyManager::enumTypeId(), name_);
                 rootProperty_ = prop;
                 QStringList enumNames;
                 AttributeMetadata::EnumDescMap_t::iterator iter = metaData->enums.begin();
@@ -324,7 +353,7 @@ namespace ECEditor
             }
             else
             {
-                rootProperty_ = intPropertyManager->addProperty(QVariant::Int, attributeName_);
+                rootProperty_ = intPropertyManager->addProperty(QVariant::Int, name_);
                 if((metaDataFlag_ & UsingMinValue) != 0)
                     intPropertyManager->setAttribute(rootProperty_, "minimum", ::ParseString<int>(metaData->min.toStdString()));
                 if((metaDataFlag_ & UsingMaxValue) != 0)
@@ -337,7 +366,7 @@ namespace ECEditor
             if(rootProperty_)
             {
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(intPropertyManager, variantFactory);
         }
@@ -345,6 +374,7 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<int>::Set(QtProperty *property)
@@ -355,7 +385,15 @@ namespace ECEditor
             std::string valueString = property->valueText().toStdString();
             if((metaDataFlag_ & UsingEnums) != 0)
             {
-                AttributeMetadata *metaData = (*attributes_.begin())->GetMetadata();
+                ComponentPtr comp = components_[0].lock();
+                IAttribute *attribute = FindAttribute(comp);
+                if(!attribute)
+                {
+                    //! @todo add log error
+                    return;
+                }
+
+                AttributeMetadata *metaData = attribute->GetMetadata();
                 AttributeMetadata::EnumDescMap_t::iterator iter = metaData->enums.begin();
                 for(; iter != metaData->enums.end(); iter++)
                     if(valueString == iter->second)
@@ -378,11 +416,11 @@ namespace ECEditor
             QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory(this);
             propertyMgr_ = boolPropertyManager;
             factory_ = variantFactory;
-            rootProperty_ = boolPropertyManager->addProperty(QVariant::Bool, attributeName_);
+            rootProperty_ = boolPropertyManager->addProperty(QVariant::Bool, name_);
             if(rootProperty_)
             {
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(boolPropertyManager, variantFactory);
         }
@@ -390,6 +428,7 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<bool>::Set(QtProperty *property)
@@ -407,18 +446,15 @@ namespace ECEditor
     {
         if(!useMultiEditor_)
         {
-            AttributeList::iterator iter = attributes_.begin();
             QtVariantPropertyManager *boolPropertyManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
             if(!boolPropertyManager)
                 return;
 
-            if(iter != attributes_.end())
+            if(rootProperty_)
             {
-                if(rootProperty_)
-                {
-                    Attribute<bool> *attribute = dynamic_cast<Attribute<bool>*>(*iter);
-                    boolPropertyManager->setValue(rootProperty_, attribute->Get());
-                }
+                ComponentPtr comp = components_[0].lock();
+                Attribute<bool> *attribute = dynamic_cast<Attribute<bool>*>(FindAttribute(comp));
+                boolPropertyManager->setValue(rootProperty_, attribute->Get());
             }
         }
         else
@@ -437,7 +473,8 @@ namespace ECEditor
                 QList<QtProperty *> children = rootProperty_->subProperties();
                 if(children.size() >= 3)
                 {
-                    Attribute<Vector3df> *attribute = dynamic_cast<Attribute<Vector3df> *>(*(attributes_.begin()));
+                    ComponentPtr comp = components_[0].lock();
+                    Attribute<Vector3df> *attribute = dynamic_cast<Attribute<Vector3df> *>(FindAttribute(comp));
                     if(!attribute)
                         return;
 
@@ -461,7 +498,7 @@ namespace ECEditor
             QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory(this);
             propertyMgr_ = variantManager;
             factory_ = variantFactory;
-            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), attributeName_);
+            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), name_);
 
             if(rootProperty_)
             {
@@ -475,7 +512,7 @@ namespace ECEditor
                 childProperty = variantManager->addProperty(QVariant::Double, "z");
                 rootProperty_->addSubProperty(childProperty);
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(variantManager, variantFactory);
         }
@@ -483,17 +520,18 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<Vector3df>::Set(QtProperty *property)
     {
         if(listenEditorChangedSignal_)
         {
-            QtVariantPropertyManager *variantManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
             QList<QtProperty *> children = rootProperty_->subProperties();
             if(children.size() >= 3)
             {
-                Attribute<Vector3df> *attribute = dynamic_cast<Attribute<Vector3df> *>(*(attributes_.begin()));
+                ComponentPtr comp = components_[0].lock();
+                Attribute<Vector3df> *attribute = dynamic_cast<Attribute<Vector3df> *>(FindAttribute(comp));
                 if(!attribute)
                     return;
 
@@ -522,7 +560,8 @@ namespace ECEditor
                 QList<QtProperty *> children = rootProperty_->subProperties();
                 if(children.size() >= 4)
                 {
-                    Attribute<Color> *attribute = dynamic_cast<Attribute<Color> *>(*(attributes_.begin()));
+                    ComponentPtr comp = components_[0].lock();
+                    Attribute<Color> *attribute = dynamic_cast<Attribute<Color> *>(FindAttribute(comp));
                     if(!attribute)
                         return;
 
@@ -548,7 +587,7 @@ namespace ECEditor
             propertyMgr_ = variantManager;
             factory_ = variantFactory;
 
-            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), attributeName_);
+            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), name_);
             if(rootProperty_)
             {
                 QtVariantProperty *childProperty = 0;
@@ -573,7 +612,7 @@ namespace ECEditor
                 variantManager->setAttribute(childProperty, "maximum", QVariant(255));
 
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(variantManager, variantFactory);
         }
@@ -581,17 +620,18 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<Color>::Set(QtProperty *property)
     {
         if(listenEditorChangedSignal_)
         {
-            QtVariantPropertyManager *variantManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
-            QList<QtProperty *> children = rootProperty_->subProperties();
+           QList<QtProperty *> children = rootProperty_->subProperties();
             if(children.size() >= 4)
             {
-                Attribute<Color> *attribute = dynamic_cast<Attribute<Color> *>(*(attributes_.begin()));
+                ComponentPtr comp = components_[0].lock();
+                Attribute<Color> *attribute = dynamic_cast<Attribute<Color> *>(FindAttribute(comp));
                 if(!attribute)
                     return;
 
@@ -621,11 +661,11 @@ namespace ECEditor
             ECEditor::LineEditPropertyFactory *lineEditFactory = new ECEditor::LineEditPropertyFactory(this);
             propertyMgr_ = qStringPropertyManager;
             factory_ = lineEditFactory;
-            rootProperty_ = qStringPropertyManager->addProperty(attributeName_);
+            rootProperty_ = qStringPropertyManager->addProperty(name_);
             if(rootProperty_)
             {
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(qStringPropertyManager, lineEditFactory);
         }
@@ -633,6 +673,7 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<QString>::Set(QtProperty *property)
@@ -645,21 +686,22 @@ namespace ECEditor
     {
         if(!useMultiEditor_)
         {
-            AttributeList::iterator iter = attributes_.begin();
+            ComponentPtr comp = components_[0].lock();
             QtStringPropertyManager *qStringPropertyManager = dynamic_cast<QtStringPropertyManager *>(propertyMgr_);
 
             assert(qStringPropertyManager);
             if(!qStringPropertyManager)
                 return;
 
-            if(iter != attributes_.end())
+            if (rootProperty_)
             {
-                if (rootProperty_)
+                Attribute<QString> *attribute = dynamic_cast<Attribute<QString>*>(FindAttribute(comp));
+                if(!attribute)
                 {
-                    Attribute<QString> *attribute = dynamic_cast<Attribute<QString>*>(*iter);
-                    qStringPropertyManager->setValue(rootProperty_, attribute->Get());
+                    //! @todo add log error.
+                    return;
                 }
-                iter++;
+                qStringPropertyManager->setValue(rootProperty_, attribute->Get());
             }
         }
         else
@@ -677,11 +719,11 @@ namespace ECEditor
             ECEditor::LineEditPropertyFactory *lineEditFactory = new ECEditor::LineEditPropertyFactory(this);
             propertyMgr_ = qStringPropertyManager;
             factory_ = lineEditFactory;
-            rootProperty_ = qStringPropertyManager->addProperty(attributeName_);
+            rootProperty_ = qStringPropertyManager->addProperty(name_);
             if(rootProperty_)
             {
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(qStringPropertyManager, lineEditFactory);
         }
@@ -689,6 +731,7 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<QVariant>::Set(QtProperty *property)
@@ -704,20 +747,16 @@ namespace ECEditor
     {
         if(!useMultiEditor_)
         {
-            AttributeList::iterator iter = attributes_.begin();
             QtStringPropertyManager *qStringPropertyManager = dynamic_cast<QtStringPropertyManager *>(propertyMgr_);
             assert(qStringPropertyManager);
             if(!qStringPropertyManager)
                 return;
 
-            if(iter != attributes_.end())
+            if (rootProperty_)
             {
-                if (rootProperty_)
-                {
-                    Attribute<QVariant> *attribute = dynamic_cast<Attribute<QVariant>*>(*iter);
-                    qStringPropertyManager->setValue(rootProperty_, attribute->Get().toString());
-                }
-                iter++;
+                ComponentPtr comp = components_[0].lock();
+                Attribute<QVariant> *attribute = dynamic_cast<Attribute<QVariant>*>(FindAttribute(comp));
+                qStringPropertyManager->setValue(rootProperty_, attribute->Get().toString());
             }
         }
         else
@@ -739,12 +778,18 @@ namespace ECEditor
             optionalPropertyManagers_.push_back(stringManager);
 
             rootProperty_ = groupManager->addProperty();
-            rootProperty_->setPropertyName(attributeName_);
+            rootProperty_->setPropertyName(name_);
             if(rootProperty_)
             {
                 QtProperty *childProperty = 0;
                 // Get number of elements in attribute array and create for property for each array element.
-                Attribute<QVariantList > *attribute = dynamic_cast<Attribute<QVariantList >*>(*(attributes_.begin()));
+                ComponentPtr comp = components_[0].lock();
+                Attribute<QVariantList > *attribute = dynamic_cast<Attribute<QVariantList >*>(FindAttribute(comp));
+                if(!attribute)
+                {
+                    //! @todo Add log error.
+                    return;
+                }
                 QVariantList variantArray = attribute->Get();
                 for(uint i = 0; i < variantArray.size(); i++)
                 {
@@ -755,23 +800,30 @@ namespace ECEditor
                 rootProperty_->addSubProperty(childProperty);
 
                 Update();
-                QObject::connect(stringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(stringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(stringManager, lineEditFactory);
         }
         else
             InitializeMultiEditor();
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<QVariantList >::Set(QtProperty *property)
     {
         if (listenEditorChangedSignal_)
         {
-            Attribute<QVariantList > *attribute = dynamic_cast<Attribute<QVariantList >*>(*(attributes_.begin()));
+            ComponentPtr comp = components_[0].lock();
+            Attribute<QVariantList > *attribute = dynamic_cast<Attribute<QVariantList >*>(FindAttribute(comp));
+            if (!attribute)
+            {
+                //! @todo add log error
+                return;
+            }
             QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(optionalPropertyManagers_[0]);
             QList<QtProperty*> children = rootProperty_->subProperties();
             QVariantList value;
-            for(uint i = 0; i < children.size(); i++)
+            for(int i = 0; i < children.size(); i++)
             {
                 QVariant variant = QVariant(stringManager->value(children[i]));
                 if(variant.toString() == "" && i == children.size() - 1)
@@ -790,7 +842,13 @@ namespace ECEditor
     {
         if(!useMultiEditor_)
         {
-            Attribute<QVariantList > *attribute = dynamic_cast<Attribute<QVariantList >*>(*(attributes_.begin()));
+            ComponentPtr comp = components_[0].lock();
+            Attribute<QVariantList > *attribute = dynamic_cast<Attribute<QVariantList >*>(FindAttribute(comp));
+            if (!attribute)
+            {
+                //! @todo add log error.
+                return;
+            }
             QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(optionalPropertyManagers_[0]);
             QList<QtProperty*> children = rootProperty_->subProperties();
             QVariantList value = attribute->Get();
@@ -815,28 +873,31 @@ namespace ECEditor
 
     //-------------------------ASSETREFERENCE ATTRIBUTE TYPE-------------------------
 
-    template<> void ECAttributeEditor<Foundation::AssetReference>::Update()
+    template<> void ECAttributeEditor<AssetReference>::Update()
     {
         if(!useMultiEditor_)
         {
             QList<QtProperty*> children = rootProperty_->subProperties();
             if(children.size() == 2)
             {
+                ComponentPtr comp = components_[0].lock();
                 QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(children[0]->propertyManager());
-                Attribute<Foundation::AssetReference> *attribute = dynamic_cast<Attribute<Foundation::AssetReference> *>(*(attributes_.begin()));
+                Attribute<AssetReference> *attribute = dynamic_cast<Attribute<AssetReference> *>(FindAttribute(comp));
                 if(!attribute || !stringManager)
+                {
+                    //! @todo add log error.
                     return;
+                }
 
-                Foundation::AssetReference value = attribute->Get();
-                stringManager->setValue(children[0], QString::fromStdString(value.id_));
-                stringManager->setValue(children[1], QString::fromStdString(value.type_));
+                stringManager->setValue(children[0], attribute->Get().id);
+                stringManager->setValue(children[1], attribute->Get().type);
             }
         }
         else
             UpdateMultiEditorValue();
     }
 
-    template<> void ECAttributeEditor<Foundation::AssetReference>::Initialize()
+    template<> void ECAttributeEditor<AssetReference>::Initialize()
     {
         ECAttributeEditorBase::PreInitialize();
         if(!useMultiEditor_)
@@ -849,7 +910,7 @@ namespace ECEditor
             optionalPropertyManagers_.push_back(stringManager);
 
             rootProperty_ = groupManager->addProperty();
-            rootProperty_->setPropertyName(attributeName_);
+            rootProperty_->setPropertyName(name_);
             if(rootProperty_)
             {
                 QtProperty *childProperty = 0;
@@ -860,30 +921,32 @@ namespace ECEditor
                 rootProperty_->addSubProperty(childProperty);
 
                 Update();
-                QObject::connect(stringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(stringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(stringManager, lineEditFactory);
         }
         else
             InitializeMultiEditor();
+        emit EditorChanged(name_);
     }
 
-    template<> void ECAttributeEditor<Foundation::AssetReference>::Set(QtProperty *property)
+    template<> void ECAttributeEditor<AssetReference>::Set(QtProperty *property)
     {
         if(listenEditorChangedSignal_)
         {
             QList<QtProperty*> children = rootProperty_->subProperties();
             if(children.size() == 2)
             {
-                QtStringPropertyManager *stringManager = dynamic_cast<QtStringPropertyManager *>(children[0]->propertyManager());
-                Attribute<Foundation::AssetReference> *attribute = dynamic_cast<Attribute<Foundation::AssetReference> *>(*(attributes_.begin()));
-                if(!attribute || !stringManager)
+                ComponentPtr comp = components_[0].lock();
+                QtStringPropertyManager *strMgr = dynamic_cast<QtStringPropertyManager *>(children[0]->propertyManager());
+                Attribute<AssetReference> *attribute = dynamic_cast<Attribute<AssetReference> *>(FindAttribute(comp));
+                if(!attribute || !strMgr)
+                {
+                    //! @todo add log error.
                     return;
+                }
 
-                Foundation::AssetReference value;
-                value.id_ = stringManager->value(children[0]).toStdString();
-                value.type_ = stringManager->value(children[1]).toStdString();
-                SetValue(value);
+                SetValue(AssetReference(strMgr->value(children[0]), strMgr->value(children[1])));
             }
         }
     }
@@ -899,9 +962,13 @@ namespace ECEditor
                 QList<QtProperty *> children = rootProperty_->subProperties();
                 if(children.size() >= 3)
                 {
-                    Attribute<Transform> *attribute = dynamic_cast<Attribute<Transform> *>(*(attributes_.begin()));
+                    ComponentPtr comp = components_[0].lock();
+                    Attribute<Transform> *attribute = dynamic_cast<Attribute<Transform> *>(FindAttribute(comp));
                     if(!attribute)
+                    {
+                        //! @todo add log error.
                         return;
+                    }
 
                     Transform transformValue = attribute->Get();
                     QList<QtProperty *> positions = children[0]->subProperties();
@@ -935,7 +1002,7 @@ namespace ECEditor
             propertyMgr_ = variantManager;
             factory_ = variantFactory;
 
-            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), attributeName_);
+            rootProperty_ = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), name_);
             if(rootProperty_)
             {
                 QtVariantProperty *childProperty = 0;
@@ -973,7 +1040,7 @@ namespace ECEditor
                 scaleProperty->addSubProperty(childProperty);
 
                 Update();
-                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(SetAttribute(QtProperty*)));
+                QObject::connect(propertyMgr_, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(PropertyChanged(QtProperty*)));
             }
             owner_->setFactoryForManager(variantManager, variantFactory);
         }
@@ -981,19 +1048,23 @@ namespace ECEditor
         {
             InitializeMultiEditor();
         }
+        emit EditorChanged(name_);
     }
 
     template<> void ECAttributeEditor<Transform>::Set(QtProperty *property)
     {
         if(listenEditorChangedSignal_)
         {
-            QtVariantPropertyManager *variantManager = dynamic_cast<QtVariantPropertyManager *>(propertyMgr_);
             QList<QtProperty *> children = rootProperty_->subProperties();
             if(children.size() >= 3)
             {
-                Attribute<Transform> *attribute = dynamic_cast<Attribute<Transform> *>(*(attributes_.begin()));
+                ComponentPtr comp = components_[0].lock();
+                Attribute<Transform> *attribute = dynamic_cast<Attribute<Transform> *>(FindAttribute(comp));
                 if(!attribute)
+                {
+                    //! @todo add log error.
                     return;
+                }
                 Transform trans = attribute->Get();
 
                 int foundIndex = -1;

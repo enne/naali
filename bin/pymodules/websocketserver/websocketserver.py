@@ -9,7 +9,6 @@ from eventlet import websocket
 from PythonQt.QtGui import QVector3D as Vec3
 from PythonQt.QtGui import QQuaternion as Quat
 
-import rexviewer as r
 import naali
 import mathutils
 
@@ -22,23 +21,18 @@ class NaaliWebsocketServer(circuits.BaseComponent):
 
     def __init__(self):
         circuits.BaseComponent.__init__(self)
-        print "websocket listen.."
         self.sock = eventlet.listen(('0.0.0.0', 9999))
-        print "..done"
         self.server = async_eventlet_wsgiserver.server(self.sock, handle_clients)
         print "websocket server started."
 
         NaaliWebsocketServer.instance = self
-        self.previd = 500000
         self.clientavs = {}
 
     def newclient(self, clientid, position, orientation):
-        #self.clients.add()
-        ent = r.createEntity("Jack.mesh", self.previd)
-        self.previd += 1
+        ent = naali.createMeshEntity("Jack.mesh")
 
         ent.placeable.Position = Vec3(position[0], position[1], position[2])
-        print Quat(mathutils.euler_to_quat(orientation))
+
         ent.placeable.Orientation = Quat(mathutils.euler_to_quat(orientation))
 
         print "New entity for web socket presence at", ent.placeable.Position
@@ -75,7 +69,10 @@ def handle_clients(ws):
     scene = naali.getScene("World")
     
     while True:
-            
+        # "main loop" for the server. When your done with the
+        # connection break from the loop. It is important to remove
+        # the socket from clients set
+
         try:
             msg = ws.wait()
         except socket.error:
@@ -86,13 +83,14 @@ def handle_clients(ws):
         print msg
 
         if msg is None:
-            # if there is no message the client has quit. 
+            # if there is no message the client will quit. 
             break
 
         try:
             function, params = json.loads(msg)
         except ValueError, error:
             print error
+            continue
 
         if function == 'CONNECTED':
             ws.send(json.dumps(['initGraffa', {}]))
@@ -103,32 +101,49 @@ def handle_clients(ws):
             NaaliWebsocketServer.instance.newclient(myid, start_position, start_orientation)
 
             ws.send(json.dumps(['setId', {'id': myid}]))
-            sendAll(['newAvatar', {'id': myid, 'position': start_position, 'orientation': start_orientation}])
+            sendAll(['addEntity', {'id': myid}])
+            sendAll(['addComponent', {'id': myid, 'component': 'EC_Mesh', 'url': 'http://localhost:8000/WebNaali/ankka.dae'}])
+            sendAll(['addComponent',{'id': myid, 'component': 'EC_Placeable',
+                                     'x': x,
+                                     'y': y,
+                                     'z': z,
+                                     'rotx': 1.57,
+                                     'roty': 0,
+                                     'rotz': 0}])
 
-            ents = scene.GetEntitiesWithComponentRaw("EC_DynamicComponent")
-            for ent in ents:
-                id = ent.Id
-                position = ent.placeable.Position.x(), ent.placeable.Position.y(), ent.placeable.Position.z()
-                orientation = mathutils.quat_to_euler(ent.placeable.Orientation)
-                sendAll(['addObject', {'id': id, 'position': position, 'orientation': orientation, 'xml' :scene.GetEntityXml(ent).data()}])
-                print "did addobject", id, position, orientation, scene.GetEntityXml(ent).data()
+            # ents = scene.GetEntitiesWithComponentRaw("EC_DynamicComponent")
 
+            # for ent in ents:
+            #     id = ent.Id
+            #     position = ent.placeable.Position.x(), ent.placeable.Position.y(), ent.placeable.Position.z()
+            #     orientation = mathutils.quat_to_euler(ent.placeable.Orientation)
+            #     sendAll(['addObject', {'id': id, 'position': position, 'orientation': orientation, 'xml': scene.GetEntityXml(ent).data()}])
 
         elif function == 'Naps':
             ws.send(json.dumps(['logMessage', {'message': 'Naps itelles!'}]))
             
-        elif function == 'giev update':
-            print params
+        elif function == 'setAttr':
             id = params.get('id')
-            position = params.get('position')
-            orientation = params.get('orientation')
-
-            NaaliWebsocketServer.instance.updateclient(myid, position, orientation)
+            component = params.get('component')
             
+            if component == 'EC_Placeable':
+                # What to do here?
+                ent = NaaliWebsocketServer.instance.clientavs[myid]
+                position = ent.placeable.Position
+                orientation = mathutils.quat_to_euler(ent.placeable.Orientation)
+
+                x = params.get('x', position.x())
+                y = params.get('y', position.y())
+                z = params.get('z', position.z())
+                rotx = params.get('rotx', orientation[0])
+                roty = params.get('roty', orientation[1])
+                rotz = params.get('rotz', orientation[2])
+                11
+                NaaliWebsocketServer.instance.updateclient(myid, (x, y, z), (rotx, roty, rotz))
+
             ents = scene.GetEntitiesWithComponentRaw("EC_OpenSimPresence")
-
             for ent in ents:
-
+                
                 x = ent.placeable.Position.x()
                 y = ent.placeable.Position.y()
                 z = ent.placeable.Position.z()
@@ -137,25 +152,37 @@ def handle_clients(ws):
 
                 id = ent.Id
 
-                sendAll(['updateAvatar',
-                         {'id': id,
-                          'position': (x, y, z),
-                          'orientation': orientation,
-                          }])
+                sendAll(['addEntity', {'id': id}])
+                sendAll(['addComponent', {'id': id, 'component': 'EC_Mesh', 'url': 'http://localhost:8000/WebNaali/ankka.dae'}])
+                sendAll(['addComponent', {'id': id, 'component': 'EC_Placeable'}])
 
-                
+                sendAll(['setAttr',
+                         {'id': id,
+                          'component': 'EC_Placeable',
+                          'x': x,
+                          'y': y,
+                          'z': z,
+                          'rotx': orientation[0],
+                          'roty': orientation[1],
+                          'rotz': orientation[2]}])
+
+        elif function == 'updateObject':
+            id = params['id']
+            data = params['data']
+
+
+            entity = scene.GetEntityRaw(id)
+            component = entity.GetComponentRaw('EC_DynamicComponent', 'door')
+            
+            component.SetAttribute('opened', data['opened'])
+                    
         elif function == 'setSize':
             y_max = params['height']
             x_max = params['width']
 
-        elif function == 'addObject':
-            pass
-
         elif function == 'reboot':
             break
 
+
     clients.remove(ws)
     print 'END', ws
-
-def handle_move():
-    pass

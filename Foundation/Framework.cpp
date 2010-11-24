@@ -17,13 +17,17 @@
 #include "RenderServiceInterface.h"
 #include "ConsoleServiceInterface.h"
 #include "ConsoleCommandServiceInterface.h"
-#include "FrameworkQtApplication.h"
+#include "NaaliApplication.h"
 #include "CoreException.h"
-#include "InputServiceInterface.h"
+#include "../Input/Input.h"
 #include "ISoundService.h"
 #include "Frame.h"
+#include "AssetAPI.h"
 #include "Console.h"
 #include "UiServiceInterface.h"
+
+#include "NaaliUi.h"
+#include "NaaliMainWindow.h"
 
 #include "SceneManager.h"
 #include "SceneEvents.h"
@@ -46,7 +50,7 @@ namespace Resource
 {
     namespace Events
     {
-        void RegisterResourceEvents(const Foundation::EventManagerPtr &event_manager)
+        void RegisterResourceEvents(const EventManagerPtr &event_manager)
         {
             event_category_id_t resource_event_category = event_manager->RegisterEventCategory("Resource");
             event_manager->RegisterEvent(resource_event_category, Resource::Events::RESOURCE_READY, "ResourceReady");
@@ -59,7 +63,7 @@ namespace Task
 {
     namespace Events
     {
-        void RegisterTaskEvents(const Foundation::EventManagerPtr &event_manager)
+        void RegisterTaskEvents(const EventManagerPtr &event_manager)
         {
             event_category_id_t resource_event_category = event_manager->RegisterEventCategory("Task");
             event_manager->RegisterEvent(resource_event_category, Task::Events::REQUEST_COMPLETED, "RequestCompleted");
@@ -76,8 +80,12 @@ namespace Foundation
         initialized_(false),
         log_formatter_(0),
         splitterchannel(0),
-        frame_(new Frame(this)),
-        console_(new ScriptConsole(this))
+        naaliApplication(0),
+        frame(new Frame(this)),
+        console(new ScriptConsole(this)),
+        ui(0),
+        input(0),
+        asset(0)
     {
         ParseProgramOptions();
         if (cm_options_.count("help")) 
@@ -91,7 +99,7 @@ namespace Foundation
             ProfilerSection::SetProfiler(&profiler_);
 #endif
             PROFILE(FW_Startup);
-            application_ = ApplicationPtr(new Application(this));
+//            application_ = ApplicationPtr(new Application(this));
             platform_ = PlatformPtr(new Platform(this));
         
             // Create config manager
@@ -118,7 +126,7 @@ namespace Foundation
 
             // Set config values we explicitly always want to override
             config_manager_->SetSetting(Framework::ConfigurationGroup(), std::string("version_major"), std::string("0"));
-            config_manager_->SetSetting(Framework::ConfigurationGroup(), std::string("version_minor"), std::string("3.2 TTS1"));
+            config_manager_->SetSetting(Framework::ConfigurationGroup(), std::string("version_minor"), std::string("3.4.1"));
 
             CreateLoggingSystem(); // depends on config and platform
 
@@ -133,15 +141,26 @@ namespace Foundation
             Resource::Events::RegisterResourceEvents(event_manager_);
             Task::Events::RegisterTaskEvents(event_manager_);
 
-            engine_.reset (new FrameworkQtApplication(this, argc_, argv_));
+            naaliApplication = new NaaliApplication(this, argc_, argv_);
 
             initialized_ = true;
+
+            ui = new NaaliUi(this);
+            asset = new AssetAPI(this);
+            connect(ui->MainWindow(), SIGNAL(WindowCloseEvent()), this, SLOT(Exit()));
+
+            input = new Input(this);
+
+            RegisterDynamicObject("ui", ui);
+            RegisterDynamicObject("frame", frame);
+            RegisterDynamicObject("input", input);
+            RegisterDynamicObject("console", console);
+            RegisterDynamicObject("asset", asset);
         }
     }
 
     Framework::~Framework()
     {
-        engine_.reset();
         thread_task_manager_.reset();
         event_manager_.reset();
         service_manager_.reset();
@@ -159,6 +178,17 @@ namespace Foundation
         log_channels_.clear();
         if (log_formatter_)
             log_formatter_->release();
+
+        delete frame;
+        delete console;
+        delete ui;
+        delete input;
+        delete asset;
+
+        // This delete must be the last one in Framework since naaliApplication derives QApplication.
+        // When we delete QApplication, we must have ensured that all QObjects have been deleted.
+        ///\bug Framework is itself a QObject and we should delete naaliApplication only after Framework has been deleted. A refactor is required.
+        delete naaliApplication;
     }
 
     void Framework::CreateLoggingSystem()
@@ -317,7 +347,8 @@ namespace Foundation
                 renderer.lock()->Render();
             }
 
-            frame_->Update(frametime);
+            frame->Update(frametime);
+            input->Update(frametime);
         }
 
         RESETPROFILER
@@ -330,7 +361,7 @@ namespace Foundation
             PostInitialize();
         }
         
-        engine_->Go();
+        naaliApplication->Go();
         exit_signal_ = true;
 
         UnloadModules();
@@ -339,15 +370,15 @@ namespace Foundation
     void Framework::Exit()
     {
         exit_signal_ = true;
-        if (engine_.get())
-            engine_->AboutToExit();
+        if (naaliApplication)
+            naaliApplication->AboutToExit();
     }
     
     void Framework::ForceExit()
     {
         exit_signal_ = true;
-        if (engine_.get())
-            engine_->quit();
+        if (naaliApplication)
+            naaliApplication->quit();
     }
     
     void Framework::CancelExit()
@@ -377,6 +408,11 @@ namespace Foundation
         event_manager_->ClearDelayedEvents();
         module_manager_->UninitializeModules();
         module_manager_->UnloadModules();
+    }
+
+    NaaliApplication *Framework::GetNaaliApplication() const
+    { 
+        return naaliApplication;
     }
 
     Scene::ScenePtr Framework::CreateScene(const QString &name)
@@ -440,7 +476,7 @@ namespace Foundation
 
     Console::CommandResult Framework::ConsoleListModules(const StringVector &params)
     {
-        boost::shared_ptr<Console::ConsoleServiceInterface> console = GetService<Console::ConsoleServiceInterface>(Foundation::Service::ST_Console).lock();
+        boost::shared_ptr<Console::ConsoleServiceInterface> console = GetService<Console::ConsoleServiceInterface>(Service::ST_Console).lock();
         if (console)
         {
             console->Print("Loaded modules:");
@@ -547,7 +583,7 @@ namespace Foundation
     Console::CommandResult Framework::ConsoleProfile(const StringVector &params)
     {
 #ifdef PROFILING
-        boost::shared_ptr<Console::ConsoleServiceInterface> console = GetService<Console::ConsoleServiceInterface>(Foundation::Service::ST_Console).lock();
+        boost::shared_ptr<Console::ConsoleServiceInterface> console = GetService<Console::ConsoleServiceInterface>(Service::ST_Console).lock();
         if (console)
         {
             Profiler &profiler = GetProfiler();
@@ -566,7 +602,7 @@ namespace Foundation
 
     void Framework::RegisterConsoleCommands()
     {
-        boost::shared_ptr<Console::CommandService> console = GetService<Console::CommandService>(Foundation::Service::ST_ConsoleCommand).lock();
+        boost::shared_ptr<Console::CommandService> console = GetService<Console::CommandService>(Service::ST_ConsoleCommand).lock();
         if (console)
         {
             console->RegisterCommand(Console::CreateCommand("LoadModule", 
@@ -593,32 +629,12 @@ namespace Foundation
         }
     }
 
-    QApplication *Framework::GetQApplication() const
-    {
-        return engine_.get();
-    }
-
-    MainWindow *Framework::GetMainWindow() const
-    {
-        return engine_->GetMainWindow();
-    }
-
-    QGraphicsView *Framework::GetUIView() const
-    {
-        return engine_->GetUIView();
-    }
-
 #ifdef PROFILING
     Profiler &Framework::GetProfiler()
     {
         return profiler_;
     }
 #endif
-
-    void Framework::SetUIView(std::auto_ptr <QGraphicsView> view)
-    {
-        engine_->SetUIView(view);
-    }
 
     ComponentManagerPtr Framework::GetComponentManager() const
     {
@@ -665,33 +681,59 @@ namespace Foundation
         return config_manager_.get();
     }
 
-    UiServiceInterface *Framework::Ui() const
+    Frame *Framework::GetFrame() const
     {
-        UiServicePtr ui = GetServiceManager()->GetService<UiServiceInterface>(Foundation::Service::ST_Gui).lock();
-        if (!ui.get())
-            throw Exception("Fatal: Ui service not present!");
-
-        return ui.get();
+        return frame;
     }
 
-    InputServiceInterface *Framework::Input() const
+    Input *Framework::GetInput() const
     {
-        boost::shared_ptr<InputServiceInterface> input_logic = GetServiceManager()->
-                GetService<InputServiceInterface>(Foundation::Service::ST_Input).lock();
-        if (!input_logic.get())
-            throw Exception("Fatal: Input service not present!");
+        return input;
+    }
 
-        return input_logic.get();
+    NaaliUi *Framework::Ui() const
+    {
+        return ui;
+    }
+
+    UiServiceInterface *Framework::UiService() 
+    { 
+        return GetService<UiServiceInterface>(); 
+    }
+
+    ScriptConsole *Framework::Console() const
+    { 
+        return console;
     }
 
     ISoundService *Framework::Audio() const
     {
         boost::shared_ptr<ISoundService> sound_logic = GetServiceManager()->
-                GetService<ISoundService>(Foundation::Service::ST_Sound).lock();
+                GetService<ISoundService>(Service::ST_Sound).lock();
         if (!sound_logic.get())
 //            throw Exception("Fatal: Sound service not present!");
             RootLogWarning("Framework::Audio(): Sound service not present!");
         return sound_logic.get();
+    }
+
+    AssetAPI *Framework::Asset() const
+    {
+        return asset;
+    }
+
+    bool Framework::RegisterDynamicObject(QString name, QObject *object)
+    {
+        if (name.length() == 0 || !object)
+            return false;
+
+        // We never override a property if it already exists.
+        if (property(name.toStdString().c_str()).isValid())
+            return false;
+
+        setProperty(name.toStdString().c_str(), QVariant::fromValue<QObject*>(object));
+
+        return true;
+
     }
 
     Scene::ScenePtr Framework::GetScene(const QString &name) const
@@ -712,10 +754,24 @@ namespace Foundation
     {
         return default_scene_;
     }
+    
+    Scene::SceneManager* Framework::DefaultScene() const
+    {
+        return default_scene_.get();
+    }
+    
+    Scene::SceneManager* Framework::Scene(const QString& name) const
+    {
+        return GetScene(name).get();
+    }
 
     void Framework::SetDefaultWorldScene(const Scene::ScenePtr &scene)
     {
-        default_scene_ = scene;
+        if(scene != default_scene_)
+        {
+            default_scene_ = scene;
+            emit DefaultWorldSceneChanged(scene);
+        }
     }
 
     const Framework::SceneMap &Framework::GetSceneMap() const

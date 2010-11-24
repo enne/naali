@@ -11,6 +11,8 @@
 #include "ModuleManager.h"
 #include "ServiceManager.h"
 
+#include "../Ui/NaaliUiFwd.h"
+
 #include <boost/smart_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/timer.hpp>
@@ -21,10 +23,14 @@ class QWidget;
 class QObject;
 
 class ISoundService;
-class InputServiceInterface;
 class UiServiceInterface;
 class Frame;
+class Input;
+class AssetAPI;
 class ScriptConsole;
+
+class Input;
+class FrameworkImpl;
 
 namespace Poco
 {
@@ -35,6 +41,7 @@ namespace Poco
 
 namespace Foundation
 {
+    class NaaliApplication;
     class FrameworkQtApplication;
     class KeyStateListener;
     class MainWindow;
@@ -110,9 +117,6 @@ namespace Foundation
 
         //! Returns thread task manager.
         ThreadTaskManagerPtr GetThreadTaskManager();
-
-        //! Signal the framework to exit
-        void Exit();
 
         //! Cancel a pending exit
         void CancelExit();
@@ -231,16 +235,7 @@ namespace Foundation
         void UnloadModules();
 
         //! Get main QApplication
-        QApplication *GetQApplication() const;
-
-        //! Get main window
-        MainWindow *GetMainWindow() const;
-
-        //! Get main UI View
-        QGraphicsView *GetUIView() const;
-
-        //! Set main UI View
-        void SetUIView(std::auto_ptr <QGraphicsView> view);
+        NaaliApplication *GetNaaliApplication() const;
 
         /** Returns module by class T.
             @param T class type of the module.
@@ -264,19 +259,39 @@ namespace Foundation
 
     public slots:
         /// Returns the Naali core API UI object.
-        UiServiceInterface *Ui() const;
+        NaaliUi *Ui() const;
+
+        /// Returns the old UiServiceInterface impl, which is not merged to the core UI object yet
+        UiServiceInterface *UiService();
 
         /// Returns the Naali core API Input object.
-        InputServiceInterface *Input() const;
+        Input *GetInput() const;
 
         /// Returns the Naali core API Frame object.
-        Frame *GetFrame() const { return frame_; }
+        Frame *GetFrame() const;
 
         /// Returns the Naali core API Console object.
-        ScriptConsole *Console() const { return console_; }
+        ScriptConsole *Console() const;
 
         /// Returns the Naali core API Audio object.
         ISoundService *Audio() const;
+
+        /// Returns the default scene.
+        Scene::SceneManager* DefaultScene() const;
+        
+        /// Returns a scene by name
+        Scene::SceneManager* Scene(const QString& name) const;
+        
+        AssetAPI *Asset() const;
+        /// Stores the given QObject as a dynamic property into the Framework. This is done to implement
+        /// easier script access for QObject-based interface objects.
+        /// @param name The name to use for the property. Fails if name is an empty string.
+        /// @param object The object to register as a property. The property will be a QVariant containing this QObject.
+        /// @return If the registration succeeds, this returns true. Otherwise either 'object' pointer was null,
+        ///        or a property with that name was registered already.
+        /// \note There is no unregister option. It can be implemented if someone finds it useful, but at this point
+        ///  we are going with a "unload-only-on-close" behavior.
+        bool RegisterDynamicObject(QString name, QObject *object);
 
     signals:
         /// Emitted after new scene has been added to framework.
@@ -288,6 +303,15 @@ namespace Foundation
         /** @param name removed scene name.
         */
         void SceneRemoved(const QString &name);
+
+        /// Emmitted when default world scene changes.
+        /** @param scene new default world scene object.
+        */
+        void DefaultWorldSceneChanged(const Scene::ScenePtr &scene);
+
+    public slots:
+        //! Signal the framework to exit
+        void Exit();
 
     private:
         //! Registers framework specific console commands
@@ -336,9 +360,6 @@ namespace Foundation
         //! Current 'default' scene
         Scene::ScenePtr default_scene_;
 
-        //! Bridges QtApplication and Framework bridge object.
-        std::auto_ptr <FrameworkQtApplication> engine_;
-
 #ifdef PROFILING
         //! profiler
         Profiler profiler_;
@@ -362,13 +383,27 @@ namespace Foundation
         //! Sends log prints for multiple channels.
         Poco::SplitterChannel *splitterchannel;
 
+        /// Naali implementation of the main QApplication object.
+        NaaliApplication *naaliApplication;
+
         //! Exposes Naali framework's update tick.
-        Frame *frame_;
+        Frame *frame;
 
         //! Provides console access for scripting languages.
-        ScriptConsole *console_;
+        ScriptConsole *console;
+
+        //! The Naali UI API.
+        NaaliUi *ui;
+
+        //! The Naali Input API.
+        Input *input;
+
+        /// This object represents the Naali core Asset API.
+        AssetAPI *asset;
+
     };
 
+    ///\todo Refactor-remove these. -jj.
     namespace
     {
         const event_id_t PROGRAM_OPTIONS = 1;
@@ -379,6 +414,7 @@ namespace Foundation
     //! Contains pre-parsed program options and non-parsed command line arguments.
     /*! Options contains program options pre-parsed by framework. If modules wish
         to use their own command line arguments, the arguments are also supplied.
+        ///\todo Refactor-remove these. -jj.
     */
     class ProgramOptionsEvent : public IEventData
     {

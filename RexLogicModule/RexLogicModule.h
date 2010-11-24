@@ -77,6 +77,7 @@ namespace RexLogic
     class WorldInputLogic;
     class LoginHandler;
     class ObjectCameraController;
+    class CameraControl;
 
     namespace InWorldChat { class Provider; }
 
@@ -84,6 +85,7 @@ namespace RexLogic
     typedef boost::shared_ptr<Primitive> PrimitivePtr;
     typedef boost::shared_ptr<CameraControllable> CameraControllablePtr;
     typedef boost::shared_ptr<ObjectCameraController> ObjectCameraControllerPtr;
+    typedef boost::shared_ptr<CameraControl> CameraControlPtr;
 
     //! Camera states handled by rex logic
     enum CameraState
@@ -204,10 +206,13 @@ namespace RexLogic
             \param entity this is the entity that was hit with normal raycast. 
             \return returns true if infoicon was hit, false otherwise
         */
-        bool CheckInfoIconIntersection(int x, int y, Foundation::RaycastResult *result);
+        bool CheckInfoIconIntersection(int x, int y, RaycastResult *result);
 
         //! Launch estateownermessage event
         void EmitIncomingEstateOwnerMessageEvent(QVariantList params);
+
+        ObjectCameraControllerPtr GetObjectCameraController() { return obj_camera_controller_; }
+        CameraControlPtr GetCameraControlWidget() { return camera_control_widget_; }
 
     public slots:
         //! logout from server and delete current scene
@@ -225,11 +230,11 @@ namespace RexLogic
         Q_DISABLE_COPY(RexLogicModule);
 
         //! Handle real-time update of scene objects
-        /*! Performs dead-reckoning and damped motion for all scene entities which have an OgrePlaceable and a NetworkPosition
-            component. If the OgrePlaceable position/rotation is set anywhere else, it will be overridden by the next
+        /*! Performs dead-reckoning and damped motion for all scene entities which have an Placeable and a NetworkPosition
+            component. If the Placeable position/rotation is set anywhere else, it will be overridden by the next
             call to this, so it should be avoided.
 
-            Performs animation update to all objects that have an OgreAnimationController component.
+            Performs animation update to all objects that have an AnimationController component.
          */
         void UpdateObjects(f64 frametime);
 
@@ -324,6 +329,8 @@ namespace RexLogic
         CameraControllablePtr camera_controllable_;
 
         ObjectCameraControllerPtr obj_camera_controller_;
+
+        CameraControlPtr camera_control_widget_;
 
         //! Avatar entities found this frame. Needed so that we can update name overlays last, after all other updates
         std::vector<Scene::EntityWeakPtr> found_avatars_;

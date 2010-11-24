@@ -6,7 +6,7 @@
 #include "IModule.h"
 #include "Framework.h"
 #include "Entity.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "SceneManager.h"
 #include "ISoundService.h"
 
@@ -28,9 +28,9 @@ EC_Sound::EC_Sound(IModule *module):
     static AttributeMetadata metaData("", "0", "1", "0.1");
     soundGain.SetMetadata(&metaData);
 
-    QObject::connect(this, SIGNAL(ParentEntitySet()), this, SLOT(UpdateSignals()));
+    connect(this, SIGNAL(ParentEntitySet()), SLOT(UpdateSignals()));
     connect(this, SIGNAL(OnAttributeChanged(IAttribute*, AttributeChange::Type)),
-            this, SLOT(AttributeUpdated(IAttribute*)));
+            SLOT(AttributeUpdated(IAttribute*)));
 }
 
 EC_Sound::~EC_Sound()
@@ -66,6 +66,17 @@ void EC_Sound::RegisterActions()
     }
 }
 
+void EC_Sound::PositionChange(const QVector3D &pos)
+{
+    EC_Placeable *placeable = qobject_cast<EC_Placeable*>(sender());
+    ISoundService *soundService = framework_->Audio();
+    if(soundService && placeable && sound_id_)
+    {
+        Vector3df position(pos.x(), pos.y(), pos.z());
+        soundService->SetPosition(sound_id_, position);
+    }
+}
+
 void EC_Sound::PlaySound()
 {
     triggerSound.Set(false, AttributeChange::LocalOnly);
@@ -82,7 +93,7 @@ void EC_Sound::PlaySound()
     if(sound_id_)
         StopSound();
 
-    OgreRenderer::EC_OgrePlaceable *placeable = dynamic_cast<OgreRenderer::EC_OgrePlaceable *>(FindPlaceable().get());
+    EC_Placeable *placeable = dynamic_cast<EC_Placeable *>(FindPlaceable().get());
     if(placeable)
     {
         sound_id_ = soundService->PlaySound3D(soundId.Get(), ISoundService::Triggered, false, placeable->GetPosition());
@@ -146,6 +157,9 @@ ComponentPtr EC_Sound::FindPlaceable() const
         LogError("Fail to find a placeable component cause parent entity is null.");
         return comp;
     }
-    comp = GetParentEntity()->GetComponent<OgreRenderer::EC_OgrePlaceable>();
+    comp = GetParentEntity()->GetComponent<EC_Placeable>();
+    //We need to update sound source position when placeable component has changed it's transformation.
+    connect(comp.get(), SIGNAL(PositionChanged(const QVector3D &)),
+            SLOT(PositionChange(const QVector3D &)), Qt::UniqueConnection);
     return comp;
 }

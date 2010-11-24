@@ -7,7 +7,7 @@
 #include "LinkPlugin.h"
 #include "ServerInfoProvider.h"
 #include "ModuleManager.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "WorldLogicInterface.h"
 #include "Entity.h"
 #include "ConsoleCommandServiceInterface.h"
@@ -18,6 +18,7 @@
 #include "MumbleLibrary.h"
 #include "SettingsWidget.h"
 #include "UiServiceInterface.h"
+#include "EC_VoiceChannel.h"
 
 #include "MemoryLeakCheck.h"
 
@@ -53,6 +54,7 @@ namespace MumbleVoip
 
     void MumbleVoipModule::Load()
     {
+        DECLARE_MODULE_EC(EC_VoiceChannel);
         if (use_native_mumble_client_)
         {
             server_info_provider_ = new ServerInfoProvider(framework_);
@@ -158,7 +160,7 @@ namespace MumbleVoip
         if (!avatar)
             return false;
 
-        boost::shared_ptr<OgreRenderer::EC_OgrePlaceable> ogre_placeable = avatar->GetComponent<OgreRenderer::EC_OgrePlaceable>();
+        boost::shared_ptr<EC_Placeable> ogre_placeable = avatar->GetComponent<EC_Placeable>();
         if (!ogre_placeable)
             return false;
 
@@ -179,7 +181,7 @@ namespace MumbleVoip
         if (!camera)
             return false;
 
-        boost::shared_ptr<OgreRenderer::EC_OgrePlaceable> ogre_placeable = camera->GetComponent<OgreRenderer::EC_OgrePlaceable>();
+        boost::shared_ptr<EC_Placeable> ogre_placeable = camera->GetComponent<EC_Placeable>();
         if (!ogre_placeable)
             return false;
 
@@ -273,7 +275,7 @@ namespace MumbleVoip
 
     void MumbleVoipModule::StartMumbleClient(ServerInfo info)
     {
-        QUrl murmur_url(QString("mumble://%1/%2").arg(info.server).arg(info.channel)); // setScheme method does not add '//' between scheme and host.
+        QUrl murmur_url(QString("mumble://%1/%2").arg(info.server).arg(info.channel_id)); // setScheme method does not add '//' between scheme and host.
         murmur_url.setUserName(info.user_name);
         murmur_url.setPassword(info.password);
         murmur_url.setQueryItems(QList<QPair<QString,QString> >() << QPair<QString,QString>("version", info.version));

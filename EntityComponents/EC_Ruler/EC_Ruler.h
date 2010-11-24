@@ -3,7 +3,7 @@
  *
  *  @file   EC_Ruler.h
  *  @brief  EC_Ruler enables visual highlighting effect for of scene entity.
- *  @note   The entity must have EC_OgrePlaceable and EC_Mesh (if mesh) or
+ *  @note   The entity must have EC_Placeable and EC_Mesh (if mesh) or
  *          EC_OgreCustomObject (if prim) components available in advance.
  */
 
@@ -63,7 +63,7 @@ Registered by RexLogic::RexLogicModule.
 <li>"EndDrag": Call EndDrag to tell the code we're done for now.
 <li>"UpdateRuler": Callback for OnChanged from ECEditor. 
 </ul>
- 	
+     
 
 <b>Reacts on the following actions:</b>
 <ul>
@@ -74,7 +74,7 @@ Registered by RexLogic::RexLogicModule.
 
 Does not emit any actions.
 
-<b>The entity must have EC_OgrePlaceable and EC_Mesh (if mesh) or
+<b>The entity must have EC_Placeable and EC_Mesh (if mesh) or
 EC_OgreCustomObject (if prim) components available in advance</b>.
 </table>
 
@@ -92,6 +92,7 @@ public:
     
     enum Type
     {
+        Null,
         Rotation,
         Scale,
         Translation,
@@ -169,15 +170,22 @@ private:
 
     /// Ogre entity clone created for highlighting.
     Ogre::ManualObject *rulerObject;
+    /// object for grid part.
+    Ogre::ManualObject *gridObject;
 
     /// Ogre scene node where this EC is attached.
     Ogre::SceneNode *sceneNode_;
     
     /// Ogre scene node to attach EC to when we want global space axis vis
     Ogre::SceneNode *globalSceneNode;
+    /// grid anchor
+    Ogre::SceneNode *anchorNode;
+ 
     
     std::string rulerName;
+    std::string rulerMovingPartName;
     std::string nodeName;
+    std::string movingNodeName;
     
     EC_Ruler::Type type;
     

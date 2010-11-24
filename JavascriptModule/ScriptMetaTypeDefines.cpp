@@ -10,15 +10,16 @@
 #include "ScriptMetaTypeDefines.h"
 
 #include "Entity.h"
-#include "QtInputMouseEvent.h"
-#include "QtInputKeyEvent.h"
+#include "KeyEvent.h"
+#include "MouseEvent.h"
 #include "UiProxyWidget.h"
 #include "Frame.h"
 #include "Console.h"
+#include "SceneManager.h"
 #include "ISoundService.h"
+#include "InputContext.h"
+#include "RenderServiceInterface.h"
 
-#include "QtInputMouseEvent.h"
-#include "QtInputKeyEvent.h"
 #include "EntityAction.h"
 
 #include <QUiLoader>
@@ -33,12 +34,14 @@ Q_SCRIPT_DECLARE_QMETAOBJECT(QWidget, QWidget*)
 //! Naali input defines
 Q_DECLARE_METATYPE(MouseEvent*)
 Q_DECLARE_METATYPE(KeyEvent*)
+Q_DECLARE_METATYPE(InputContext*)
 
 //! Naali Ui defines
 Q_DECLARE_METATYPE(UiProxyWidget*);
 Q_SCRIPT_DECLARE_QMETAOBJECT(UiProxyWidget, QWidget*)
 
 //! Naali Scene defines.
+Q_DECLARE_METATYPE(Scene::SceneManager*);
 Q_DECLARE_METATYPE(Scene::Entity*);
 Q_DECLARE_METATYPE(EntityAction*);
 Q_DECLARE_METATYPE(AttributeChange*);
@@ -50,6 +53,9 @@ Q_DECLARE_METATYPE(Frame*);
 Q_DECLARE_METATYPE(ScriptConsole*);
 Q_DECLARE_METATYPE(Command*);
 Q_DECLARE_METATYPE(DelayedSignal*);
+
+//! Naali renderer defines
+Q_DECLARE_METATYPE(RaycastResult*);
 
 void ExposeQtMetaTypes(QScriptEngine *engine)
 {
@@ -64,6 +70,7 @@ void ExposeCoreApiMetaTypes(QScriptEngine *engine)
     // Input metatypes.
     qScriptRegisterQObjectMetaType<MouseEvent*>(engine);
     qScriptRegisterQObjectMetaType<KeyEvent*>(engine);
+    qScriptRegisterQObjectMetaType<InputContext*>(engine);
     qRegisterMetaType<KeyEvent::EventType>("KeyEvent::EventType");
     qRegisterMetaType<MouseEvent::EventType>("MouseEvent::EventType");
     qRegisterMetaType<MouseEvent::MouseButton>("MouseEvent::MouseButton");
@@ -98,6 +105,9 @@ void ExposeCoreApiMetaTypes(QScriptEngine *engine)
     qRegisterMetaType<ISoundService::SoundState>("ISoundService::SoundState");
     qRegisterMetaType<ISoundService::SoundType>("SoundType");
     qRegisterMetaType<ISoundService::SoundType>("ISoundService::SoundType");
+
+    // Renderer metatypes
+    qScriptRegisterQObjectMetaType<RaycastResult*>(engine);
 }
 
 

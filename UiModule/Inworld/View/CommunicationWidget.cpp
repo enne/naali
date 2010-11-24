@@ -10,7 +10,6 @@
 #include "UiModule.h"
 #include "ModuleManager.h"
 #include "VoiceUsersWidget.h"
-#include "VoiceControl.h"
 #include "UiServiceInterface.h"
 #include "VoiceControllerWidget.h"
 
@@ -575,6 +574,7 @@ namespace CoreUi
             return;
 
         tool_manager_->RemoveToolWidget(voice_tool_);
+        voice_tool_ = 0; // Object deleted by tool_manager_->RemoveToolWidget() function call
     }
 	
 //$ BEGIN_MOD $

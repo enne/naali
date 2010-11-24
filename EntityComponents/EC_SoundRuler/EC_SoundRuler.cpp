@@ -3,7 +3,7 @@
  *
  *  @file   EC_SoundRuler.h
  *  @brief  EC_SoundRuler enables visual sound properties effect for scene entity.
- *  @note   The entity must have EC_OgrePlaceable and EC_OpenSimPrim 
+ *  @note   The entity must have EC_Placeable and EC_OpenSimPrim 
  *  @author Nathan Letwory | http://www.letworyinteractive.com
  */
 
@@ -14,7 +14,7 @@
 #include "Entity.h"
 #include "Renderer.h"
 #include "OgreMaterialUtils.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "EC_Mesh.h"
 #include "EC_OgreCustomObject.h"
 #include "EC_OpenSimPrim.h"
@@ -34,7 +34,7 @@ EC_SoundRuler::EC_SoundRuler(IModule *module) :
     rulerObject(0),
     sceneNode_(0)
 {
-    renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer);
+    renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer);
     
     QObject::connect(this, SIGNAL(OnAttributeChanged(IAttribute*, AttributeChange::Type)), this, SLOT(UpdateSoundRuler()));
     
@@ -110,7 +110,7 @@ void EC_SoundRuler::Create()
     if (!entity)
         return;
 
-    OgreRenderer::EC_OgrePlaceable *placeable = entity->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+    EC_Placeable *placeable = entity->GetComponent<EC_Placeable>().get();
     assert(placeable);
     if (!placeable)
         return;

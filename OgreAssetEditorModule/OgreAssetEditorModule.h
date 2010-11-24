@@ -11,6 +11,7 @@
 
 #include "IModule.h"
 #include "ModuleLoggingFunctions.h"
+#include "OgreAssetEditorModuleApi.h"
 
 #include <QObject>
 
@@ -28,7 +29,7 @@ namespace Inventory
 class MaterialWizard;
 class EditorManager;
 
-class OgreAssetEditorModule : public QObject, public IModule
+class ASSET_EDITOR_MODULE_API OgreAssetEditorModule : public QObject, public IModule
 {
     Q_OBJECT
 
@@ -70,7 +71,7 @@ private:
     boost::weak_ptr<UiServiceInterface> uiService_;
 
     /// Event manager pointer.
-    Foundation::EventManagerPtr eventManager_;
+    EventManagerPtr eventManager_;
 
     /// Inventory event category.
     event_category_id_t frameworkEventCategory_;

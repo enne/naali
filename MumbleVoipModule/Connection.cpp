@@ -92,6 +92,8 @@ namespace MumbleLib
             playback_buffer_length_ms_(playback_buffer_length_ms),
             statistics_(500)
     {
+        qRegisterMetaType<State>("MumbleLib::Connection::State");
+
         // BlockingQueuedConnection for cross thread signaling
         QObject::connect(this, SIGNAL(UserObjectCreated(User*)), SLOT(AddToUserList(User*)), Qt::BlockingQueuedConnection);
 
@@ -189,6 +191,24 @@ namespace MumbleLib
 
     void Connection::Close()
     {
+        if (state_ == STATE_CONNECTING)
+        {
+            lock_state_.lockForWrite();
+            state_ = STATE_CLOSED;
+            lock_state_.unlock();
+            emit StateChanged(state_);
+            return;
+        }
+
+        if (state_ == STATE_AUTHENTICATING)
+        {
+            lock_state_.lockForWrite();
+            state_ = STATE_CLOSED;
+            lock_state_.unlock();
+            emit StateChanged(state_);
+            return;
+        }
+
         user_update_timer_.stop();
         QMutexLocker raw_udp_tunnel_locker(&mutex_raw_udp_tunnel_);
         lock_state_.lockForWrite();
@@ -400,7 +420,7 @@ namespace MumbleLib
 	    int flags = 0; // target = 0
 	    flags |= (MumbleClient::UdpMessageType::UDPVoiceCELTAlpha << 5);
 	    data[0] = static_cast<unsigned char>(flags);
-        PacketDataStream data_stream(data + 1, PACKET_DATA_SIZE_MAX - 1);
+        MumbleClient::PacketDataStream data_stream(data + 1, PACKET_DATA_SIZE_MAX - 1);
         data_stream << frame_sequence_;
 
         for (int i = 0; i < MumbleVoip::FRAMES_PER_PACKET; ++i)
@@ -481,8 +501,6 @@ namespace MumbleLib
     void Connection::RemoveChannel(const MumbleClient::Channel& channel)
     {
         QMutexLocker locker(&mutex_channels_);
-
-        int i = 0;
         for (int i = 0; i < channels_.size(); ++i)
         {
             if (channels_.at(i)->Id() == channel.id)
@@ -522,12 +540,13 @@ namespace MumbleLib
         else
             return;
 
-        PacketDataStream data_stream = PacketDataStream((char*)buffer, length);
+        MumbleClient::PacketDataStream data_stream = MumbleClient::PacketDataStream((char*)buffer, length);
         bool valid = data_stream.isValid();
-
+        UNREFERENCED_PARAM(valid);
         uint8_t first_byte = static_cast<unsigned char>(data_stream.next());
         MumbleClient::UdpMessageType::MessageType type = static_cast<MumbleClient::UdpMessageType::MessageType>( ( first_byte >> 5) & 0x07 );
         uint8_t flags = first_byte & 0x1f;
+        UNREFERENCED_PARAM(flags);
         switch (type)
         {
         case MumbleClient::UdpMessageType::UDPVoiceCELTAlpha:

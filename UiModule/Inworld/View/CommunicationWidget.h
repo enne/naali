@@ -6,7 +6,7 @@
 
 #include <QGraphicsProxyWidget>
 #include "ui_CommunicationWidget.h"
-#include "InputServiceInterface.h"
+#include "Input.h"
 
 //$ BEGIN_MOD $
 #include "TtsChatWidget.h"

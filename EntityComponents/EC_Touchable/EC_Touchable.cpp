@@ -7,7 +7,7 @@
  *          when it is clicked i.e. touched. The effect is not visible by default.
  *          You must call Show() function separately. The effect is visible only
  *          for certain time.
- *  @note   The entity must have EC_OgrePlaceable and EC_Mesh (if mesh) or
+ *  @note   The entity must have EC_Placeable and EC_Mesh (if mesh) or
  *          EC_OgreCustomObject (if prim) components available in advance.
  */
 
@@ -20,7 +20,7 @@
 #include "Entity.h"
 #include "Renderer.h"
 //#include "OgreMaterialUtils.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "EC_Mesh.h"
 #include "EC_OgreCustomObject.h"
 #include "LoggingFunctions.h"
@@ -116,7 +116,7 @@ EC_Touchable::EC_Touchable(IModule *module) :
 
     hoverCursor.SetMetadata(&metadata);
 
-    renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer);
+    renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer);
     connect(this, SIGNAL(OnAttributeChanged(IAttribute*, AttributeChange::Type)), SLOT(UpdateMaterial()));
     connect(this, SIGNAL(ParentEntitySet()), SLOT(RegisterActions()));
 //    connect(this, SIGNAL(ParentEntitySet()), SLOT(Create()));
@@ -132,24 +132,24 @@ void EC_Touchable::Create()
     if (!entity)
         return;
 
-    OgreRenderer::EC_OgrePlaceable *placeable = entity->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+    EC_Placeable *placeable = entity->GetComponent<EC_Placeable>().get();
     assert(placeable);
     if (!placeable)
         return;
 
     // Check out if this entity has EC_Mesh or EC_OgreCustomObject.
     Ogre::Entity *originalEntity  = 0;
-    if (entity->GetComponent(OgreRenderer::EC_Mesh::TypeNameStatic()))
+    if (entity->GetComponent(EC_Mesh::TypeNameStatic()))
     {
-        OgreRenderer::EC_Mesh *ec_mesh= entity->GetComponent<OgreRenderer::EC_Mesh>().get();
+        EC_Mesh *ec_mesh= entity->GetComponent<EC_Mesh>().get();
         assert(ec_mesh);
 
         originalEntity = ec_mesh->GetEntity();
         sceneNode_ = ec_mesh->GetAdjustmentSceneNode();
     }
-    else if(entity->GetComponent(OgreRenderer::EC_OgreCustomObject::TypeNameStatic()))
+    else if(entity->GetComponent(EC_OgreCustomObject::TypeNameStatic()))
     {
-        OgreRenderer::EC_OgreCustomObject *ec_custom = entity->GetComponent<OgreRenderer::EC_OgreCustomObject>().get();
+        EC_OgreCustomObject *ec_custom = entity->GetComponent<EC_OgreCustomObject>().get();
         assert(ec_custom);
         if (!ec_custom->IsCommitted())
         {
@@ -233,7 +233,13 @@ void EC_Touchable::UpdateMaterial()
         return;
     }
 
-//    hover_cursor_ = QCursor((Qt::CursorShape)(hoverCursor.Get()));
+    // Remove current cursors when attributes change
+    QCursor *current_cursor = QApplication::overrideCursor();
+    while (current_cursor)
+    {
+        QApplication::restoreOverrideCursor();
+        current_cursor = QApplication::overrideCursor();
+    }
 }
 
 ///\todo Remove this altogether. -jj. Integrate switching mouse cursors to input contexts so that 

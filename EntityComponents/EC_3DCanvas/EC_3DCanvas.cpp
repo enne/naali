@@ -27,7 +27,7 @@ EC_3DCanvas::EC_3DCanvas(IModule *module) :
     texture_name_("")
 {
     boost::shared_ptr<OgreRenderer::Renderer> renderer = module->GetFramework()->GetServiceManager()->
-        GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+        GetService<OgreRenderer::Renderer>(Service::ST_Renderer).lock();
     if (renderer)
     {
         // Create material
@@ -88,6 +88,12 @@ void EC_3DCanvas::Start()
         Update();
 }
 
+void EC_3DCanvas::Stop()
+{
+    if (refresh_timer_)
+        refresh_timer_->stop();
+}
+
 void EC_3DCanvas::Setup(QWidget *widget, const QList<uint> &submeshes, int refresh_per_second)
 {
     SetWidget(widget);
@@ -110,13 +116,20 @@ void EC_3DCanvas::SetRefreshRate(int refresh_per_second)
     if (refresh_per_second < 0)
         refresh_per_second = 0;
 
+    bool was_running = false;
+    if (refresh_timer_)
+        was_running = refresh_timer_->isActive();
     SAFE_DELETE(refresh_timer_);
 
     if (refresh_per_second != 0)
     {
-        update_interval_msec_ = 1000 / refresh_per_second;
         refresh_timer_ = new QTimer(this);
-        connect(refresh_timer_, SIGNAL(timeout()), SLOT(Update()));
+        connect(refresh_timer_, SIGNAL(timeout()), SLOT(Update()), Qt::UniqueConnection);
+
+        int temp_msec = 1000 / refresh_per_second;
+        if (update_interval_msec_ != temp_msec && was_running)
+            refresh_timer_->start(temp_msec);
+        update_interval_msec_ = temp_msec;
     }
     else
         update_interval_msec_ = 0;
@@ -153,8 +166,9 @@ void EC_3DCanvas::Update()
     if (texture.isNull())
         return;
 
-    QImage buffer(widget_->size(), QImage::Format_ARGB32_Premultiplied);
-    QPainter painter(&buffer);
+    if (buffer_.size() != widget_->size())
+        buffer_ = QImage(widget_->size(), QImage::Format_ARGB32_Premultiplied);
+    QPainter painter(&buffer_);
     widget_->render(&painter);
 
     // Set texture to material
@@ -168,16 +182,16 @@ void EC_3DCanvas::Update()
         update_internals_ = false;
     }
 
-    if (texture->getWidth() != buffer.width() || texture->getHeight() != buffer.height())
+    if ((int)texture->getWidth() != buffer_.width() || (int)texture->getHeight() != buffer_.height())
     {
         texture->freeInternalResources();
-        texture->setWidth(buffer.width());
-        texture->setHeight(buffer.height());
+        texture->setWidth(buffer_.width());
+        texture->setHeight(buffer_.height());
         texture->createInternalResources();
     }
 
-    Ogre::Box update_box(0,0, buffer.width(), buffer.height());
-    Ogre::PixelBox pixel_box(update_box, Ogre::PF_A8R8G8B8, (void*)buffer.bits());
+    Ogre::Box update_box(0,0, buffer_.width(), buffer_.height());
+    Ogre::PixelBox pixel_box(update_box, Ogre::PF_A8R8G8B8, (void*)buffer_.bits());
     if (!texture->getBuffer().isNull())
         texture->getBuffer()->blitFromMemory(pixel_box, update_box);
 }
@@ -191,8 +205,8 @@ void EC_3DCanvas::UpdateSubmeshes()
 
     int draw_type = -1;
     uint submesh_count = 0;
-    OgreRenderer::EC_Mesh* ec_mesh = entity->GetComponent<OgreRenderer::EC_Mesh>().get();
-    OgreRenderer::EC_OgreCustomObject* ec_custom_object = entity->GetComponent<OgreRenderer::EC_OgreCustomObject>().get();
+    EC_Mesh* ec_mesh = entity->GetComponent<EC_Mesh>().get();
+    EC_OgreCustomObject* ec_custom_object = entity->GetComponent<EC_OgreCustomObject>().get();
 
     if (ec_mesh)
     {

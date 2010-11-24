@@ -19,7 +19,8 @@
 #include "EC_Mesh.h"
 #include "EC_OgreCustomObject.h"
 #include "EC_Terrain.h"
-#include "MainWindow.h"
+#include "NaaliMainWindow.h"
+#include "NaaliUi.h"
 #include <AssetEvents.h>
 #include <EventManager.h>
 //#include "RealXtend/RexProtocolMsgIDs.h"
@@ -104,7 +105,7 @@ TimeProfilerWindow::TimeProfilerWindow(Foundation::Framework *fw) : framework_(f
     label->setPixmap(QPixmap::fromImage(img));
 
     const int headerHeight = tree_profiling_data_->headerItem()->sizeHint(0).height();
-
+    UNREFERENCED_PARAM(headerHeight);
     tree_profiling_data_->header()->resizeSection(0, 300);
     tree_profiling_data_->header()->resizeSection(1, 60);
     tree_profiling_data_->header()->resizeSection(2, 50);
@@ -218,7 +219,7 @@ TimeProfilerWindow::TimeProfilerWindow(Foundation::Framework *fw) : framework_(f
     QObject::connect(tree_mesh_assets_, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(ShowMeshAsset(QTreeWidgetItem*, int)));
     QObject::connect(tree_texture_assets_, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(ShowTextureAsset(QTreeWidgetItem*, int)));
 
-    boost::shared_ptr<Foundation::EventManager> event_manager_ = framework_->GetEventManager();
+    boost::shared_ptr<EventManager> event_manager_ = framework_->GetEventManager();
     if ( event_manager_ != 0)
         asset_event_category_ = event_manager_->QueryEventCategory("Asset");
 
@@ -250,6 +251,8 @@ TimeProfilerWindow::TimeProfilerWindow(Foundation::Framework *fw) : framework_(f
         QObject::connect(copyAssetName, SIGNAL(triggered()), this, SLOT(CopyMaterialAssetName()));
         menu_material_assets_->addAction(copyAssetName);
     }
+
+    tex_preview_ = 0;
 }
 
 namespace
@@ -277,11 +280,11 @@ bool TimeProfilerWindow::eventFilter(QObject *obj, QEvent *event)
     {
         QTreeWidget *widget = dynamic_cast<QTreeWidget*>(obj);
         if (widget == tree_texture_assets_)
-            menu_texture_assets_->popup(framework_->GetMainWindow()->mapFromGlobal(QCursor::pos()));
+            menu_texture_assets_->popup(framework_->Ui()->MainWindow()->mapFromGlobal(QCursor::pos()));
         if (widget == tree_mesh_assets_)
-            menu_mesh_assets_->popup(framework_->GetMainWindow()->mapFromGlobal(QCursor::pos()));
+            menu_mesh_assets_->popup(framework_->Ui()->MainWindow()->mapFromGlobal(QCursor::pos()));
         if (widget == tree_material_assets_)
-            menu_material_assets_->popup(framework_->GetMainWindow()->mapFromGlobal(QCursor::pos()));
+            menu_material_assets_->popup(framework_->Ui()->MainWindow()->mapFromGlobal(QCursor::pos()));
 
         return true;
     }
@@ -308,7 +311,7 @@ void TimeProfilerWindow::CopyMaterialAssetName()
 void TimeProfilerWindow::ShowMeshAsset(QTreeWidgetItem* item, int column)
 {
     Asset::Events::AssetOpen open(item->text(0), QString::number(RexAT_Mesh));
-    boost::shared_ptr<Foundation::EventManager> event_manager_ = framework_->GetEventManager();
+    boost::shared_ptr<EventManager> event_manager_ = framework_->GetEventManager();
     if ( event_manager_ != 0 )
     {
         event_manager_->SendEvent(asset_event_category_,Asset::Events::ASSET_OPEN, &open);
@@ -318,12 +321,22 @@ void TimeProfilerWindow::ShowMeshAsset(QTreeWidgetItem* item, int column)
 
 void TimeProfilerWindow::ShowTextureAsset(QTreeWidgetItem* item, int column)
 {
+    if ( tex_preview_ == 0)
+    {
+        tex_preview_ = new TexturePreviewEditor(framework_,this);
+    }
+        
+    tex_preview_->OpenOgreTexture(item->text(0));
+    tex_preview_->show();
+
+    /*
     Asset::Events::AssetOpen open(item->text(0), QString::number(RexAT_Texture));
-    boost::shared_ptr<Foundation::EventManager> event_manager_ = framework_->GetEventManager();
+    boost::shared_ptr<EventManager> event_manager_ = framework_->GetEventManager();
     if ( event_manager_ != 0 )
     {
         event_manager_->SendEvent(asset_event_category_,Asset::Events::ASSET_OPEN, &open);
     }
+    */
 
 }
 
@@ -655,6 +668,7 @@ void TimeProfilerWindow::RedrawFrameTimeHistoryGraph(const std::vector<std::pair
     if (!tab_widget_ || tab_widget_->currentIndex() != 1)
         return;
 
+    PROFILE(DebugStats_DrawTimeHistoryGraph);
 //    QPixmap picture(label_frame_time_history_->width(), label_frame_time_history_->height());
     const QPixmap *pixmap = label_frame_time_history_->pixmap();
     QImage image = pixmap->toImage();
@@ -1623,6 +1637,7 @@ void TimeProfilerWindow::RefreshSimStatsData(ProtocolUtilities::NetInMessage *si
     int regionX = simStats->ReadU32();
     int regionY = simStats->ReadU32();
     u32 regionFlags = simStats->ReadU32();
+    UNREFERENCED_PARAM(regionFlags);
     int objectCapacity = simStats->ReadU32();
 
     tree_sim_stats_->clear();
@@ -1653,7 +1668,7 @@ void TimeProfilerWindow::RefreshAssetProfilingData()
     tree_asset_transfers_->clear();
 
     boost::shared_ptr<Foundation::AssetServiceInterface> asset_service = 
-        framework_->GetServiceManager()->GetService<Foundation::AssetServiceInterface>(Foundation::Service::ST_Asset).lock();
+        framework_->GetServiceManager()->GetService<Foundation::AssetServiceInterface>(Service::ST_Asset).lock();
     if (!asset_service)
         return;
         
@@ -1699,7 +1714,7 @@ void TimeProfilerWindow::RefreshSceneComplexityProfilingData()
         return;
     
     boost::shared_ptr<Foundation::RenderServiceInterface> renderer = 
-        framework_->GetServiceManager()->GetService<Foundation::RenderServiceInterface>(Foundation::Service::ST_Renderer).lock();
+        framework_->GetServiceManager()->GetService<Foundation::RenderServiceInterface>(Service::ST_Renderer).lock();
     assert(renderer);
     if (!renderer)
         return;
@@ -1765,12 +1780,12 @@ void TimeProfilerWindow::RefreshSceneComplexityProfilingData()
     // Loop through entities to see mesh usage
     for (Scene::SceneManager::iterator iter = scene->begin(); iter != scene->end(); ++iter)
     {
-        Scene::Entity &entity = **iter;
+        Scene::Entity &entity = *iter->second;
         entities++;
         EC_OpenSimPrim* prim = entity.GetComponent<EC_OpenSimPrim>().get();
         Environment::EC_Terrain* terrain = entity.GetComponent<Environment::EC_Terrain>().get();
-        OgreRenderer::EC_Mesh* mesh = entity.GetComponent<OgreRenderer::EC_Mesh>().get();
-        OgreRenderer::EC_OgreCustomObject* custom = entity.GetComponent<OgreRenderer::EC_OgreCustomObject>().get();
+        EC_Mesh* mesh = entity.GetComponent<EC_Mesh>().get();
+        EC_OgreCustomObject* custom = entity.GetComponent<EC_OgreCustomObject>().get();
         Ogre::Entity* ogre_entity = 0;
         
         // Get Ogre mesh from mesh EC
@@ -1848,7 +1863,7 @@ void TimeProfilerWindow::RefreshSceneComplexityProfilingData()
             if (ogre_entity)
                 meshentities++;
         }
-        if (entity.GetComponent("EC_OgreAnimationController").get())
+        if (entity.GetComponent("EC_AnimationController").get())
             animated++;
     }
     

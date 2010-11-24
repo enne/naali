@@ -1,25 +1,4 @@
 #$HEADER_MOD_FILE$
-macro (AddSourceFolder folder_name)
-    file (GLOB H_FILES_IN_FOLDER_${folder_name} ${folder_name}/*.h)
-    file (GLOB CPP_FILES_IN_FOLDER_${folder_name} ${folder_name}/*.cpp)
-    source_group ("Header Files\\${folder_name}" FILES ${H_FILES_IN_FOLDER_${folder_name}})
-    source_group ("Source Files\\${folder_name}" FILES ${CPP_FILES_IN_FOLDER_${folder_name}})
-    set (H_FILES ${H_FILES} ${H_FILES_IN_FOLDER_${folder_name}})
-    set (CPP_FILES ${CPP_FILES} ${CPP_FILES_IN_FOLDER_${folder_name}})
-endmacro (AddSourceFolder)
-
-macro (MocFolder)
-    file (GLOB MOCS_TO_SOURCE_GROUP *.cxx */*.cxx */*/*.cxx */*/*/*.cxx)
-    source_group ("CMake Moc" FILES ${MOCS_TO_SOURCE_GROUP})
-endmacro (MocFolder)
-
-macro (UiFolder)
-    file (GLOB GENERATED_UI_H ui_*.h)
-    source_group ("Generated UI" FILES ${GENERATED_UI_H})
-endmacro (UiFolder)
-
-#############################################################################################
-
 # Define target name and output directory
 init_target (UiModule OUTPUT modules/core)
 
@@ -67,7 +46,7 @@ use_package (XMLRPC)
 use_package (OGRE)
 #$BEGIN_MOD$
 #$MOD_DESCRIPTION TtsModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence added$ 
-use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule TtsModule EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)
+use_modules (UiModule Core Foundation Interfaces SceneManager RexCommon ProtocolUtilities SupportModules OgreRenderingModule Ui TtsModule Input EntityComponents/EC_TtsVoice EntityComponents/EC_OpenSimPresence)
 #$END_MOD$
 build_library (${TARGET_NAME} SHARED ${SOURCE_FILES} ${MOC_SRCS} ${UI_SRCS} ${RESOURCE_SRCS})
 
@@ -80,7 +59,7 @@ link_package (QT4)
 link_package (POCO)
 link_package (XMLRPC)
 link_package (CURL)
-link_package (OGRE)
+link_ogre()
 
 # ETHER TYPE DEFINE
 if (DYNAMIC_LOGIN_SCENE)

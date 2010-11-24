@@ -7,7 +7,7 @@
 #include "UiSettingsService.h"
 #include "UiDarkBlueStyle.h"
 #include "UiStateMachine.h"
-#include "InputServiceInterface.h"
+#include "Input.h"
 
 #include "Ether/EtherLogic.h"
 #include "Ether/EtherSceneController.h"
@@ -22,6 +22,8 @@
 #include "Inworld/Notifications/ProgressNotification.h"
 #include "Common/UiAction.h"
 #include "UiSceneService.h"
+#include "NaaliUi.h"
+#include "NaaliGraphicsView.h"
 
 #include "EventManager.h"
 #include "ServiceManager.h"
@@ -33,7 +35,7 @@
 #include "InputEvents.h"
 #include "UiServiceInterface.h"
 #include "WorldLogicInterface.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "EC_Mesh.h"
 #include "Renderer.h"
 #include "Entity.h"
@@ -89,7 +91,7 @@ namespace UiServices
 
     void UiModule::Initialize()
     {
-        ui_view_ = GetFramework()->GetUIView();
+        ui_view_ = GetFramework()->Ui()->GraphicsView();
         if (ui_view_)
         {
             ui_state_machine_ = new CoreUi::UiStateMachine(ui_view_, this);
@@ -115,14 +117,16 @@ namespace UiServices
 
             // Register settings service
             ui_settings_service_ = UiSettingsPtr(new UiSettingsService(inworld_scene_controller_->GetControlPanelManager()));
-            GetFramework()->GetServiceManager()->RegisterService(Foundation::Service::ST_UiSettings, ui_settings_service_);
+            GetFramework()->GetServiceManager()->RegisterService(Service::ST_UiSettings, ui_settings_service_);
             LogDebug("UI Settings Service registered and READY");
 
             // Register UI service
             ui_scene_service_ = UiSceneServicePtr(new UiSceneService(this));
-            framework_->GetServiceManager()->RegisterService(Foundation::Service::ST_Gui, ui_scene_service_);
+            framework_->GetServiceManager()->RegisterService(Service::ST_Gui, ui_scene_service_);
             connect(ui_scene_service_.get(), SIGNAL(TransferRequest(const QString&, QGraphicsProxyWidget*)),
                     inworld_scene_controller_, SLOT(HandleWidgetTransfer(const QString&, QGraphicsProxyWidget*)));
+
+            framework_->RegisterDynamicObject("uiservice", ui_scene_service_.get());
         }
         else
             LogWarning("Could not acquire QGraphicsView shared pointer from framework, UiServices are disabled");
@@ -145,7 +149,7 @@ namespace UiServices
                 SLOT(OnSceneChanged(const QString&, const QString&)));
         LogDebug("Ether Logic STARTED");
 
-        input = framework_->Input()->RegisterInputContext("EtherInput", 90);
+        input = framework_->GetInput()->RegisterInputContext("EtherInput", 90);
         input->SetTakeKeyboardEventsOverQt(true);
         connect(input.get(), SIGNAL(KeyPressed(KeyEvent *)), this, SLOT(OnKeyPressed(KeyEvent *)));
 
@@ -243,10 +247,10 @@ namespace UiServices
         if (key->eventType != KeyEvent::KeyPressed || key->keyPressCount > 1)
             return;
 
-        InputServiceInterface &inputService = *framework_->Input();
+        Input *inputService = framework_->GetInput();
 
-        const QKeySequence toggleEther = inputService.KeyBinding("Ether.ToggleEther", Qt::Key_Escape);
-        const QKeySequence toggleWorldChat = inputService.KeyBinding("Ether.ToggleWorldChat", Qt::Key_F2);
+        const QKeySequence toggleEther = inputService->KeyBinding("Ether.ToggleEther", Qt::Key_Escape);
+        const QKeySequence toggleWorldChat = inputService->KeyBinding("Ether.ToggleWorldChat", Qt::Key_F2);
 
         if (key->keyCode == toggleEther)
             ui_state_machine_->ToggleEther();
@@ -329,8 +333,8 @@ namespace UiServices
         if (!avatar_entity)
             return;
 
-        OgreRenderer::EC_OgrePlaceable *ec_placeable = avatar_entity->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
-        OgreRenderer::EC_Mesh *ec_mesh = avatar_entity->GetComponent<OgreRenderer::EC_Mesh>().get();
+        EC_Placeable *ec_placeable = avatar_entity->GetComponent<EC_Placeable>().get();
+        EC_Mesh *ec_mesh = avatar_entity->GetComponent<EC_Mesh>().get();
 
         if (!ec_placeable || !ec_mesh || !avatar_entity->HasComponent("EC_AvatarAppearance"))
             return;
@@ -362,7 +366,7 @@ namespace UiServices
         // Get paths where to store the screenshots and pass to renderer for screenshots.
         QPair<QString, QString> paths = ether_logic_->GetLastLoginScreenshotData(framework_->GetConfigManager()->GetPath());
         boost::shared_ptr<Foundation::RenderServiceInterface> render_service = 
-            framework_->GetServiceManager()->GetService<Foundation::RenderServiceInterface>(Foundation::Service::ST_Renderer).lock();
+            framework_->GetServiceManager()->GetService<Foundation::RenderServiceInterface>(Service::ST_Renderer).lock();
 
         if (render_service && !paths.first.isEmpty() && !paths.second.isEmpty())
         {

@@ -16,6 +16,8 @@
 
 #include "MemoryLeakCheck.h"
 
+#include <QGraphicsView>
+
 #define DOCK_WIDTH          (300)
 #define DIST_FROM_BOTTOM    (200)
 #define DIST_FROM_TOP       (50)
@@ -107,7 +109,10 @@ namespace UiServices
 
         // Add to internal control list
         if (!all_proxy_widgets_in_scene_.contains(widget))
+        {
             all_proxy_widgets_in_scene_.append(widget);
+            connect(widget, SIGNAL(destroyed(QObject*)), SLOT(ProxyDestroyed(QObject*)));
+        }
 
 
         // \todo Find a proper solution to the problem
@@ -222,7 +227,7 @@ namespace UiServices
             communication_widget_->UpdateImWidget(im_proxy);
     }
 
-    void InworldSceneController::ApplyNewProxySettings(int new_opacity, int new_animation_speed) const
+    void InworldSceneController::ApplyNewProxySettings(int new_opacity, int new_animation_speed)
     {
         foreach (QGraphicsProxyWidget *widget, all_proxy_widgets_in_scene_)
         {
@@ -403,6 +408,20 @@ namespace UiServices
         DockLineup();
         docking_widget_proxy_->hide();
         docking_widget_proxy_->setVisible(false);
+    }
+
+    void InworldSceneController::ProxyDestroyed(QObject *obj)
+    {
+        if (!obj)
+            return;
+        QGraphicsProxyWidget *destroyed = 0;
+        foreach (QGraphicsProxyWidget *widget, all_proxy_widgets_in_scene_)
+        {
+            if (widget == obj)
+                destroyed = widget;
+        }
+        if (destroyed)
+            all_proxy_widgets_in_scene_.removeAll(destroyed);
     }
 
     void InworldSceneController::DeleteCallingWidgetOnClose()

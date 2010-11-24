@@ -12,8 +12,9 @@
 
 #include "IModule.h"
 #include "EC_OpenSimPrim.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "UiServiceInterface.h"
+#include "NaaliApplication.h"
 
 #include <QPixmap>
 #include <QDebug>
@@ -39,7 +40,7 @@ namespace WorldBuilding
         override_server_time_(false)
     {
         setParent(parent);
-        connect(framework_->GetQApplication(), SIGNAL(aboutToQuit()), SLOT(CleanPyWidgets()));
+        connect(framework_->GetNaaliApplication(), SIGNAL(aboutToQuit()), SLOT(CleanPyWidgets()));
         connect(viewport_poller_, SIGNAL(timeout()), SLOT(UpdateObjectViewport()));
 
         InitScene();
@@ -199,6 +200,14 @@ namespace WorldBuilding
             scene_widget = false;
         }
         else if (name_compare == "inventory")
+        {
+            tranfer_widgets_[name] = TransferPair(widget->widget(), widget);
+            widget->setWidget(0);
+            object_manip_ui.tab_widget->addTab(tranfer_widgets_[name].first, name);
+            tranfer_widgets_[name].first->show();
+            scene_widget = false;
+        }
+        else if (name_compare == "library")
         {
             tranfer_widgets_[name] = TransferPair(widget->widget(), widget);
             widget->setWidget(0);
@@ -642,7 +651,7 @@ namespace WorldBuilding
     {
         if (selected_entity_)
         {
-            OgreRenderer::EC_OgrePlaceable *entity_ec_placable = selected_entity_->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+            EC_Placeable *entity_ec_placable = selected_entity_->GetComponent<EC_Placeable>().get();
             if (entity_ec_placable)
             {
                 qreal acceleration = 0.01;
@@ -655,7 +664,7 @@ namespace WorldBuilding
     {
         if (selected_entity_)
         {
-            OgreRenderer::EC_OgrePlaceable *entity_ec_placable = selected_entity_->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+            EC_Placeable *entity_ec_placable = selected_entity_->GetComponent<EC_Placeable>().get();
             if (entity_ec_placable)
             {
                 qreal acceleration_x = 1;

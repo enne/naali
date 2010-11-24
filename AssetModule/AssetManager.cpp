@@ -15,7 +15,7 @@ namespace Asset
     AssetManager::AssetManager(Foundation::Framework* framework) : 
         framework_(framework)
     {
-        Foundation::EventManagerPtr event_manager = framework_->GetEventManager();
+        EventManagerPtr event_manager = framework_->GetEventManager();
 
         event_category_ = event_manager->RegisterEventCategory("Asset");
         event_manager->RegisterEvent(event_category_, Events::ASSET_READY, "AssetReady");
@@ -35,6 +35,15 @@ namespace Asset
     Foundation::AssetPtr AssetManager::GetAsset(const std::string& asset_id, const std::string& asset_type)
     {
         return GetFromCache(asset_id, asset_type);
+    }
+
+    QString AssetManager::GetAbsoluteAssetPath(const std::string& asset_id, const std::string& asset_type)
+    {
+        Foundation::AssetPtr cache_asset = GetFromCache(asset_id, asset_type);
+        QString path_to_cache = "";
+        if (cache_asset.get())
+            path_to_cache = QString::fromStdString(cache_->GetAbsoluteFilePath(asset_id, asset_type));
+        return path_to_cache;
     }
 
     bool AssetManager::IsValidId(const std::string& asset_id, const std::string& asset_type)

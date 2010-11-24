@@ -3,7 +3,7 @@
  *
  *  @file   EC_HoveringText.cpp
  *  @brief  EC_HoveringText shows a hovering text attached to an entity.
- *  @note   The entity must EC_OgrePlaceable available in advance.
+ *  @note   The entity must EC_Placeable available in advance.
  */
 
 #include "StableHeaders.h"
@@ -12,7 +12,7 @@
 #include "EC_HoveringText.h"
 #include "IModule.h"
 #include "Renderer.h"
-#include "EC_OgrePlaceable.h"
+#include "EC_Placeable.h"
 #include "Entity.h"
 #include "OgreMaterialUtils.h"
 #include "LoggingFunctions.h"
@@ -53,7 +53,7 @@ EC_HoveringText::EC_HoveringText(IModule *module) :
 
 
 {
-    renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Foundation::Service::ST_Renderer);
+    renderer_ = module->GetFramework()->GetServiceManager()->GetService<OgreRenderer::Renderer>(Service::ST_Renderer);
 
     visibility_animation_timeline_->setFrameRange(0,100);
     visibility_animation_timeline_->setEasingCurve(QEasingCurve::InOutSine);
@@ -235,7 +235,7 @@ void EC_HoveringText::ShowMessage(const QString &text)
     if (!entity)
         return;
 
-    OgreRenderer::EC_OgrePlaceable *node = entity->GetComponent<OgreRenderer::EC_OgrePlaceable>().get();
+    EC_Placeable *node = entity->GetComponent<EC_Placeable>().get();
     if (!node)
         return;
 
@@ -304,7 +304,7 @@ void EC_HoveringText::Redraw()
             texPtr = Ogre::TextureManager::getSingleton().getByName(textureName_);
             assert(!texPtr.isNull());
             // See if size/format changed, have to delete/recreate internal resources
-            if (img.width() != texPtr->getWidth() || img.height() != texPtr->getHeight())
+            if (img.width() != (int)texPtr->getWidth() || img.height() != (int)texPtr->getHeight())
             {
                 texPtr->freeInternalResources();
                 texPtr->setWidth(img.width());
@@ -380,7 +380,7 @@ QPixmap EC_HoveringText::GetTextPixmap()
         painter.setBrush(backgroundColor_);
 
     // Draw background rect
-    painter.setPen(QColor(255,255,255,150));
+    painter.setPen(Qt::transparent);
     painter.drawRoundedRect(rect, 20.0, 20.0);
 
     // Draw text

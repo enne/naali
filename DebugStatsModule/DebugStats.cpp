@@ -160,7 +160,7 @@ void DebugStatsModule::StartProfiling(bool visible)
 
 Console::CommandResult DebugStatsModule::ShowProfilingWindow(/*const StringVector &params*/)
 {
-    UiServicePtr ui = framework_->GetService<UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+    UiServicePtr ui = framework_->GetService<UiServiceInterface>(Service::ST_Gui).lock();
     if (!ui)
         return Console::ResultFailure("Failed to acquire UI service!");
 
@@ -176,7 +176,7 @@ Console::CommandResult DebugStatsModule::ShowProfilingWindow(/*const StringVecto
 
 Console::CommandResult DebugStatsModule::ShowParticipantWindow(const StringVector &params)
 {
-    UiServicePtr ui = framework_->GetService<UiServiceInterface>(Foundation::Service::ST_Gui).lock();
+    UiServicePtr ui = framework_->GetService<UiServiceInterface>(Service::ST_Gui).lock();
     if (!ui)
         return Console::ResultFailure("Failed to acquire UI service!");
 
@@ -190,7 +190,7 @@ Console::CommandResult DebugStatsModule::ShowParticipantWindow(const StringVecto
     participantWindow_->move(100, 100);
     participantWindow_->setWindowFlags(Qt::Dialog);
 
-    QGraphicsProxyWidget *proxy = ui->AddWidgetToScene(participantWindow_);
+    /*QGraphicsProxyWidget *proxy = */ui->AddWidgetToScene(participantWindow_);
     ui->BringWidgetToFront(participantWindow_);
 //    proxy->show();
 
@@ -461,7 +461,7 @@ Console::CommandResult DebugStatsModule::LoadScene(const StringVector &params)
 Console::CommandResult DebugStatsModule::DumpTextures(const StringVector &params)
 {
     boost::shared_ptr<OgreRenderer::Renderer> renderer = GetFramework()->GetServiceManager()->GetService
-        <OgreRenderer::Renderer>(Foundation::Service::ST_Renderer).lock();
+        <OgreRenderer::Renderer>(Service::ST_Renderer).lock();
     if (!renderer)
         return Console::ResultFailure("No renderer");
     

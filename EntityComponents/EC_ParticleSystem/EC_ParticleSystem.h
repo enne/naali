@@ -52,7 +52,7 @@ Registered by RexLogic::RexLogicModule.
 
 Does not emit any actions.
 
-<b>Depends on the component OgrePlaceable</b>.
+<b>Depends on the component Placeable</b>.
 </table>
 
 */
@@ -82,10 +82,6 @@ public:
     Q_PROPERTY(float renderingDistance READ getrenderingDistance WRITE setrenderingDistance);
     DEFINE_QPROPERTY_ATTRIBUTE(float, renderingDistance);
 
-    /*Attribute<QString> particleId_;
-    Attribute<bool> castShadows_;
-    Attribute<float> renderingDistance_;*/
-
 public slots:
     //! Create a new particle system. System name will be same as component name.
     void CreateParticleSystem(const QString &systemName);
@@ -94,8 +90,8 @@ public slots:
     void DeleteParticleSystem();
 
 private slots:
-    void UpdateSignals();
     void AttributeUpdated(IAttribute *attribute);
+    void EntitySetted();
 
 private:
     explicit EC_ParticleSystem(IModule *module);
